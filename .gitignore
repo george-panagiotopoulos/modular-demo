@@ -83,3 +83,11 @@ Thumbs.db
 
 # Generated PlantUML Image
 app/static/images/architecture_stub.png
+
+# Cursor IDE
+.cursor/
+
+# Custom/Project Specific
+prompts/
+Swagger/
+PUML/
