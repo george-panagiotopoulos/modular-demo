@@ -1,0 +1,28 @@
+[
+  {
+    "timestamp": "2024-07-27T10:01:30Z",
+    "method": "GET",
+    "uri": "/accounts/acc123/transactions",
+    "request_payload": null,
+    "response_payload": {
+      "transactions": [
+        {"id": "txn1", "amount": -50.0, "description": "Coffee Shop"},
+        {"id": "txn2", "amount": 1000.0, "description": "Salary"}
+      ]
+    }
+  },
+    {
+    "timestamp": "2024-07-27T11:15:00Z",
+    "method": "POST",
+    "uri": "/transfers",
+    "request_payload": {
+        "fromAccountId": "acc123",
+        "toAccountId": "acc789",
+        "amount": 250.0
+    },
+    "response_payload": {
+        "transferId": "trnfr555",
+        "status": "completed"
+    }
+  }
+] 

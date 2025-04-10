@@ -1,0 +1,542 @@
+{
+  "swagger" : "2.0",
+  "info" : {
+    "description" : "Temenos exhibits modularity in its design approach by dividing the system into smaller, loosely coupled modules. The deposits modules of Retail Modular Banking is an independently deployable piece of software providing solution for specific business area namely retail deposits and retail accounts. This API can be used to create and manage accounts such as current, savings, using the Arrangement Architecture.",
+    "version" : "v2.0.0",
+    "title" : "Retail Modular Banking Deposits Module Accounts"
+  },
+  "host" : "api.server.com",
+  "basePath" : "/api/v2.0.0/",
+  "tags" : [ {
+    "name" : "RETAIL"
+  } ],
+  "schemes" : [ "http", "https" ],
+  "security" : [ {
+    "basicAuth" : [ ]
+  }, {
+    "apiKey" : [ ]
+  } ],
+  "paths" : {
+    "/holdings/accounts/currentAccounts" : {
+      "post" : {
+        "tags" : [ "RETAIL" ],
+        "summary" : "API is used to  create a current account.",
+        "description" : "API is used to create a current account for a single customer or more than one customer(like a joint account relationship). It is possible to include alternate identifiers, add the quotation reference if required at the time of account opening.",
+        "operationId" : "createCurrentAccounts",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "validate_only",
+          "in" : "query",
+          "description" : "The identifier to indicate if it is set to only validate or not.",
+          "required" : false,
+          "type" : "boolean"
+        }, {
+          "in" : "body",
+          "name" : "payload",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/CreateAccounts"
+          }
+        }, {
+          "name" : "credentials",
+          "in" : "header",
+          "description" : "Username and password to authenticate the API against core-banking.",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "companyId",
+          "in" : "header",
+          "description" : "Identifier of the lead company of the underlying Entity/Company/Branch for the respective contract for customer data protection purposes. Example US0010001.",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "deviceId",
+          "in" : "header",
+          "description" : "Identifies the device type",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "userRole",
+          "in" : "header",
+          "description" : "User who initiated the transaction",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "channelName",
+          "in" : "header",
+          "description" : "Name of the (digital) channel registered by the Customer",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "createAccountsResponse",
+            "schema" : {
+              "$ref" : "#/definitions/AccountsResponse"
+            }
+          },
+          "default" : {
+            "description" : "ArrangementErrorResponse",
+            "schema" : {
+              "$ref" : "#/definitions/ArrangementErrorResponse"
+            }
+          },
+          "400" : {
+            "description" : "BusinessArrangementErrorResponse",
+            "schema" : {
+              "$ref" : "#/definitions/BusinessArrangementErrorResponse"
+            }
+          },
+          "500" : {
+            "description" : "SystemArrangementErrorResponse",
+            "schema" : {
+              "$ref" : "#/definitions/SystemArrangementErrorResponse"
+            }
+          }
+        }
+      }
+    },
+  "/holdings/accounts/savingsAccount" : {
+     "post" : {
+        "tags" : [ "RETAIL" ],
+        "summary" : "API is used to  create a savings account.",
+        "description" : "API is used to create a savings account for a single customer or more than one customer(like a joint account relationship). It is possible to include alternate identifiers, add the quotation reference if required at the time of account opening.",
+        "operationId" : "createSavingsAccounts",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "validate_only",
+          "in" : "query",
+          "description" : "The identifier to indicate if it is set to only validate or not.",
+          "required" : false,
+          "type" : "boolean"
+        }, {
+          "in" : "body",
+          "name" : "payload",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/CreateAccounts"
+          }
+        }, {
+          "name" : "credentials",
+          "in" : "header",
+          "description" : "Username and password to authenticate the API against core-banking.",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "companyId",
+          "in" : "header",
+          "description" : "Identifier of the lead company of the underlying Entity/Company/Branch for the respective contract for customer data protection purposes. Example US0010001.",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "deviceId",
+          "in" : "header",
+          "description" : "Identifies the device type",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "userRole",
+          "in" : "header",
+          "description" : "User who initiated the transaction",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "channelName",
+          "in" : "header",
+          "description" : "Name of the (digital) channel registered by the Customer",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "createAccountsResponse",
+            "schema" : {
+              "$ref" : "#/definitions/AccountsResponse"
+            }
+          },
+          "default" : {
+            "description" : "ArrangementErrorResponse",
+            "schema" : {
+              "$ref" : "#/definitions/ArrangementErrorResponse"
+            }
+          },
+          "400" : {
+            "description" : "BusinessArrangementErrorResponse",
+            "schema" : {
+              "$ref" : "#/definitions/BusinessArrangementErrorResponse"
+            }
+          },
+          "500" : {
+            "description" : "SystemArrangementErrorResponse",
+            "schema" : {
+              "$ref" : "#/definitions/SystemArrangementErrorResponse"
+            }
+          }
+        }
+    }
+  },
+  "/holdings/accounts/{accountId}/balances" : {
+      "get" : {
+        "tags" : [ "RETAIL" ],
+        "summary" : "API is used to get account balances.",
+        "description" : "API is used to get details of the account balances that is available for the account arrangement",
+        "operationId" : "getAccountInfo",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "accountId",
+          "in" : "path",
+          "description" : "Contains the accounts arrangement number that is returned from the system. For example, A987654321",
+          "required" : true,
+          "type" : "string"
+        }],
+        "responses" : {
+          "200" : {
+            "description" : "getAccountInfoResponse",
+            "schema" : {
+              "$ref" : "#/definitions/AccountInfoResponse"
+            }
+          },
+          "default" : {
+            "description" : "QueryErrorResponse",
+            "schema" : {
+              "$ref" : "#/definitions/QueryErrorResponse"
+            }
+          },
+          "400" : {
+            "description" : "BusinessQueryErrorResponse",
+            "schema" : {
+              "$ref" : "#/definitions/BusinessQueryErrorResponse"
+            }
+          },
+          "500" : {
+            "description" : "SystemQueryErrorResponse",
+            "schema" : {
+              "$ref" : "#/definitions/SystemQueryErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  },
+  "securityDefinitions" : {
+    "basicAuth" : {
+      "type" : "basic"
+    },
+    "apiKey" : {
+      "type" : "apiKey",
+      "name" : "Authorization",
+      "in" : "header"
+    }
+  },
+  "definitions" : {
+    "PayloadHeader" : {
+      "properties" : {
+        "audit" : {
+          "type" : "object",
+          "properties" : {
+            "versionNumber" : {
+              "type" : "string",
+              "description" : "The CURR.NO. of the record"
+            }
+          }
+        }
+      }
+    },
+    "CreateAccounts" : {
+      "type" : "object",
+      "properties" : {
+        "parties" : {
+          "type" : "array",
+          "description" : "Contains the array of customer identifier details for opening the account. There can more than one customer information passed to the end point in case of joint account opening.",
+          "items" : {
+            "type" : "object",
+            "properties" : {
+              "partyId" : {
+                "type" : "string",
+                "description" : "Contains the unique customer identifier used in the account opening process. The list of the customer identifier can be listed from the endpoint. This is a mandatory field.  When there are more than one customer in the account opening process(like a joint relationship), the next partyId is updated as another set of fields in the array with the corresponding partyRole field indicating that respective party's role.",
+                "minLength" : 0,
+                "maxLength" : 10
+              },
+              "partyRole" : {
+                "type" : "string",
+                "description" : "Contains the role of the customer in the associated partyId field.  This is an optional field. For example, owner, joint owner, nominee, guardian etc. ",
+                "enum" : ["AGENT", "AGENT.CUM.PARTICIPANT", "APPLICANT", "BUYER", "DEALER", "GUARANTOR", "GUARDIAN", "INTERMEDIARY", "INVESTOR", "JOINT.OWNER", "LEGAL.OWNER", "LESSEE", "OWNER", "PARTICIPANT", "PARTNER", "POWER.OF.ATTORNEY", "RISK.PARTICIPANT", "SOLICITOR", "SUB-LESSEE", "SUB-PARTICIPANT", "SUB.PARTICIPANT", "SUPPLIER"],
+                "minLength" : 0,
+                "maxLength" : 30
+              }
+            }
+          }
+        },
+         "accountReferences" : {
+            "type" : "array",
+              "description" : "Contains the array of the alternate references for the accounts. This is optional array to be used only when alternate identification has to be updated at the time of account opening.",
+                "items" : {
+                  "type" : "object",
+                  "properties" : {
+                    "referenceType" : {
+                      "type" : "string",
+                      "description" : "Contains the type of alternate reference that can be updated in the account at the time of account opening. For example, IBAN, LEGACY type of alternate account numbers can be added to the account.",
+                      "enum" : ["IBAN","LEGACY","PREV.IBAN","T24.IBAN"],
+                      "minLength" : 0,
+                      "maxLength" : 10
+                    },
+                    "accountReference" : {
+                      "type" : "string",
+                      "description" : "Contains the unique account number that can be updated as an alternate account identifier. This field is associated with the referenceType field. For example, the account identifier for IBAN number or the legacy system can be given here.",
+                      "minLength" : 0,
+                      "maxLength" : 36
+                    }
+                  }
+                }
+              },
+              "accountName" : {
+                "type" : "string",
+                "description" : "contains the nickname given for the account that is being opened. For example : MySavingsAccount, MyCurrentAccount",
+                "minLength" : 0,
+                "maxLength" : 70
+         },
+        "openingDate" : {
+          "type" : "string",
+          "description" : "Contains the effective date of the account opening.The account is usually opened with the current system date but the user can also specify an effective date for opening the account (like back value dated account opening). In such cases, the effective date for account opening can be given here in the format yyyymmdd. For example, 20230927",
+          "minLength" : 0,
+          "maxLength" : 11
+        },
+        "productId" : {
+          "type" : "string",
+          "description" : "Contains the product in which the account should be opened for the customer. The list of the product with its available currency can be listed from the endpoint. This is a mandatory feild of the payload to indicate the productID in the system. For example, PremiumCurrentAccount",
+          "minLength" : 0,
+          "maxLength" : 30
+        },
+        "currency" : {
+          "type" : "string",
+          "description" : "Contains the 3 digit ISO currency code that indicates the currency in which the account should be opened for the customer. The list of the product in the system with its available currency can be listed from the endpoint. This is a mandatory field of the payload and must contain a valid currency in which the account product is sold. For example: USD",
+          "minLength" : 0,
+          "maxLength" : 3
+        },
+        "branchCode" : {
+          "type" : "string",
+          "description" : "Contains the branch in which the account should be opened for the customer. The list of the branches in the system can be listed from the endpoint.  The pricing and other benefits might vary based on the branch of account opening for the customer. For example: if the branch code for NewYork Branch is 1510, then the value 1510 should be keyed in here",
+          "minLength" : 0,
+          "maxLength" : 16
+        },
+        "quotationReference" : {
+          "type" : "string",
+          "description" : "Contains the account origination reference from the simulated or origination system. For example, the quotation reference can be like QUOTE123456789",
+          "minLength" : 0,
+          "maxLength" : 100
+        }
+      }
+    },
+    "AccountsResponse" : {
+      "type" : "object",
+      "properties" : {
+         "accountReference" : {
+            "type" : "string",
+            "description" : "Contains the unique account number that can be updated as an alternate account identifier.",
+            "minLength" : 0,
+            "maxLength" : 36
+            }
+         }
+      },
+     "ArrangementErrorResponse": {
+            "properties": {
+                "error": {
+                    "type": "array",
+                    "$ref": "#/definitions/ArrangementErrorResponseBody"
+                }
+            },
+            "description": "ArrangementErrorResponse"
+        },
+        "ArrangementErrorResponseBody": {
+            "items": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "description": "The identifier of the error message"
+                    },
+                    "message": {
+                        "type": "string",
+                        "description": "The actual Transact error message "
+                    },
+                    "property": {
+                        "type": "string",
+                        "description": "Id of the product property"
+                    }
+                }
+            }
+        },
+        "BusinessArrangementErrorResponse": {
+            "properties": {
+                "error": {
+                    "type": "array",
+                    "$ref": "#/definitions/BusinessArrangementErrorResponseBody"
+                }
+            },
+            "description": "BusinessArrangementErrorResponse"
+        },
+        "BusinessArrangementErrorResponseBody": {
+            "items": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "description": "The identifier of the error message"
+                    },
+                    "message": {
+                        "type": "string",
+                        "description": "The actual Transact error message for bad requests"
+                    },
+                    "property": {
+                        "type": "string",
+                        "description": "Id of the product property"
+                    }
+                }
+            }
+        },
+        "SystemArrangementErrorResponse": {
+            "properties": {
+                "error": {
+                    "type": "array",
+                    "$ref": "#/definitions/SystemArrangementErrorResponseBody"
+                }
+            },
+            "description": "SystemArrangementErrorResponse"
+        },
+        "SystemArrangementErrorResponseBody": {
+            "items": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "description": "The identifier of the error message"
+                    },
+                    "message": {
+                        "type": "string",
+                        "description": "The actual Transact error message caused by server"
+                    },
+                    "property": {
+                        "type": "string",
+                        "description": "Id of the product property"
+                    }
+                }
+            }
+        },
+    "AccountInfoResponse" : {
+      "properties" : {
+          "accountReference" : {
+            "type" : "string",
+            "description" : "Contains the accounts arrangement number that is returned from the system. For example, A987654321",
+            "maxLength" : 35
+          },
+          "accountName" : {
+            "type" : "string",
+            "description" : "Contains the nickname given by the customer for the Accounts arrangement. For example : John Doe Current",
+            "maxLength" : 30
+          },
+          "currency" : {
+            "type" : "string",
+            "description" : "Contains the 3 digit ISO currency code that indicates the currency in which each of the associated arrangements has be opened for the customer. For example: USD",
+            "maxLength" : 3
+          },
+          "ledgerBalance" : {
+            "type" : "number",
+            "description" : "Gives the actual balance in the account (ledger balance including uncleared credits)"
+          },
+          "blockedAmount" : {
+            "type" : "number",
+            "description" : "Gives the amounts funds that are locked/blocked/kept on hold (funds cannot be utilised by the customer) in the account.",
+            "maximum" : 19
+          },
+          "availableBalance" : {
+            "type" : "number",
+            "description" : "Gives the usable balance in the account. This is the sum of the cleared balance with unauthorised debits and locked funds. If the actual balance is 10,000 and cleared balance is 9000 (as 1000 is a credit under clearing), the incoming debit for 500 is not authorised and there is a locked amount is 2000, then available balance or the usable balance is 10000-1000-500-2000 = 6500. If there is a limit of 1000, then the usable balance is 10000-1000-500-2000+1000 = 7500.This feild can be configured to give the working balance in the account meaning the sum of the cleared balance with unauthorised debits. "
+          },
+          "productId" : {
+            "type" : "string",
+            "description" : "Contains the accounts product name of the arrangement ID displayed. For example: CurrentPremier456",
+            "maxLength" : 30
+          },
+          "overdraftLimit" : {
+            "type" : "string",
+            "description" : "Contains the information about the limit that is sanctioned for the customer. For example, 1000$ is the limit availble for the customer under this product"
+          }
+        }
+    },
+    "QueryErrorResponse" : {
+      "properties" : {
+        "error" : {
+          "$ref" : "#/definitions/QueryErrorResponseBody"
+        }
+      },
+      "description" : "QueryErrorResponse"
+    },
+    "QueryErrorResponseBody" : {
+      "type" : "object",
+      "properties" : {
+        "code" : {
+          "type" : "string",
+          "description" : "The identifier of the error message"
+        },
+        "message" : {
+          "type" : "string",
+          "description" : "The actual Transact error message"
+        },
+        "type" : {
+          "type" : "string",
+          "description" : "The identifier of error type: "
+        }
+      }
+    },
+    "BusinessQueryErrorResponse" : {
+      "properties" : {
+        "error" : {
+          "$ref" : "#/definitions/BusinessQueryErrorResponseBody"
+        }
+      },
+      "description" : "BusinessQueryErrorResponse"
+    },
+    "BusinessQueryErrorResponseBody" : {
+      "type" : "object",
+      "properties" : {
+        "code" : {
+          "type" : "string",
+          "description" : "The identifier of the error message"
+        },
+        "message" : {
+          "type" : "string",
+          "description" : "The actual Transact error message for bad requests"
+        },
+        "type" : {
+          "type" : "string",
+          "description" : "The identifier of error type: Business"
+        }
+      }
+    },
+    "SystemQueryErrorResponse" : {
+      "properties" : {
+        "error" : {
+          "$ref" : "#/definitions/SystemQueryErrorResponseBody"
+        }
+      },
+      "description" : "SystemQueryErrorResponse"
+    },
+    "SystemQueryErrorResponseBody" : {
+      "type" : "object",
+      "properties" : {
+        "code" : {
+          "type" : "string",
+          "description" : "The identifier of the error message"
+        },
+        "message" : {
+          "type" : "string",
+          "description" : "The actual Transact error message caused by server"
+        },
+        "type" : {
+          "type" : "string",
+          "description" : "The identifier of error type: System"
+        }
+      }
+    }
+  }
+}

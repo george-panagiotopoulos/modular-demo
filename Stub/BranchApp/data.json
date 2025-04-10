@@ -1,0 +1,225 @@
+{
+  "customers": [
+    {
+      "customerId": "CUST1001",
+      "status": "Active",
+      "title": "Mr.",
+      "firstName": "John",
+      "lastName": "Doe",
+      "dateOfBirth": "1985-03-15",
+      "gender": "Male",
+      "nationality": "US",
+      "primaryEmail": "john.doe@example.com",
+      "secondaryEmail": null,
+      "mobilePhone": "+1-555-123-4567",
+      "homePhone": "+1-555-987-6543",
+      "employmentStatus": "Employed",
+      "jobTitle": "Software Engineer",
+      "employerName": "Tech Solutions Inc.",
+      "address": {
+        "streetAddress1": "123 Main St",
+        "streetAddress2": "Apt 4B",
+        "city": "Anytown",
+        "state": "CA",
+        "postalCode": "90210",
+        "country": "USA",
+        "type": "Primary"
+      },
+      "preferredLanguage": "en",
+      "marketingConsent": true,
+      "lastLogin": "2024-07-29T10:00:00Z",
+      "creationDate": "2020-01-10T14:30:00Z",
+      "accountIds": [
+        "ACC001",
+        "SAV002",
+        "LON003"
+      ]
+    },
+    {
+      "customerId": "CUST1002",
+      "status": "Active",
+      "title": "Ms.",
+      "firstName": "Jane",
+      "lastName": "Smith",
+      "dateOfBirth": "1992-11-20",
+      "gender": "Female",
+      "nationality": "CA",
+      "primaryEmail": "jane.smith@example.ca",
+      "secondaryEmail": "jsmith.personal@mail.com",
+      "mobilePhone": "+1-416-555-8888",
+      "homePhone": null,
+      "employmentStatus": "Self-Employed",
+      "jobTitle": "Graphic Designer",
+      "employerName": "Freelance",
+      "address": {
+        "streetAddress1": "456 Oak Ave",
+        "streetAddress2": null,
+        "city": "Toronto",
+        "state": "ON",
+        "postalCode": "M5A 1A1",
+        "country": "Canada",
+        "type": "Primary"
+      },
+      "preferredLanguage": "en",
+      "marketingConsent": false,
+      "lastLogin": "2024-07-28T15:20:00Z",
+      "creationDate": "2021-05-22T09:00:00Z",
+      "accountIds": [
+        "ACC004",
+        "SAV005"
+      ]
+    }
+  ],
+  "accounts": {
+    "ACC001": {
+      "accountId": "ACC001",
+      "customerId": "CUST1001",
+      "displayName": "Everyday Checking",
+      "productName": "Current Account",
+      "currency": "USD",
+      "currentBalance": 1190.75,
+      "availableBalance": 1140.5,
+      "type": "deposit",
+      "openDate": "2020-01-15"
+    },
+    "SAV002": {
+      "accountId": "SAV002",
+      "customerId": "CUST1001",
+      "displayName": "Rainy Day Fund",
+      "productName": "Savings Account",
+      "currency": "USD",
+      "currentBalance": 8450.0,
+      "availableBalance": 8450.0,
+      "type": "deposit",
+      "openDate": "2020-01-15"
+    },
+    "LON003": {
+      "accountId": "LON003",
+      "customerId": "CUST1001",
+      "displayName": "Home Mortgage",
+      "productName": "Mortgage Loan",
+      "currency": "USD",
+      "currentBalance": -185000.0,
+      "principalAmount": 200000.0,
+      "nextPaymentAmount": 1150.5,
+      "nextPaymentDate": "2024-08-15",
+      "type": "loan",
+      "openDate": "2022-03-01",
+      "interestRate": 3.5
+    },
+    "ACC004": {
+      "accountId": "ACC004",
+      "customerId": "CUST1002",
+      "displayName": "Primary Checking",
+      "productName": "Current Account",
+      "currency": "CAD",
+      "currentBalance": 3450.2,
+      "availableBalance": 3400.0,
+      "type": "deposit",
+      "openDate": "2021-05-22"
+    },
+    "SAV005": {
+      "accountId": "SAV005",
+      "customerId": "CUST1002",
+      "displayName": "Travel Fund",
+      "productName": "Savings Account",
+      "currency": "CAD",
+      "currentBalance": 12500.0,
+      "availableBalance": 12500.0,
+      "type": "deposit",
+      "openDate": "2023-02-10"
+    }
+  },
+  "transactions": {
+    "ACC001": [
+      {
+        "transactionId": "TXN001",
+        "bookingDate": "2024-07-28T10:30:00Z",
+        "description": "Coffee Shop",
+        "amount": -5.5,
+        "currency": "USD",
+        "type": "Debit Card Purchase"
+      },
+      {
+        "transactionId": "TXN002",
+        "bookingDate": "2024-07-27T09:00:00Z",
+        "description": "Salary Deposit",
+        "amount": 2500.0,
+        "currency": "USD",
+        "type": "Direct Deposit"
+      },
+      {
+        "transactionId": "TXN003",
+        "bookingDate": "2024-07-26T15:00:00Z",
+        "description": "Grocery Store",
+        "amount": -75.2,
+        "currency": "USD",
+        "type": "Debit Card Purchase"
+      }
+    ],
+    "SAV002": [
+      {
+        "transactionId": "TXN004",
+        "bookingDate": "2024-07-15T11:00:00Z",
+        "description": "Monthly Transfer In",
+        "amount": 500.0,
+        "currency": "USD",
+        "type": "Transfer"
+      },
+      {
+        "transactionId": "TXN005",
+        "bookingDate": "2024-06-15T11:00:00Z",
+        "description": "Monthly Transfer In",
+        "amount": 500.0,
+        "currency": "USD",
+        "type": "Transfer"
+      }
+    ],
+    "LON003": [
+      {
+        "transactionId": "TXN006",
+        "bookingDate": "2024-07-15T08:00:00Z",
+        "description": "Mortgage Payment",
+        "amount": -1150.5,
+        "currency": "USD",
+        "type": "Loan Payment"
+      }
+    ],
+    "ACC004": [
+      {
+        "transactionId": "TXN007",
+        "bookingDate": "2024-07-29T12:15:00Z",
+        "description": "Client Payment",
+        "amount": 1500.0,
+        "currency": "CAD",
+        "type": "Deposit"
+      },
+      {
+        "transactionId": "TXN008",
+        "bookingDate": "2024-07-28T18:00:00Z",
+        "description": "Art Supplies",
+        "amount": -120.5,
+        "currency": "CAD",
+        "type": "Purchase"
+      },
+      {
+        "transactionId": "TXN009",
+        "bookingDate": "2024-07-25T10:00:00Z",
+        "description": "Software Subscription",
+        "amount": -25.0,
+        "currency": "CAD",
+        "type": "Recurring Payment"
+      }
+    ],
+    "SAV005": [
+      {
+        "transactionId": "TXN010",
+        "bookingDate": "2024-07-01T10:00:00Z",
+        "description": "Transfer from Checking",
+        "amount": 1000.0,
+        "currency": "CAD",
+        "type": "Transfer"
+      }
+    ]
+  }
+}

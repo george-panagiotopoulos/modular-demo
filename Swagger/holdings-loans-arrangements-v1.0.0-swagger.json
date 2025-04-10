@@ -1,0 +1,961 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "Temenos exhibits modularity in its design approach by dividing the system into smaller, loosely coupled modules. The deposits modules of Retail Modular Banking is an independently deployable piece of software providing solution for specific business area namely retail deposits and retail accounts. This API can be used to create and manage loans such as mortgages, consumer loans, line of credit using the Arrangement Architecture.",
+    "version": "v1.0.0",
+    "title": "Retail Modular Banking Lending Module Loans"
+  },
+  "host": "api.server.com",
+  "basePath": "/api/v1.0.0/",
+  "tags": [
+    {
+      "name": "OTHERS"
+    }
+  ],
+  "schemes": [
+    "http",
+    "https"
+  ],
+  "security": [
+    {
+      "basicAuth": []
+    },
+    {
+      "apiKey": []
+    }
+  ],
+  "paths": {
+    "/holdings/lending/consumerLoans": {
+      "post": {
+        "tags": [
+          "RETAIL"
+        ],
+        "summary": "API used to create Consumer Loans.",
+        "description": "API is used to create a consumer loan for a single customer or more than one customers(such as a joint loan or co-borrower loan). The loan information, including the term and commitment amount can be input by the user at the time of loan creation.",
+        "operationId": "createConsumerLoans",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "validate_only",
+            "in": "query",
+            "description": "The identifier to indicate if it is set to only validate or not.",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "in": "body",
+            "name": "payload",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CreateConsumerLoans"
+            }
+          },
+          {
+            "name": "credentials",
+            "in": "header",
+            "description": "Username and password to authenticate the API against core-banking.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "companyId",
+            "in": "header",
+            "description": "Identifier of the lead company of the underlying Entity/Company/Branch for the respective contract for customer data protection purposes. Example US0010001.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "deviceId",
+            "in": "header",
+            "description": "Identifies the device type",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "userRole",
+            "in": "header",
+            "description": "User who initiated the transaction",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "channelName",
+            "in": "header",
+            "description": "Name of the (digital) channel registered by the Customer",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "createConsumerLoansResponse",
+            "schema": {
+              "$ref": "#/definitions/CreateConsumerLoansResponse"
+            }
+          },
+          "400": {
+            "description": "BusinessArrangementErrorResponse",
+            "schema": {
+              "$ref": "#/definitions/BusinessArrangementErrorResponse"
+            }
+          },
+          "500": {
+            "description": "SystemArrangementErrorResponse",
+            "schema": {
+              "$ref": "#/definitions/SystemArrangementErrorResponse"
+            }
+          },
+          "default": {
+            "description": "ArrangementErrorResponse",
+            "schema": {
+              "$ref": "#/definitions/ArrangementErrorResponse"
+            }
+          }
+        }
+      }
+    },
+  "/holdings/lending/mortgages": {
+      "post": {
+        "tags": [
+          "RETAIL"
+        ],
+        "summary": "API used to create Mortgage.",
+        "description": "API is used to create a mortgages for a single customer or more than one customers(such as a joint loan or co-borrower loan). The loan information, including the term and commitment amount can be input by the user at the time of loan creation.",
+        "operationId": "createMortgage",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "validate_only",
+            "in": "query",
+            "description": "The identifier to indicate if it is set to only validate or not.",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "in": "body",
+            "name": "payload",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CreateMortgage"
+            }
+          },
+          {
+            "name": "credentials",
+            "in": "header",
+            "description": "Username and password to authenticate the API against core-banking.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "companyId",
+            "in": "header",
+            "description": "Identifier of the lead company of the underlying Entity/Company/Branch for the respective contract for customer data protection purposes. Example US0010001.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "deviceId",
+            "in": "header",
+            "description": "Identifies the device type",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "userRole",
+            "in": "header",
+            "description": "User who initiated the transaction",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "channelName",
+            "in": "header",
+            "description": "Name of the (digital) channel registered by the Customer",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "createMortgageResponse",
+            "schema": {
+              "$ref": "#/definitions/CreateMortgageResponse"
+            }
+          },
+          "400": {
+            "description": "BusinessArrangementErrorResponse",
+            "schema": {
+              "$ref": "#/definitions/BusinessArrangementErrorResponse"
+            }
+          },
+          "500": {
+            "description": "SystemArrangementErrorResponse",
+            "schema": {
+              "$ref": "#/definitions/SystemArrangementErrorResponse"
+            }
+          },
+          "default": {
+            "description": "ArrangementErrorResponse",
+            "schema": {
+              "$ref": "#/definitions/ArrangementErrorResponse"
+            }
+          }
+        }
+      }
+    },
+  "/holdings/lending/linesOfCredit" : {
+      "post" : {
+        "tags" : [ "RETAIL" ],
+        "summary" : "API used to create Line of Credit.",
+        "description" : "API is used to create a line of credit for a single customer or more than one customers(such as a joint loan or co-borrower loan). The loan information, including the term and commitment amount can be input by the user at the time of loan creation.",
+        "operationId" : "createLOC",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "validate_only",
+          "in" : "query",
+          "description" : "The identifier to indicate if it is set to only validate or not.",
+          "required" : false,
+          "type" : "boolean"
+        }, {
+          "in" : "body",
+          "name" : "payload",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/LOC"
+          }
+        }, {
+          "name" : "credentials",
+          "in" : "header",
+          "description" : "Username and password to authenticate the API against core-banking.",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "companyId",
+          "in" : "header",
+          "description" : "Identifier of the lead company of the underlying Entity/Company/Branch for the respective contract for customer data protection purposes. Example US0010001.",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "deviceId",
+          "in" : "header",
+          "description" : "Identifies the device type",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "userRole",
+          "in" : "header",
+          "description" : "User who initiated the transaction",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "channelName",
+          "in" : "header",
+          "description" : "Name of the (digital) channel registered by the Customer",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "createLOCResponse",
+            "schema" : {
+              "$ref" : "#/definitions/LOCResponse"
+            }
+          },
+          "default" : {
+            "description" : "ArrangementErrorResponse",
+            "schema" : {
+              "$ref" : "#/definitions/ArrangementErrorResponse"
+            }
+          },
+          "400" : {
+            "description" : "BusinessArrangementErrorResponse",
+            "schema" : {
+              "$ref" : "#/definitions/BusinessArrangementErrorResponse"
+            }
+          },
+          "500" : {
+            "description" : "SystemArrangementErrorResponse",
+            "schema" : {
+              "$ref" : "#/definitions/SystemArrangementErrorResponse"
+            }
+          }
+        }
+      }
+    },
+	"/holdings/lending/{loanId}/balances" : {
+      "get" : {
+        "tags" : [ "RETAIL" ],
+        "summary" : "API used to get details of the loan balances that are outstanding for the loan arrangement.",
+        "description" : "API is used to get details of the loan balances that are outstanding for the loan arrangement.",
+        "operationId" : "getArrangementBalanceDetails",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "loanId",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }],
+        "responses" : {
+          "200" : {
+            "description" : "ArrangementBalanceDetailsResponse",
+            "schema" : {
+              "$ref" : "#/definitions/ArrangementBalanceDetailsResponse"
+            }
+          },
+          "default" : {
+            "description" : "QueryErrorResponse",
+            "schema" : {
+              "$ref" : "#/definitions/QueryErrorResponse"
+            }
+          },
+          "400" : {
+            "description" : "BusinessQueryErrorResponse",
+            "schema" : {
+              "$ref" : "#/definitions/BusinessQueryErrorResponse"
+            }
+          },
+          "500" : {
+            "description" : "SystemQueryErrorResponse",
+            "schema" : {
+              "$ref" : "#/definitions/SystemQueryErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  },
+  "securityDefinitions": {
+    "basicAuth": {
+      "type": "basic"
+    },
+    "apiKey": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header"
+    }
+  },
+  "definitions": {
+    "PayloadHeader": {
+      "properties": {
+        "audit": {
+          "type": "object",
+          "properties": {
+            "versionNumber": {
+              "type": "string",
+              "description": "The CURR.NO. of the record"
+            }
+          }
+        }
+      }
+    },
+    "CreateConsumerLoans": {
+      "type": "object",
+      "properties": {
+        "parties": {
+          "type": "array",
+          "description": "Contains the array of customer identifier details for creating the consumer loan. There can be more than one customer information passed to the end point in case of joint loan or a cor-borrower loan.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "partyId": {
+                "type": "string",
+                "description": "Contains the unique customer identifier used in the loan creation. The list of the customer identifier can be listed from the endpoint. This is a mandatory field.  When there are more than one customer in the consumer loan (like a joint loan with a co-borrower scenario), the next partyId is updated as another set of fields in the array, with the corresponding partyRole field indicating that respective party's role.",
+                "minLength": 0,
+                "maxLength": 10
+              },
+              "partyRole": {
+                "type": "string",
+                "description": "Contains the role of the customer in the associated partyId field.  This is an optional field. For example, borrower, coborrower etc",
+				"enum" : ["AGENT", "AGENT.CUM.PARTICIPANT", "APPLICANT", "BUYER", "DEALER", "GUARANTOR", "GUARDIAN", "INTERMEDIARY", "INVESTOR", "JOINT.OWNER", "LEGAL.OWNER", "LESSEE", "OWNER", "PARTICIPANT", "PARTNER", "POWER.OF.ATTORNEY", "RISK.PARTICIPANT", "SOLICITOR", "SUB-LESSEE", "SUB-PARTICIPANT", "SUB.PARTICIPANT", "SUPPLIER"],
+                "minLength": 0,
+                "maxLength": 30
+              }
+            }
+          }
+        },
+        "accountReferences": {
+          "type": "array",
+          "description": "Contains the array of the alternate references for the consumer loan. This is optional array to be used only when alternate identification has to be updated at the time of consumer loan creation.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "referenceType": {
+                "type": "string",
+                "description": "Contains the type of alternate reference that can be updated in the consumer loan at the time of loan creation. For example, IBAN, LEGACY type of alternate identifiers can be added",
+                "enum" : ["IBAN","LEGACY","PREV.IBAN","T24.IBAN"],
+				"minLength": 0,
+                "maxLength": 10
+              },
+              "accountReference": {
+                "type": "string",
+                "description": "Contains the unique  number that can be updated as an alternate identifier. This field is associated with the referenceType field. For example, the unique identifier for IBAN number or the legacy system can be given here.",
+                "minLength": 0,
+                "maxLength": 36
+              }
+            }
+          }
+        },
+        "quotationReference": {
+          "type": "string",
+          "description": "Contains the consumer loan origination reference from the simulated or origination system. For example, the quotation reference can be like QUOTE123456789",
+          "minLength": 0,
+          "maxLength": 100
+        },
+        "accountName": {
+          "type": "string",
+          "description": "Contains the nickname given for the consumer loan that is being created. For example:MyPersonalLoan",
+          "minLength": 0,
+          "maxLength": 70
+        },
+        "openingDate": {
+          "type": "string",
+          "description": "Contains the effective date of the consumer loan creation. This is an optional field. The consumer loan is usually opened with the current system date but the user can also specify an effective date for loan creation (like back value dated loan creation). In such cases, the effective date for loan creation can be given here in the format yyyymmdd. For example, 20230927",
+          "minLength": 0,
+          "maxLength": 11
+        },
+        "productId": {
+          "type": "string",
+          "description": "Contains the product in which the consumer loan must be opened for the customer. The list of the product with its available currency can be listed from the endpoint. This is a mandatory field of the payload to indicate the productID in the system. For example, Consumer Loan",
+          "minLength": 0,
+          "maxLength": 30
+        },
+        "currency": {
+          "type": "string",
+          "description": "Contains the 3 digit ISO currency code that indicates the currency in which the consumer loan must be opened for the customer. The list of the product in the system with its available currency can be listed from the endpoint. This is a mandatory field of the payload and must contain a valid currency in which the consumer loan product is sold. For example: USD",
+          "minLength": 0,
+          "maxLength": 3
+        },
+        "branch": {
+          "type": "string",
+          "description": "Contains the branch in which the consumer loan must be created for the customer. The list of the branches in the system can be listed from the endpoint. This is an optional field. The pricing and other benefits might vary based on the branch of consumer loan creation for the customer. For example: if the branch code for NewYork Branch is 1510, then the value 1510 must be keyed in here",
+          "minLength": 0,
+          "maxLength": 16
+        },
+        "loanAmount": {
+          "type": "string",
+          "description": "Contains the loan amount committed to the customer at the time of the loan creation. This is a mandatory field in the payload. For example, the amount can be fed as 20000 to create a consumer loan with a commitment of 20000. Note the commitment amount is in the currency of the loan. Hence it is not updated explicitly in the payload fields.",
+          "minLength": 0,
+          "maxLength": 19
+        },
+        "loanTerm": {
+          "type": "string",
+          "description": "Contains the term for which the consumer loan must be opened, the Term can be appended with D,W,M,Y to indicate days, weeks, months and years. This is a mandatory field in the payload. For example, if the consumer loan is must be created for 12 weeks, then 12W can be given here, for a consumer loan 12 months 12M can be given here.",
+          "minLength": 0,
+          "maxLength": 6
+        },
+        "repaymentStartDate": {
+          "type": "string",
+          "description": "Contains the date on which the customer has to repay the principal and interest due for the consumer loan. This is an optional field. For example, if the customer wishes to pay the loan repayment on 15th of every month, then this field in the payload must be updated in the format D_20231015( denoting the 15th of every month after the loan disbursment). When this field is left blank, the installment date is the same date as the disburement date.",
+          "minLength": 0,
+          "maxLength": 30
+        },
+        "repaymentFrequency": {
+          "type": "string",
+          "description": "Contains the frequency at which the customer has to repay the installment namely the loan principal and interest for the consumer  loan availed. The loan repayment can be done on monthly, quarterly, semi-annually (half yearly) or annually. Based on the requirement, the user can key in one of the values given here: Monthly,Annually,Semi-Annually,Quarterly. This is an optional field. When this field is left blank, the default frequnency from the product configuration can be used.",
+          "enum" : ["Monthly","Quarterly","Semi-Annually","Annually"],
+		  "minLength": 0,
+          "maxLength": 38
+        },
+        "disbursementAccount": {
+          "type": "string",
+          "description": "Contains the account to which the loan amount will be disbursed to at the time of loan creation. For example, the account number can be given as 123456 or an identifier like AA231231234 can be updated. This is an optional field and when left blank, the loan disbursement will be incomplete and requires user intervention.",
+          "minLength": 0,
+          "maxLength": 90
+        },
+        "repaymentAccount": {
+          "type": "string",
+          "description": "Contains the account from which funds are to be debited for the repayment of the installments of the consumer loan. For example, the account number can be given as 123456 or an identifier like AA231231234 can be updated. This is an optional field and when left blank, the loan installment is not collected automatically from settlement account, instead the loan dues stay outstanding.",
+          "minLength": 0,
+          "maxLength": 90
+        }
+      }
+    },
+    "CreateConsumerLoansResponse": {
+      "type": "object",
+      "properties": {
+        "accountReference": {
+          "type": "string",
+          "description": "Contains the unique  number that can be updated as an alternate identifier. This field is associated with the referenceType field. For example, the unique identifier for IBAN number or the legacy system can be given here.",
+          "minLength": 0,
+          "maxLength": 36
+        }
+      }
+    },
+	"CreateMortgage": {
+      "type": "object",
+      "properties": {
+        "parties": {
+          "type": "array",
+          "description": "Contains the array of customer identifier details for creating the mortgage loan. There can be more than one customer information passed to the end point in case of joint loan or a co-borrower loan.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "partyId": {
+                "type": "string",
+                "description": "Contains the unique customer identifier used in the mortgage loan creation. The list of the customer identifier can be listed from the endpoint. This is a mandatory field.  When there are more than one customer in the mortgage loan (like a joint loan with a co-borrower scenario), the next partyId is updated as another set of fields in the array, with the corresponding partyRole field indicating that respective party's role.",
+                "minLength": 0,
+                "maxLength": 10
+              },
+              "partyRole": {
+                "type": "string",
+                "description": "contains the role of the customer in the associated partyId field.  This is an optional field. For example, borrower, co-borrower etc",
+                "enum" : ["AGENT", "AGENT.CUM.PARTICIPANT", "APPLICANT", "BUYER", "DEALER", "GUARANTOR", "GUARDIAN", "INTERMEDIARY", "INVESTOR", "JOINT.OWNER", "LEGAL.OWNER", "LESSEE", "OWNER", "PARTICIPANT", "PARTNER", "POWER.OF.ATTORNEY", "RISK.PARTICIPANT", "SOLICITOR", "SUB-LESSEE", "SUB-PARTICIPANT", "SUB.PARTICIPANT", "SUPPLIER"],
+			    "minLength": 0,
+                "maxLength": 30
+              }
+            }
+          }
+        },
+        "accountReferences": {
+          "type": "array",
+          "description": "Contains the array of the alternate references for the mortgage loan. This is optional array to be used only when alternate identification has to be updated at the time of mortgage loan creation.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "referenceType": {
+                "type": "string",
+                "description": "Contains the type of alternate reference that can be updated in the mortgage loan at the time of loan creation. For example, IBAN, LEGACY type of alternate identifiers can be added",
+				"enum" : ["IBAN","LEGACY","PREV.IBAN","T24.IBAN"],
+                "minLength": 0,
+                "maxLength": 10
+              },
+              "accountReference": {
+                "type": "string",
+                "description": "Contains the unique number that can be updated as an alternate identifier. This field is associated with the referenceType field. For example, the unique identifier for IBAN number or the legacy system can be given here.",
+                "minLength": 0,
+                "maxLength": 36
+              }
+            }
+          }
+        },
+        "quotationReference": {
+          "type": "string",
+          "description": "Contains the mortgage loan origination reference from the simulated or origination system. For example, the quotation reference can be like QUOTE123456789",
+          "minLength": 0,
+          "maxLength": 100
+        },
+        "accountName": {
+          "type": "string",
+          "description": "Contains the nickname given for the mortgage loan that is being created. For example : MyMortgageLoan",
+          "minLength": 0,
+          "maxLength": 70
+        },
+        "openingDate": {
+          "type": "string",
+          "description": "Contains the effective date of the mortgage loan creation. This is an optional field. The consumer loan is usually opened with the current system date but the user can also specify an effective date for loan creation (like back value dated mortgage loan creation). In such cases, the effective date for loan creation can be given here in the format yyyymmdd. For example, 20230927",
+          "minLength": 0,
+          "maxLength": 11
+        },
+        "productId": {
+          "type": "string",
+          "description": "Contains the product in which the mortgage loan must be opened for the customer. The list of the product with its available currency can be listed from the endpoint. This is a mandatory field of the payload to indicate the productID in the system. For example, Mortgage Loan",
+          "minLength": 0,
+          "maxLength": 30
+        },
+        "currency": {
+          "type": "string",
+          "description": "Contains the 3 digit ISO currency code that indicates the currency in which the mortgage loan must be opened for the customer. The list of the product in the system with its available currency can be listed from the endpoint. This is a mandatory field of the payload and must contain a valid currency in which the mortgage loan product is sold. For example: USD",
+          "minLength": 0,
+          "maxLength": 3
+        },
+        "branch": {
+          "type": "string",
+          "description": "Contains the branch in which the mortgage loan must be created for the customer. The list of the branches in the system can be listed from the endpoint. This is an optional field. The pricing and other benefits might vary based on the branch of mortgage loan creation for the customer. For example: if the branch code for NewYork Branch is 1510, then the value 1510 must be keyed in here",
+          "minLength": 0,
+          "maxLength": 16
+        },
+        "loanAmount": {
+          "type": "string",
+          "description": "Contains the loan amount committed to the customer at the time of the loan creation. This is a mandatory field in the payload. For example, the amount can be fed as 300000 to create a mortgage loan with a commitment of 300000. Note the commitment amount is in the currency of the loan. Hence it is not updated explicitly in the payload fields.",
+          "minLength": 0,
+          "maxLength": 19
+        },
+        "loanTerm": {
+          "type": "string",
+          "description": "Contains the term for which the mortgage loan must be opened, the Term can be appended with D,W,M,Y to indicate days, weeks, months and years. This is a mandatory field in the payload. For example, if the mortgage loan must be created for 12 weeks, then 12W can be given here, for a consumer loan of 36 months, 36M can be given here.",
+          "minLength": 0,
+          "maxLength": 6
+        },
+        "amortisationTerm": {
+          "type": "string",
+          "description": "Contains the term for which the loan repayment must be amortised for. The actual payment amount is calculated based on the amortisation term and not on the actual term defined of the contract.  This calculated payment is then spread across actual term of the arrangement. If the amortisation term is greater than the actual term then we would be left with residual amount at the maturity date. For example, the mortgage loan with a term of 10years can have the amortisation period as 9 years based on which installment amount is calculated and scheduled. If the amortisation period is given as 11 years, then the installment amount is calculated for 11 year tenure and collected over 10 years and the remaining amount due is collected on the maturity date of the contract.",
+          "minLength": 0,
+          "maxLength": 4
+        },
+        "repaymentStartDate": {
+          "type": "string",
+          "description": "Contains the date on which the customer has to repay the principal and interest due for the mortgage loan. This is an optional field. For example, if the customer wishes to pay the loan repayment on 15th of every month, then this field in the payload must be updated in the format D_20231015( denoting the 15th of every month after the loan disbursment). When this field is left blank, the installment date is the same date as the disburement date.",
+          "minLength": 0,
+          "maxLength": 30
+        },
+        "repaymentFrequency": {
+          "type": "string",
+          "description": "Contains the frequency at which the customer has to repay the installment namely the loan principal and interest for the consumer  loan availed. The loan repayment can be done on monthly, quarterly, semi-annually (half yearly) or annually. Based on the requirement, the user can key in one of the values given here: Monthly,Annually,Semi-Annually,Quarterly. This is an optional field. When this field is left blank, the default frequency from the product configuration can be used.",
+          "enum" : ["Monthly","Quarterly","Semi-Annually","Annually"],
+		  "minLength": 0,
+          "maxLength": 38
+        },
+        "disbursementAccount": {
+          "type": "string",
+          "description": "Contains the account to which the loan amount will be disbursed to at the time of loan creation. For example, the account number can be given as 123456 or an identifier like AA231231234 can be updated. This is an optional field and when left blank, the loan disbursement will be incomplete and requires user intervention.",
+          "minLength": 0,
+          "maxLength": 90
+        },
+        "repaymentAccount": {
+          "type": "string",
+          "description": "Contains the account from which funds are to be debited for the repayment of the installments of the mortgage loan. For example, the account number can be given as 123456 or an identifier like AA231231234 can be updated. This is an optional field and when left blank, the loan installment is not collected automatically from settlement account, instead the loan dues stay outstanding.",
+          "minLength": 0,
+          "maxLength": 90
+        }
+      }
+    },
+    "CreateMortgageResponse": {
+      "type": "object",
+      "properties": {
+        "accountReference": {
+          "type": "string",
+          "description": "Account Reference of the error account",
+          "minLength": 0,
+          "maxLength": 36
+        }
+      }
+    },
+	"LOC" : {
+      "type" : "object",
+      "properties" : {
+        "parties" : {
+          "type" : "array",
+          "description" : "Contains the array of customer identifier details for creating the line of credit. There can be more than one customer information passed to the end point in case of joint loan or a co-borrower loan.",
+          "items" : {
+            "type" : "object",
+            "properties" : {
+              "partyId" : {
+                "type" : "string",
+                "description" : "Contains the unique customer identifier used in the line of credit creation. The list of the customer identifier can be listed from the endpoint. This is a mandatory field.  When there are more than one customer in the line of credit(like a joint loan with a co-borrower scenario), the next partyId is updated as another set of fields in the array, with the corresponding partyRole field indicating that respective party's role.",
+                "minLength" : 0,
+                "maxLength" : 10
+              },
+              "partyRole" : {
+                "type" : "string",
+                "description" : "Contains the role of the customer in the associated partyId field.  This is an optional field. For example, borrower, coborrower etc",
+                "enum" : ["AGENT", "AGENT.CUM.PARTICIPANT", "APPLICANT", "BUYER", "DEALER", "GUARANTOR", "GUARDIAN", "INTERMEDIARY", "INVESTOR", "JOINT.OWNER", "LEGAL.OWNER", "LESSEE", "OWNER", "PARTICIPANT", "PARTNER", "POWER.OF.ATTORNEY", "RISK.PARTICIPANT", "SOLICITOR", "SUB-LESSEE", "SUB-PARTICIPANT", "SUB.PARTICIPANT", "SUPPLIER"],
+				"minLength" : 0,
+                "maxLength" : 30
+              }
+            }
+          }
+        },
+		 "accountReferences" : {
+                "type" : "array",
+                "description" : "Contains the array of the alternate references for the line of credit. This is optional array to be used only when alternate identification has to be updated at the time of creation line of credit.",
+                "items" : {
+                  "type" : "object",
+                  "properties" : {
+                    "referenceType" : {
+                      "type" : "string",
+                      "description" : "Contains the type of alternate reference that can be updated in the line of credit at the time of loan creation. For example, IBAN, LEGACY type of alternate identifiers can be added",
+                      "enum" : ["IBAN","LEGACY","PREV.IBAN","T24.IBAN"],
+					  "minLength" : 0,
+                      "maxLength" : 10
+                    },
+                    "accountReference" : {
+                      "type" : "string",
+                      "description" : "Contains the unique  number that can be updated as an alternate identifier. This field is associated with the referenceType field. For example, the unique identifier for IBAN number or the legacy system can be given here.",
+                      "minLength" : 0,
+                      "maxLength" : 36
+                    }
+                  }
+                }
+              },
+	    "accountName" : {
+          "type" : "string",
+           "description" : "Contains the nickname given for the line of credit that is being created. For example : MyLineofCredit",
+           "minLength" : 0,
+           "maxLength" : 70
+              },
+	   "openingDate" : {
+          "type" : "string",
+          "description" : "Contains the effective date of the creation of line of credit. This is an optional field. The line of credit is usually opened with the current system date but the user can also specify an effective date for line of credit creation (like back value dated creation). In such cases, the effective date for line of credit creation can be given here in the format yyyymmdd. For example, 20230927",
+          "minLength" : 0,
+          "maxLength" : 11
+        },
+		"productId" : {
+          "type" : "string",
+          "description" : "Contains the product in which the line of credit must be opened for the customer. The list of the product with its available currency can be listed from the endpoint. This is a mandatory field of the payload to indicate the productID in the system. For example, Line of Credit",
+          "minLength" : 0,
+          "maxLength" : 30
+        },
+        "currency" : {
+          "type" : "string",
+          "description" : "Contains the 3 digit ISO currency code that indicates the currency in which the line of credit must be opened for the customer. The list of the product in the system with its available currency can be listed from the endpoint. This is a mandatory field of the payload and must contain a valid currency in which the line of credit product is sold. For example: USD",
+          "minLength" : 0,
+          "maxLength" : 3
+        },
+		"branch" : {
+          "type" : "string",
+          "description" : "Contains the branch in which the line of credit must be created for the customer. The list of the branches in the system can be listed from the endpoint. This is an optional field. The pricing and other benefits might vary based on the branch of line of credit creation for the customer. For example: if the branch code for NewYork Branch is 1510, then the value 1510 must be keyed in here",
+          "minLength" : 0,
+          "maxLength" : 16
+        },
+        "quotationReference" : {
+          "type" : "string",
+          "description" : "Contains the line of credit origination reference from the simulated or origination system. For example, the quotation reference can be like QUOTE123456789",
+          "minLength" : 0,
+          "maxLength" : 100
+        },
+		"creditLimit" : {
+           "type" : "string",
+            "description" : "Contains the credit limit given to the customer at the time creation of line of credit. This is a mandatory field in the payload. For example, the credit limit can be fed as 50000 to create a line of credit with a credit limit of 50000. Note the credit limit is in the currency of the line of credit. Hence it is not updated explicitly in the payload fields.",
+            "minLength" : 0,
+            "maxLength" : 19
+        },
+        "loanTerm" : {
+            "type" : "string",
+            "description" : "Contains the term for which the line of credit must be opened, the Term can be appended with D,W,M,Y to indicate days, weeks, months and years. This is a mandatory field in the payload. For example, if the line of credit must be created for 12 weeks, then 12W can be given here, for a line of credit of 60 months, 60M can be given here.",
+            "minLength" : 0,
+            "maxLength" : 6
+        },
+		"repaymentStartDate" : {
+           "type" : "string",
+           "description" : "Indicates the loan commencement date",
+           "minLength" : 0,
+           "maxLength" : 30
+        },
+        "repaymentFrequency" : {
+            "type" : "string",
+            "description" : "Contains the repayment frequency formatted according to ISO 8601 Durations. Eg. P1Y2M10DT2H30M",
+            "enum" : ["Monthly","Quarterly","Semi-Annually","Annually"],
+			"minLength" : 0,
+            "maxLength" : 38
+        },
+        "disbursementAccount" : {
+           "type" : "string",
+           "description" : "Contains the account to which the credit limit will be disbursed to at the time of line of credit. For example, the account number can be given as 123456 or an identifier like AA231231234 can be updated. This is an optional field and when left blank, the disbursement will be incomplete and requires user intervention.",
+            "minLength" : 0,
+            "maxLength" : 90
+        },
+        "repaymentAccount" : {
+            "type" : "string",
+            "description" : "contains the account from which funds are to be debited for the repayment of the installments of the credit limit availed using line of credit. For example, the account number can be given as 123456 or an identifier like AA231231234 can be updated. This is an optional field and when left blank, the installment is not collected automatically from settlement account, instead the loan dues stay outstanding.",
+            "minLength" : 0,
+           "maxLength" : 90
+        }
+      }
+    },
+    "LOCResponse" : {
+      "type" : "object",
+      "properties" : {
+           "accountReference" : {
+               "type" : "string",
+               "description" : "Account Reference of the error account",
+                "minLength" : 0,
+                "maxLength" : 35
+          }
+       }
+    },
+	"ArrangementBalanceDetailsResponse" : {
+        "type" : "object",
+        "properties" : {
+          "accountReference" : {
+            "type" : "string",
+            "description" : "Contains the loan arrangement for which the balances are returned by the system. For example, L987654321",
+            "maxLength" : 20
+          },
+          "accountName" : {
+            "type" : "string",
+            "description" : "Contains the nickname given by the customer for the loan arrangement. For example : John Doe Personal Loan.",
+            "maxLength" : 30
+          },
+          "productId" : {
+            "type" : "string",
+            "description" : "Contains the loan product name of the arrangement ID displayed. For example: PersonalLoan123.",
+            "maxLength" : 40
+          },
+          "currency" : {
+            "type" : "string",
+            "description" : "Contains the currency in which the loan is created for the customer. For example: USD.",
+            "maxLength" : 3
+          },
+          "principalOutstanding" : {
+            "type" : "string",
+            "description" : "Gives the current outstanding of the principal balance in the loan."
+          },
+          "accruedInterest" : {
+            "type" : "string",
+            "description" : "Gives the interest accrued till date in the loan arrangment."
+          },
+          "overdueAmount" : {
+            "type" : "string",
+            "description" : "Gives the details on the overdue payments - payments pending to be paid by customer beyond the due date/grace date (includes principal, interest, fees, and charges)"
+          },
+          "loanOutstanding" : {
+            "type" : "string",
+            "description" : "Gives the details on the amount that is to be repaid by the customer. This is the sum balance of the principal outstanding, interest accrued, and overdue amount (if any) in the loan arrangement."
+          }
+        }
+    },
+    "ArrangementErrorResponse": {
+            "properties": {
+                "error": {
+                    "type": "array",
+                    "$ref": "#/definitions/ArrangementErrorResponseBody"
+                }
+            },
+            "description": "ArrangementErrorResponse"
+        },
+        "ArrangementErrorResponseBody": {
+            "items": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "description": "The identifier of the error message"
+                    },
+                    "message": {
+                        "type": "string",
+                        "description": "The actual Transact error message "
+                    },
+                    "property": {
+                        "type": "string",
+                        "description": "Id of the product property"
+                    }
+                }
+            }
+        },
+        "BusinessArrangementErrorResponse": {
+            "properties": {
+                "error": {
+                    "type": "array",
+                    "$ref": "#/definitions/BusinessArrangementErrorResponseBody"
+                }
+            },
+            "description": "BusinessArrangementErrorResponse"
+        },
+        "BusinessArrangementErrorResponseBody": {
+            "items": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "description": "The identifier of the error message"
+                    },
+                    "message": {
+                        "type": "string",
+                        "description": "The actual Transact error message for bad requests"
+                    },
+                    "property": {
+                        "type": "string",
+                        "description": "Id of the product property"
+                    }
+                }
+            }
+        },
+        "SystemArrangementErrorResponse": {
+            "properties": {
+                "error": {
+                    "type": "array",
+                    "$ref": "#/definitions/SystemArrangementErrorResponseBody"
+                }
+            },
+            "description": "SystemArrangementErrorResponse"
+        },
+        "SystemArrangementErrorResponseBody": {
+            "items": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "description": "The identifier of the error message"
+                    },
+                    "message": {
+                        "type": "string",
+                        "description": "The actual Transact error message caused by server"
+                    },
+                    "property": {
+                        "type": "string",
+                        "description": "Id of the product property"
+                    }
+                }
+            }
+        },
+	"QueryErrorResponse" : {
+      "properties" : {
+        "error" : {
+          "$ref" : "#/definitions/QueryErrorResponseBody"
+        }
+      },
+      "description" : "QueryErrorResponse"
+    },
+    "QueryErrorResponseBody" : {
+      "type" : "object",
+      "properties" : {
+        "code" : {
+          "type" : "string",
+          "description" : "The identifier of the error message"
+        },
+        "message" : {
+          "type" : "string",
+          "description" : "The actual Transact error message "
+        },
+        "type" : {
+          "type" : "string",
+          "description" : "The identifier of error type: "
+        }
+      }
+    },
+	"BusinessQueryErrorResponse" : {
+      "properties" : {
+        "error" : {
+          "$ref" : "#/definitions/BusinessQueryErrorResponseBody"
+        }
+      },
+      "description" : "BusinessQueryErrorResponse"
+    },
+    "BusinessQueryErrorResponseBody" : {
+      "type" : "object",
+      "properties" : {
+        "code" : {
+          "type" : "string",
+          "description" : "The identifier of the error message"
+        },
+        "message" : {
+          "type" : "string",
+          "description" : "The actual Transact error message for bad requests"
+        },
+        "type" : {
+          "type" : "string",
+          "description" : "The identifier of error type: Business"
+        }
+      }
+    },
+	"SystemQueryErrorResponse" : {
+      "properties" : {
+        "error" : {
+          "$ref" : "#/definitions/SystemQueryErrorResponseBody"
+        }
+      },
+      "description" : "SystemQueryErrorResponse"
+    },
+    "SystemQueryErrorResponseBody" : {
+      "type" : "object",
+      "properties" : {
+        "code" : {
+          "type" : "string",
+          "description" : "The identifier of the error message"
+        },
+        "message" : {
+          "type" : "string",
+          "description" : "The actual Transact error message caused by server"
+        },
+        "type" : {
+          "type" : "string",
+          "description" : "The identifier of error type: System"
+        }
+      }
+    }
+  }
+}

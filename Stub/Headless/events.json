@@ -1,0 +1,19 @@
+[
+  {
+    "timestamp": "2024-07-27T10:00:00Z",
+    "source": "MobileApp",
+    "type": "UserLogin",
+    "data": {
+      "userId": "user123"
+    }
+  },
+  {
+    "timestamp": "2024-07-27T10:05:15Z",
+    "source": "HoldingsService",
+    "type": "AccountBalanceUpdated",
+    "data": {
+      "accountId": "acc456",
+      "newBalance": 1500.75
+    }
+  }
+] 

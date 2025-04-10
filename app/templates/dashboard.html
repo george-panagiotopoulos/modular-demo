@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Modular Banking Demo Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link id="dashboard-css" rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <!-- Tab-specific CSS will be loaded dynamically here -->
+</head>
+<body>
+    <header>
+        <h1>Modular Banking Demo UA</h1>
+        <nav>
+            <ul>
+                <li><a href="#mobile-app" data-tab="mobile" class="tab-link active">Mobile App</a></li>
+                <li><a href="#branch-app" data-tab="branch" class="tab-link">Branch App</a></li>
+                <li><a href="#headless" data-tab="headless" class="tab-link">Headless</a></li>
+                <li><a href="#architecture" data-tab="architecture" class="tab-link">Architecture</a></li>
+                <li><a href="#assistant" data-tab="assistant" class="tab-link">Assistant</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main id="tab-content-area">
+        <!-- Tab content will be loaded here -->
+        <p>Loading...</p>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Modular Demo</p>
+    </footer>
+
+    <!-- Include HTMX? Decide if needed based on how tab JS is implemented -->
+    <!-- <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script> -->
+    <script id="dashboard-js" src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    <!-- Tab-specific JS will be loaded dynamically here -->
+</body>
+</html> 

@@ -1,0 +1,971 @@
+{
+  "api_calls": [
+    {
+      "callId": "API190C4E",
+      "timestamp": "2025-04-10T07:50:10Z",
+      "sourceTab": "MobileApp",
+      "method": "GET",
+      "uri": "/api/mobile/accounts",
+      "requestPayload": null,
+      "responsePayload": [
+        {
+          "accountId": "ACC001",
+          "customerId": "CUST1001",
+          "displayName": "Everyday Checking",
+          "productName": "Current Account",
+          "currency": "USD",
+          "currentBalance": 1190.75,
+          "availableBalance": 1140.5,
+          "type": "deposit",
+          "openDate": "2020-01-15"
+        },
+        {
+          "accountId": "SAV002",
+          "customerId": "CUST1001",
+          "displayName": "Rainy Day Fund",
+          "productName": "Savings Account",
+          "currency": "USD",
+          "currentBalance": 8450.0,
+          "availableBalance": 8450.0,
+          "type": "deposit",
+          "openDate": "2020-01-15"
+        },
+        {
+          "accountId": "LON003",
+          "customerId": "CUST1001",
+          "displayName": "Home Mortgage",
+          "productName": "Mortgage Loan",
+          "currency": "USD",
+          "currentBalance": -185000.0,
+          "principalAmount": 200000.0,
+          "nextPaymentAmount": 1150.5,
+          "nextPaymentDate": "2024-08-15",
+          "type": "loan",
+          "openDate": "2022-03-01",
+          "interestRate": 3.5
+        }
+      ]
+    },
+    {
+      "callId": "APIB2C228",
+      "timestamp": "2025-04-10T07:50:03Z",
+      "sourceTab": "MobileApp",
+      "method": "GET",
+      "uri": "/api/mobile/accounts",
+      "requestPayload": null,
+      "responsePayload": [
+        {
+          "accountId": "ACC001",
+          "customerId": "CUST1001",
+          "displayName": "Everyday Checking",
+          "productName": "Current Account",
+          "currency": "USD",
+          "currentBalance": 1190.75,
+          "availableBalance": 1140.5,
+          "type": "deposit",
+          "openDate": "2020-01-15"
+        },
+        {
+          "accountId": "SAV002",
+          "customerId": "CUST1001",
+          "displayName": "Rainy Day Fund",
+          "productName": "Savings Account",
+          "currency": "USD",
+          "currentBalance": 8450.0,
+          "availableBalance": 8450.0,
+          "type": "deposit",
+          "openDate": "2020-01-15"
+        },
+        {
+          "accountId": "LON003",
+          "customerId": "CUST1001",
+          "displayName": "Home Mortgage",
+          "productName": "Mortgage Loan",
+          "currency": "USD",
+          "currentBalance": -185000.0,
+          "principalAmount": 200000.0,
+          "nextPaymentAmount": 1150.5,
+          "nextPaymentDate": "2024-08-15",
+          "type": "loan",
+          "openDate": "2022-03-01",
+          "interestRate": 3.5
+        }
+      ]
+    },
+    {
+      "callId": "API54C62F",
+      "timestamp": "2025-04-10T07:49:49Z",
+      "sourceTab": "MobileApp",
+      "method": "POST",
+      "uri": "/api/mobile/transfer",
+      "requestPayload": {
+        "from_account": "SAV002",
+        "to_account": "ACC999",
+        "amount": 25
+      },
+      "responsePayload": {
+        "transferId": "TRFFA243F03",
+        "status": "Completed",
+        "message": "Transfer processed successfully (Stub)."
+      }
+    },
+    {
+      "callId": "API02DFA2",
+      "timestamp": "2025-04-10T07:49:38Z",
+      "sourceTab": "MobileApp",
+      "method": "GET",
+      "uri": "/api/mobile/accounts",
+      "requestPayload": null,
+      "responsePayload": [
+        {
+          "accountId": "ACC001",
+          "customerId": "CUST1001",
+          "displayName": "Everyday Checking",
+          "productName": "Current Account",
+          "currency": "USD",
+          "currentBalance": 1190.75,
+          "availableBalance": 1140.5,
+          "type": "deposit",
+          "openDate": "2020-01-15"
+        },
+        {
+          "accountId": "SAV002",
+          "customerId": "CUST1001",
+          "displayName": "Rainy Day Fund",
+          "productName": "Savings Account",
+          "currency": "USD",
+          "currentBalance": 8475.0,
+          "availableBalance": 8475.0,
+          "type": "deposit",
+          "openDate": "2020-01-15"
+        },
+        {
+          "accountId": "LON003",
+          "customerId": "CUST1001",
+          "displayName": "Home Mortgage",
+          "productName": "Mortgage Loan",
+          "currency": "USD",
+          "currentBalance": -185000.0,
+          "principalAmount": 200000.0,
+          "nextPaymentAmount": 1150.5,
+          "nextPaymentDate": "2024-08-15",
+          "type": "loan",
+          "openDate": "2022-03-01",
+          "interestRate": 3.5
+        }
+      ]
+    },
+    {
+      "callId": "APIB09197",
+      "timestamp": "2025-04-10T07:49:10Z",
+      "sourceTab": "BranchApp",
+      "method": "GET",
+      "uri": "/api/branch/accounts/ACC004/transactions",
+      "requestPayload": null,
+      "responsePayload": [
+        {
+          "transactionId": "TXN007",
+          "bookingDate": "2024-07-29T12:15:00Z",
+          "description": "Client Payment",
+          "amount": 1500.0,
+          "currency": "CAD",
+          "type": "Deposit"
+        },
+        {
+          "transactionId": "TXN008",
+          "bookingDate": "2024-07-28T18:00:00Z",
+          "description": "Art Supplies",
+          "amount": -120.5,
+          "currency": "CAD",
+          "type": "Purchase"
+        },
+        {
+          "transactionId": "TXN009",
+          "bookingDate": "2024-07-25T10:00:00Z",
+          "description": "Software Subscription",
+          "amount": -25.0,
+          "currency": "CAD",
+          "type": "Recurring Payment"
+        }
+      ]
+    },
+    {
+      "callId": "API494CD3",
+      "timestamp": "2025-04-10T07:49:09Z",
+      "sourceTab": "BranchApp",
+      "method": "GET",
+      "uri": "/api/branch/customers/CUST1002/accounts",
+      "requestPayload": null,
+      "responsePayload": [
+        {
+          "accountId": "ACC004",
+          "customerId": "CUST1002",
+          "displayName": "Primary Checking",
+          "productName": "Current Account",
+          "currency": "CAD",
+          "currentBalance": 3450.2,
+          "availableBalance": 3400.0,
+          "type": "deposit",
+          "openDate": "2021-05-22"
+        },
+        {
+          "accountId": "SAV005",
+          "customerId": "CUST1002",
+          "displayName": "Travel Fund",
+          "productName": "Savings Account",
+          "currency": "CAD",
+          "currentBalance": 12500.0,
+          "availableBalance": 12500.0,
+          "type": "deposit",
+          "openDate": "2023-02-10"
+        }
+      ]
+    },
+    {
+      "callId": "APIBADC7B",
+      "timestamp": "2025-04-10T07:49:03Z",
+      "sourceTab": "BranchApp",
+      "method": "GET",
+      "uri": "/api/branch/customers/CUST1002/accounts",
+      "requestPayload": null,
+      "responsePayload": [
+        {
+          "accountId": "ACC004",
+          "customerId": "CUST1002",
+          "displayName": "Primary Checking",
+          "productName": "Current Account",
+          "currency": "CAD",
+          "currentBalance": 3450.2,
+          "availableBalance": 3400.0,
+          "type": "deposit",
+          "openDate": "2021-05-22"
+        },
+        {
+          "accountId": "SAV005",
+          "customerId": "CUST1002",
+          "displayName": "Travel Fund",
+          "productName": "Savings Account",
+          "currency": "CAD",
+          "currentBalance": 12500.0,
+          "availableBalance": 12500.0,
+          "type": "deposit",
+          "openDate": "2023-02-10"
+        }
+      ]
+    },
+    {
+      "callId": "API06813D",
+      "timestamp": "2025-04-10T07:48:57Z",
+      "sourceTab": "MobileApp",
+      "method": "GET",
+      "uri": "/api/mobile/accounts/ACC001/transactions",
+      "requestPayload": null,
+      "responsePayload": [
+        {
+          "transactionId": "TXN001",
+          "bookingDate": "2024-07-28T10:30:00Z",
+          "description": "Coffee Shop",
+          "amount": -5.5,
+          "currency": "USD",
+          "type": "Debit Card Purchase"
+        },
+        {
+          "transactionId": "TXN002",
+          "bookingDate": "2024-07-27T09:00:00Z",
+          "description": "Salary Deposit",
+          "amount": 2500.0,
+          "currency": "USD",
+          "type": "Direct Deposit"
+        },
+        {
+          "transactionId": "TXN003",
+          "bookingDate": "2024-07-26T15:00:00Z",
+          "description": "Grocery Store",
+          "amount": -75.2,
+          "currency": "USD",
+          "type": "Debit Card Purchase"
+        }
+      ]
+    },
+    {
+      "callId": "APIB78FC0",
+      "timestamp": "2025-04-10T07:48:56Z",
+      "sourceTab": "MobileApp",
+      "method": "GET",
+      "uri": "/api/mobile/accounts",
+      "requestPayload": null,
+      "responsePayload": [
+        {
+          "accountId": "ACC001",
+          "customerId": "CUST1001",
+          "displayName": "Everyday Checking",
+          "productName": "Current Account",
+          "currency": "USD",
+          "currentBalance": 1190.75,
+          "availableBalance": 1140.5,
+          "type": "deposit",
+          "openDate": "2020-01-15"
+        },
+        {
+          "accountId": "SAV002",
+          "customerId": "CUST1001",
+          "displayName": "Rainy Day Fund",
+          "productName": "Savings Account",
+          "currency": "USD",
+          "currentBalance": 8475.0,
+          "availableBalance": 8475.0,
+          "type": "deposit",
+          "openDate": "2020-01-15"
+        },
+        {
+          "accountId": "LON003",
+          "customerId": "CUST1001",
+          "displayName": "Home Mortgage",
+          "productName": "Mortgage Loan",
+          "currency": "USD",
+          "currentBalance": -185000.0,
+          "principalAmount": 200000.0,
+          "nextPaymentAmount": 1150.5,
+          "nextPaymentDate": "2024-08-15",
+          "type": "loan",
+          "openDate": "2022-03-01",
+          "interestRate": 3.5
+        }
+      ]
+    },
+    {
+      "callId": "API08D995",
+      "timestamp": "2025-04-10T07:48:56Z",
+      "sourceTab": "MobileApp",
+      "method": "GET",
+      "uri": "/api/mobile/accounts",
+      "requestPayload": null,
+      "responsePayload": [
+        {
+          "accountId": "ACC001",
+          "customerId": "CUST1001",
+          "displayName": "Everyday Checking",
+          "productName": "Current Account",
+          "currency": "USD",
+          "currentBalance": 1190.75,
+          "availableBalance": 1140.5,
+          "type": "deposit",
+          "openDate": "2020-01-15"
+        },
+        {
+          "accountId": "SAV002",
+          "customerId": "CUST1001",
+          "displayName": "Rainy Day Fund",
+          "productName": "Savings Account",
+          "currency": "USD",
+          "currentBalance": 8475.0,
+          "availableBalance": 8475.0,
+          "type": "deposit",
+          "openDate": "2020-01-15"
+        },
+        {
+          "accountId": "LON003",
+          "customerId": "CUST1001",
+          "displayName": "Home Mortgage",
+          "productName": "Mortgage Loan",
+          "currency": "USD",
+          "currentBalance": -185000.0,
+          "principalAmount": 200000.0,
+          "nextPaymentAmount": 1150.5,
+          "nextPaymentDate": "2024-08-15",
+          "type": "loan",
+          "openDate": "2022-03-01",
+          "interestRate": 3.5
+        }
+      ]
+    },
+    {
+      "callId": "API57BB30",
+      "timestamp": "2025-04-10T07:46:28Z",
+      "sourceTab": "MobileApp",
+      "method": "GET",
+      "uri": "/api/mobile/accounts/ACC001/transactions",
+      "requestPayload": null,
+      "responsePayload": [
+        {
+          "transactionId": "TXN001",
+          "bookingDate": "2024-07-28T10:30:00Z",
+          "description": "Coffee Shop",
+          "amount": -5.5,
+          "currency": "USD",
+          "type": "Debit Card Purchase"
+        },
+        {
+          "transactionId": "TXN002",
+          "bookingDate": "2024-07-27T09:00:00Z",
+          "description": "Salary Deposit",
+          "amount": 2500.0,
+          "currency": "USD",
+          "type": "Direct Deposit"
+        },
+        {
+          "transactionId": "TXN003",
+          "bookingDate": "2024-07-26T15:00:00Z",
+          "description": "Grocery Store",
+          "amount": -75.2,
+          "currency": "USD",
+          "type": "Debit Card Purchase"
+        }
+      ]
+    },
+    {
+      "callId": "APIB90047",
+      "timestamp": "2025-04-10T07:46:27Z",
+      "sourceTab": "MobileApp",
+      "method": "GET",
+      "uri": "/api/mobile/accounts",
+      "requestPayload": null,
+      "responsePayload": [
+        {
+          "accountId": "ACC001",
+          "customerId": "CUST1001",
+          "displayName": "Everyday Checking",
+          "productName": "Current Account",
+          "currency": "USD",
+          "currentBalance": 1190.75,
+          "availableBalance": 1140.5,
+          "type": "deposit",
+          "openDate": "2020-01-15"
+        },
+        {
+          "accountId": "SAV002",
+          "customerId": "CUST1001",
+          "displayName": "Rainy Day Fund",
+          "productName": "Savings Account",
+          "currency": "USD",
+          "currentBalance": 8475.0,
+          "availableBalance": 8475.0,
+          "type": "deposit",
+          "openDate": "2020-01-15"
+        },
+        {
+          "accountId": "LON003",
+          "customerId": "CUST1001",
+          "displayName": "Home Mortgage",
+          "productName": "Mortgage Loan",
+          "currency": "USD",
+          "currentBalance": -185000.0,
+          "principalAmount": 200000.0,
+          "nextPaymentAmount": 1150.5,
+          "nextPaymentDate": "2024-08-15",
+          "type": "loan",
+          "openDate": "2022-03-01",
+          "interestRate": 3.5
+        }
+      ]
+    },
+    {
+      "callId": "API4660E4",
+      "timestamp": "2025-04-10T07:46:20Z",
+      "sourceTab": "MobileApp",
+      "method": "GET",
+      "uri": "/api/mobile/accounts/ACC001/transactions",
+      "requestPayload": null,
+      "responsePayload": [
+        {
+          "transactionId": "TXN001",
+          "bookingDate": "2024-07-28T10:30:00Z",
+          "description": "Coffee Shop",
+          "amount": -5.5,
+          "currency": "USD",
+          "type": "Debit Card Purchase"
+        },
+        {
+          "transactionId": "TXN002",
+          "bookingDate": "2024-07-27T09:00:00Z",
+          "description": "Salary Deposit",
+          "amount": 2500.0,
+          "currency": "USD",
+          "type": "Direct Deposit"
+        },
+        {
+          "transactionId": "TXN003",
+          "bookingDate": "2024-07-26T15:00:00Z",
+          "description": "Grocery Store",
+          "amount": -75.2,
+          "currency": "USD",
+          "type": "Debit Card Purchase"
+        }
+      ]
+    },
+    {
+      "callId": "API6AE679",
+      "timestamp": "2025-04-10T07:46:19Z",
+      "sourceTab": "MobileApp",
+      "method": "GET",
+      "uri": "/api/mobile/accounts",
+      "requestPayload": null,
+      "responsePayload": [
+        {
+          "accountId": "ACC001",
+          "customerId": "CUST1001",
+          "displayName": "Everyday Checking",
+          "productName": "Current Account",
+          "currency": "USD",
+          "currentBalance": 1190.75,
+          "availableBalance": 1140.5,
+          "type": "deposit",
+          "openDate": "2020-01-15"
+        },
+        {
+          "accountId": "SAV002",
+          "customerId": "CUST1001",
+          "displayName": "Rainy Day Fund",
+          "productName": "Savings Account",
+          "currency": "USD",
+          "currentBalance": 8475.0,
+          "availableBalance": 8475.0,
+          "type": "deposit",
+          "openDate": "2020-01-15"
+        },
+        {
+          "accountId": "LON003",
+          "customerId": "CUST1001",
+          "displayName": "Home Mortgage",
+          "productName": "Mortgage Loan",
+          "currency": "USD",
+          "currentBalance": -185000.0,
+          "principalAmount": 200000.0,
+          "nextPaymentAmount": 1150.5,
+          "nextPaymentDate": "2024-08-15",
+          "type": "loan",
+          "openDate": "2022-03-01",
+          "interestRate": 3.5
+        }
+      ]
+    },
+    {
+      "callId": "API661F6B",
+      "timestamp": "2025-04-10T07:46:18Z",
+      "sourceTab": "MobileApp",
+      "method": "GET",
+      "uri": "/api/mobile/accounts",
+      "requestPayload": null,
+      "responsePayload": [
+        {
+          "accountId": "ACC001",
+          "customerId": "CUST1001",
+          "displayName": "Everyday Checking",
+          "productName": "Current Account",
+          "currency": "USD",
+          "currentBalance": 1190.75,
+          "availableBalance": 1140.5,
+          "type": "deposit",
+          "openDate": "2020-01-15"
+        },
+        {
+          "accountId": "SAV002",
+          "customerId": "CUST1001",
+          "displayName": "Rainy Day Fund",
+          "productName": "Savings Account",
+          "currency": "USD",
+          "currentBalance": 8475.0,
+          "availableBalance": 8475.0,
+          "type": "deposit",
+          "openDate": "2020-01-15"
+        },
+        {
+          "accountId": "LON003",
+          "customerId": "CUST1001",
+          "displayName": "Home Mortgage",
+          "productName": "Mortgage Loan",
+          "currency": "USD",
+          "currentBalance": -185000.0,
+          "principalAmount": 200000.0,
+          "nextPaymentAmount": 1150.5,
+          "nextPaymentDate": "2024-08-15",
+          "type": "loan",
+          "openDate": "2022-03-01",
+          "interestRate": 3.5
+        }
+      ]
+    },
+    {
+      "callId": "API906DD2",
+      "timestamp": "2025-04-10T07:45:54Z",
+      "sourceTab": "MobileApp",
+      "method": "GET",
+      "uri": "/api/mobile/accounts/ACC001/transactions",
+      "requestPayload": null,
+      "responsePayload": [
+        {
+          "transactionId": "TXN001",
+          "bookingDate": "2024-07-28T10:30:00Z",
+          "description": "Coffee Shop",
+          "amount": -5.5,
+          "currency": "USD",
+          "type": "Debit Card Purchase"
+        },
+        {
+          "transactionId": "TXN002",
+          "bookingDate": "2024-07-27T09:00:00Z",
+          "description": "Salary Deposit",
+          "amount": 2500.0,
+          "currency": "USD",
+          "type": "Direct Deposit"
+        },
+        {
+          "transactionId": "TXN003",
+          "bookingDate": "2024-07-26T15:00:00Z",
+          "description": "Grocery Store",
+          "amount": -75.2,
+          "currency": "USD",
+          "type": "Debit Card Purchase"
+        }
+      ]
+    },
+    {
+      "callId": "API81D7F8",
+      "timestamp": "2025-04-10T07:45:53Z",
+      "sourceTab": "MobileApp",
+      "method": "GET",
+      "uri": "/api/mobile/accounts",
+      "requestPayload": null,
+      "responsePayload": [
+        {
+          "accountId": "ACC001",
+          "customerId": "CUST1001",
+          "displayName": "Everyday Checking",
+          "productName": "Current Account",
+          "currency": "USD",
+          "currentBalance": 1190.75,
+          "availableBalance": 1140.5,
+          "type": "deposit",
+          "openDate": "2020-01-15"
+        },
+        {
+          "accountId": "SAV002",
+          "customerId": "CUST1001",
+          "displayName": "Rainy Day Fund",
+          "productName": "Savings Account",
+          "currency": "USD",
+          "currentBalance": 8475.0,
+          "availableBalance": 8475.0,
+          "type": "deposit",
+          "openDate": "2020-01-15"
+        },
+        {
+          "accountId": "LON003",
+          "customerId": "CUST1001",
+          "displayName": "Home Mortgage",
+          "productName": "Mortgage Loan",
+          "currency": "USD",
+          "currentBalance": -185000.0,
+          "principalAmount": 200000.0,
+          "nextPaymentAmount": 1150.5,
+          "nextPaymentDate": "2024-08-15",
+          "type": "loan",
+          "openDate": "2022-03-01",
+          "interestRate": 3.5
+        }
+      ]
+    },
+    {
+      "callId": "APIFF1A04",
+      "timestamp": "2025-04-10T07:40:35Z",
+      "sourceTab": "MobileApp",
+      "method": "POST",
+      "uri": "/api/mobile/transfer",
+      "requestPayload": {
+        "from_account": "SAV002",
+        "to_account": "ACC999",
+        "amount": 25
+      },
+      "responsePayload": {
+        "transferId": "TRFACCFA50E",
+        "status": "Completed",
+        "message": "Transfer processed successfully (Stub)."
+      }
+    },
+    {
+      "callId": "APID6503D",
+      "timestamp": "2025-04-10T07:38:03Z",
+      "sourceTab": "MobileApp",
+      "method": "POST",
+      "uri": "/api/mobile/transfer",
+      "requestPayload": {
+        "from_account": "ACC001",
+        "to_account": "ACC999",
+        "amount": 35
+      },
+      "responsePayload": {
+        "transferId": "TRF1DAF8E77",
+        "status": "Completed",
+        "message": "Transfer processed successfully (Stub)."
+      }
+    },
+    {
+      "callId": "APIB800D9",
+      "timestamp": "2025-04-10T07:37:21Z",
+      "sourceTab": "MobileApp",
+      "method": "POST",
+      "uri": "/api/mobile/transfer",
+      "requestPayload": {
+        "from_account": "ACC001",
+        "to_account": "ACC999",
+        "amount": 25
+      },
+      "responsePayload": {
+        "transferId": "TRF45E352D6",
+        "status": "Completed",
+        "message": "Transfer processed successfully (Stub)."
+      }
+    },
+    {
+      "callId": "API001",
+      "timestamp": "2024-07-30T10:01:30Z",
+      "sourceTab": "MobileApp",
+      "method": "GET",
+      "uri": "/api/mobile/accounts/ACC001/transactions",
+      "requestPayload": null,
+      "responsePayload": [
+        {
+          "transactionId": "TXN001",
+          "bookingDate": "2024-07-28T10:30:00Z",
+          "description": "Coffee Shop",
+          "amount": -5.5,
+          "currency": "USD",
+          "type": "Debit Card Purchase"
+        },
+        {
+          "transactionId": "TXN002",
+          "bookingDate": "2024-07-27T09:00:00Z",
+          "description": "Salary Deposit",
+          "amount": 2500.0,
+          "currency": "USD",
+          "type": "Direct Deposit"
+        },
+        {
+          "transactionId": "TXN003",
+          "bookingDate": "2024-07-26T15:00:00Z",
+          "description": "Grocery Store",
+          "amount": -75.2,
+          "currency": "USD",
+          "type": "Debit Card Purchase"
+        }
+      ]
+    },
+    {
+      "callId": "API002",
+      "timestamp": "2024-07-30T11:15:00Z",
+      "sourceTab": "MobileApp",
+      "method": "POST",
+      "uri": "/api/mobile/transfer",
+      "requestPayload": {
+        "from_account": "ACC001",
+        "to_account": "ACC999",
+        "amount": 250.0
+      },
+      "responsePayload": {
+        "transferId": "TRF12345",
+        "status": "Completed",
+        "message": "Transfer processed successfully."
+      }
+    },
+    {
+      "callId": "API003",
+      "timestamp": "2024-07-30T14:20:10Z",
+      "sourceTab": "BranchApp",
+      "method": "GET",
+      "uri": "/api/branch/customers/CUST1002",
+      "requestPayload": null,
+      "responsePayload": {
+        "customerId": "CUST1002",
+        "status": "Active",
+        "title": "Ms.",
+        "firstName": "Jane",
+        "lastName": "Smith",
+        "dateOfBirth": "1992-11-20",
+        "gender": "Female",
+        "nationality": "CA",
+        "primaryEmail": "jane.smith@example.ca",
+        "secondaryEmail": "jsmith.personal@mail.com",
+        "mobilePhone": "+1-416-555-8888",
+        "homePhone": null,
+        "employmentStatus": "Self-Employed",
+        "jobTitle": "Graphic Designer",
+        "employerName": "Freelance",
+        "address": {
+          "streetAddress1": "456 Oak Ave",
+          "streetAddress2": null,
+          "city": "Toronto",
+          "state": "ON",
+          "postalCode": "M5A 1A1",
+          "country": "Canada",
+          "type": "Primary"
+        },
+        "preferredLanguage": "en",
+        "marketingConsent": false,
+        "lastLogin": "2024-07-28T15:20:00Z",
+        "creationDate": "2021-05-22T09:00:00Z",
+        "accountIds": [
+          "ACC004",
+          "SAV005"
+        ]
+      }
+    }
+  ],
+  "events": [
+    {
+      "eventId": "EVT-TRFFA243F03-01",
+      "timestamp": "2025-04-10T07:49:50Z",
+      "eventType": "TransferInitiated",
+      "sourceService": "PaymentsOrchestrator",
+      "payload": {
+        "transferId": "TRFFA243F03",
+        "fromAccountId": "SAV002",
+        "toAccountId": "ACC999",
+        "amount": 25.0,
+        "currency": "USD",
+        "status": "Pending"
+      }
+    },
+    {
+      "eventId": "EVT-TRFFA243F03-02",
+      "timestamp": "2025-04-10T07:49:51Z",
+      "eventType": "AccountDebited",
+      "sourceService": "HoldingsService",
+      "payload": {
+        "accountId": "SAV002",
+        "transferId": "TRFFA243F03",
+        "amountDebited": -25.0,
+        "currency": "USD",
+        "previousBalance": 8475.0,
+        "newBalance": 8450.0
+      }
+    },
+    {
+      "eventId": "EVT-TRFFA243F03-03",
+      "timestamp": "2025-04-10T07:49:52Z",
+      "eventType": "TransferCompleted",
+      "sourceService": "PaymentsOrchestrator",
+      "payload": {
+        "transferId": "TRFFA243F03",
+        "status": "Completed",
+        "completionTimestamp": "2025-04-10T07:49:52Z"
+      }
+    },
+    {
+      "eventId": "EVT-TRFACCFA50E-01",
+      "timestamp": "2025-04-10T07:40:36Z",
+      "eventType": "TransferInitiated",
+      "sourceService": "PaymentsOrchestrator",
+      "payload": {
+        "transferId": "TRFACCFA50E",
+        "fromAccountId": "SAV002",
+        "toAccountId": "ACC999",
+        "amount": 25.0,
+        "currency": "USD",
+        "status": "Pending"
+      }
+    },
+    {
+      "eventId": "EVT-TRFACCFA50E-02",
+      "timestamp": "2025-04-10T07:40:37Z",
+      "eventType": "AccountDebited",
+      "sourceService": "HoldingsService",
+      "payload": {
+        "accountId": "SAV002",
+        "transferId": "TRFACCFA50E",
+        "amountDebited": -25.0,
+        "currency": "USD",
+        "previousBalance": 8500.0,
+        "newBalance": 8475.0
+      }
+    },
+    {
+      "eventId": "EVT-TRFACCFA50E-03",
+      "timestamp": "2025-04-10T07:40:38Z",
+      "eventType": "TransferCompleted",
+      "sourceService": "PaymentsOrchestrator",
+      "payload": {
+        "transferId": "TRFACCFA50E",
+        "status": "Completed",
+        "completionTimestamp": "2025-04-10T07:40:38Z"
+      }
+    },
+    {
+      "eventId": "EVT-TRF1DAF8E77-01",
+      "timestamp": "2025-04-10T07:38:04Z",
+      "eventType": "TransferInitiated",
+      "sourceService": "PaymentsOrchestrator",
+      "payload": {
+        "transferId": "TRF1DAF8E77",
+        "fromAccountId": "ACC001",
+        "toAccountId": "ACC999",
+        "amount": 35.0,
+        "currency": "USD",
+        "status": "Pending"
+      }
+    },
+    {
+      "eventId": "EVT-TRF1DAF8E77-02",
+      "timestamp": "2025-04-10T07:38:05Z",
+      "eventType": "AccountDebited",
+      "sourceService": "HoldingsService",
+      "payload": {
+        "accountId": "ACC001",
+        "transferId": "TRF1DAF8E77",
+        "amountDebited": -35.0,
+        "currency": "USD",
+        "previousBalance": 1225.75,
+        "newBalance": 1190.75
+      }
+    },
+    {
+      "eventId": "EVT-TRF1DAF8E77-03",
+      "timestamp": "2025-04-10T07:38:06Z",
+      "eventType": "TransferCompleted",
+      "sourceService": "PaymentsOrchestrator",
+      "payload": {
+        "transferId": "TRF1DAF8E77",
+        "status": "Completed",
+        "completionTimestamp": "2025-04-10T07:38:06Z"
+      }
+    },
+    {
+      "eventId": "EVT-TRF45E352D6-01",
+      "timestamp": "2025-04-10T07:37:22Z",
+      "eventType": "TransferInitiated",
+      "sourceService": "PaymentsOrchestrator",
+      "payload": {
+        "transferId": "TRF45E352D6",
+        "fromAccountId": "ACC001",
+        "toAccountId": "ACC999",
+        "amount": 25.0,
+        "currency": "USD",
+        "status": "Pending"
+      }
+    },
+    {
+      "eventId": "EVT-TRF45E352D6-02",
+      "timestamp": "2025-04-10T07:37:23Z",
+      "eventType": "AccountDebited",
+      "sourceService": "HoldingsService",
+      "payload": {
+        "accountId": "ACC001",
+        "transferId": "TRF45E352D6",
+        "amountDebited": -25.0,
+        "currency": "USD",
+        "previousBalance": 1250.75,
+        "newBalance": 1225.75
+      }
+    },
+    {
+      "eventId": "EVT-TRF45E352D6-03",
+      "timestamp": "2025-04-10T07:37:24Z",
+      "eventType": "TransferCompleted",
+      "sourceService": "PaymentsOrchestrator",
+      "payload": {
+        "transferId": "TRF45E352D6",
+        "status": "Completed",
+        "completionTimestamp": "2025-04-10T07:37:24Z"
+      }
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+/* Architecture Tab specific styles */
+#architecture-content { /* If using ID from old template */
+    text-align: center;
+}
+
+#architecture-diagram img {
+    max-width: 90%; /* Slightly smaller max width */
+    height: auto;
+    display: block;
+    margin: 20px auto; /* Add more margin */
+    border: 1px solid #ccc;
+    background-color: #fff; /* Add white background for contrast */
+    padding: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+} 

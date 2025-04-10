@@ -1,0 +1,94 @@
+{
+  "accounts": [
+    {
+      "accountId": "ACC001",
+      "displayName": "Everyday Checking",
+      "productName": "Current Account",
+      "currency": "USD",
+      "currentBalance": 1250.75,
+      "availableBalance": 1200.50,
+      "type": "deposit"
+    },
+    {
+      "accountId": "SAV002",
+      "displayName": "Rainy Day Fund",
+      "productName": "Savings Account",
+      "currency": "USD",
+      "currentBalance": 8500.00,
+      "availableBalance": 8500.00,
+      "type": "deposit"
+    },
+    {
+      "accountId": "LON003",
+      "displayName": "Home Mortgage",
+      "productName": "Mortgage Loan",
+      "currency": "USD",
+      "currentBalance": -185000.00,
+      "principalAmount": 200000.00,
+      "nextPaymentAmount": 1150.50,
+      "nextPaymentDate": "2024-08-15",
+      "type": "loan"
+    }
+  ],
+  "transactions": {
+    "ACC001": [
+      {
+        "transactionId": "TXN001",
+        "bookingDate": "2024-07-28T10:30:00Z",
+        "description": "Coffee Shop",
+        "amount": -5.50,
+        "currency": "USD",
+        "type": "Debit Card Purchase"
+      },
+      {
+        "transactionId": "TXN002",
+        "bookingDate": "2024-07-27T09:00:00Z",
+        "description": "Salary Deposit",
+        "amount": 2500.00,
+        "currency": "USD",
+        "type": "Direct Deposit"
+      },
+      {
+        "transactionId": "TXN003",
+        "bookingDate": "2024-07-26T15:00:00Z",
+        "description": "Grocery Store",
+        "amount": -75.20,
+        "currency": "USD",
+        "type": "Debit Card Purchase"
+      }
+    ],
+    "SAV002": [
+       {
+        "transactionId": "TXN004",
+        "bookingDate": "2024-07-15T11:00:00Z",
+        "description": "Monthly Transfer In",
+        "amount": 500.00,
+        "currency": "USD",
+        "type": "Transfer"
+      },
+      {
+        "transactionId": "TXN005",
+        "bookingDate": "2024-06-15T11:00:00Z",
+        "description": "Monthly Transfer In",
+        "amount": 500.00,
+        "currency": "USD",
+        "type": "Transfer"
+      }
+    ],
+    "LON003": [
+        {
+        "transactionId": "TXN006",
+        "bookingDate": "2024-07-15T08:00:00Z",
+        "description": "Mortgage Payment",
+        "amount": -1150.50,
+        "currency": "USD",
+        "type": "Loan Payment"
+      }
+    ]
+  },
+  "transferResult": {
+      "transferId": "TRF12345",
+      "status": "Completed",
+      "message": "Transfer processed successfully."
+  }
+} 

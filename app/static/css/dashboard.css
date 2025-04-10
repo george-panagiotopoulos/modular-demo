@@ -1,0 +1,82 @@
+/* Dashboard-specific styles */
+body {
+    font-family: sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: #f4f7f6; /* Light background for the overall page */
+}
+
+header {
+    background-color: #ffffff; /* White header */
+    padding: 10px 20px;
+    border-bottom: 1px solid #dee2e6;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+header h1 {
+    margin: 0;
+    font-size: 1.5em;
+    color: #333;
+}
+
+nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0 0 0;
+    display: flex;
+}
+
+nav ul li {
+    margin-right: 5px; /* Slightly reduce spacing */
+}
+
+nav ul li a.tab-link {
+    text-decoration: none;
+    color: #007bff;
+    padding: 10px 15px;
+    border-radius: 5px 5px 0 0; /* Top corners rounded */
+    transition: background-color 0.3s, color 0.3s;
+    border: 1px solid transparent; /* Placeholder for active border */
+    border-bottom: none; /* No bottom border for inactive */
+    display: inline-block;
+}
+
+nav ul li a.tab-link:hover {
+    background-color: #e9ecef;
+    color: #0056b3;
+}
+
+nav ul li a.tab-link.active {
+    background-color: #ffffff; /* White background for active tab */
+    color: #333; /* Darker text for active tab */
+    border-color: #dee2e6; /* Match border color */
+    border-bottom: 1px solid #ffffff; /* Hide bottom border line */
+    position: relative;
+    top: 1px; /* Align with content area border */
+}
+
+main#tab-content-area {
+    flex-grow: 1;
+    padding: 20px;
+    background-color: #ffffff; /* White background for content */
+    border-left: 1px solid #dee2e6;
+    border-right: 1px solid #dee2e6;
+    border-bottom: 1px solid #dee2e6;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    margin: 0 20px; /* Add some horizontal margin */
+    position: relative;
+    z-index: 0;
+}
+
+footer {
+    background-color: #e9ecef; /* Lighter footer */
+    padding: 10px 20px;
+    text-align: center;
+    border-top: 1px solid #dee2e6;
+    margin-top: auto;
+    color: #6c757d;
+    font-size: 0.9em;
+} 

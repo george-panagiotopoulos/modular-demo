@@ -1,0 +1,10 @@
+<h2>Assistant (Stub)</h2>
+<p>This section will host the RAG model for architecture documentation Q&A.</p>
+<div>
+    <label for="assistant-query">Ask a question about the architecture:</label>
+    <input type="text" id="assistant-query" name="query" style="width: 80%;">
+    <button hx-post="/assistant/query" hx-target="#assistant-response">Ask</button>
+</div>
+<div id="assistant-response" style="margin-top: 15px; border: 1px solid #eee; padding: 10px; min-height: 50px;">
+    Assistant response will appear here...
+</div> 

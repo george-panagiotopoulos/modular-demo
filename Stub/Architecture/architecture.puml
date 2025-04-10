@@ -1,0 +1,18 @@
+@startuml
+skinparam monochrome true
+
+actor Customer
+participant "Mobile App" as MobileApp
+participant "Branch App" as BranchApp
+participant "API Gateway" as Gateway
+participant "Holdings Service" as Holdings
+participant "Customer Service" as CustomerSvc
+
+Customer -> MobileApp : View Transactions
+MobileApp -> Gateway : GET /accounts/{id}/transactions
+Gateway -> Holdings : GET /accounts/{id}/transactions
+Holdings --> Gateway : Transaction List
+Gateway --> MobileApp : Transaction List
+MobileApp --> Customer : Display Transactions
+
+@enduml 
