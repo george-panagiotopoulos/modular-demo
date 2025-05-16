@@ -1,0 +1,195 @@
+{
+	"info": {
+		"_postman_id": "76c1ce90-2c7f-4b65-a46a-09b479221389",
+		"name": "Accounts&Deposits",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "19767728",
+		"_collection_link": "https://speeding-moon-814176.postman.co/workspace/5a5d0c03-2bf3-4838-8a39-5ee9726026dd/collection/19767728-76c1ce90-2c7f-4b65-a46a-09b479221389?action=share&source=collection_link&creator=19767728"
+	},
+	"item": [
+		{
+			"name": "CreateCurrentAccount",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "  {\r\n        \"parties\": [\r\n            {\r\n                \"partyId\": \"100100\",\r\n                \"partyRole\": \"OWNER\"\r\n            }\r\n        ],\r\n        \"accountName\": \"current\",\r\n        \"openingDate\": \"20250415\",\r\n        \"productId\": \"RegularCurrentAccount\",\r\n        \"currency\": \"USD\",\r\n        \"branchCode\": \"07733\",\r\n        \"quotationReference\": \"QUOT246813\"\r\n   }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "http://{{AccDep_URL}}/irf-TBC-accounts-container/api/v2.0.0/holdings/accounts/currentAccounts"
+			},
+			"response": []
+		},
+		{
+			"name": "createTermDeposits",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"parties\": [\r\n        {\r\n            \"partyId\": \"100100\",\r\n            \"partyRole\": \"OWNER\"\r\n        }\r\n    ],\r\n   \r\n    \"accountName\": \"MyDepositAccount\",\r\n    \"productId\": \"TermDepositWor\",\r\n    \"openingDate\": \"20250415\",\r\n    \"currency\": \"USD\",\r\n    \"branchCode\": \"07733\",\r\n    \"quotationReference\": \"AA12345678\",\r\n    \"depositAmount\": \"10000\",\r\n    \"depositTerm\": \"1Y\",\r\n    \"interestPayoutOption\": \"Settle at Scheduled Frequency\",\r\n    \"interestPayoutFrequency\": \"Monthly\",\r\n    \"fundingAccount\": \"21067\",\r\n    \"payoutAccount\": \"135917\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "http://{{AccDep_URL}}/irf-TBC-deposits-container/api/v2.0.0/holdings/deposits/termDeposits",
+				"description": "create term deposit"
+			},
+			"response": []
+		},
+		{
+			"name": "getPartiesArrangement",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": "http://{{AccDep_URL}}/irf-TBC-accounts-container/api/v1.0.0/holdings/parties/100100/arrangements"
+			},
+			"response": []
+		},
+		{
+			"name": "getAccountBalances",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "http://{{AccDep_URL}}/irf-TBC-accounts-container/api/v2.0.0/holdings/accounts/158143/balances"
+			},
+			"response": []
+		},
+		{
+			"name": "getDepositBalance",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": "http://{{AccDep_URL}}/irf-TBC-deposits-container/api/v2.0.0/holdings/deposits/AA25105N87GK/balances",
+				"description": "fetch Deposit Balance"
+			},
+			"response": []
+		},
+		{
+			"name": "DebitAccount",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"paymentTransactionReference\": \"DEBIT1\",\r\n  \"paymentReservationReference\": \"DEBIT1\",\r\n  \"paymentValueDate\": \"20250415\",\r\n  \"debitAccount\": \"158167\",\r\n  \"debitCurrency\": \"USD\",\r\n  \"paymentAmount\": \"1000\",\r\n  \"paymentDescription\": \"DEBIT\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "http://{{AccDep_URL}}/irf-TBC-accounts-container/api/v1.0.0/order/payments/debitAccount"
+			},
+			"response": []
+		},
+		{
+			"name": "CreditAccount",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"paymentTransactionReference\": \"CREDIT1\",\r\n  \"paymentReservationReference\": \"CREDIT1\",\r\n  \"paymentValueDate\": \"20250415\",\r\n  \"creditAccount\": \"158167\",\r\n  \"creditCurrency\": \"USD\",\r\n  \"paymentAmount\": \"20000\",\r\n  \"paymentDescription\": \"CREDIT\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "http://{{AccDep_URL}}/irf-TBC-accounts-container/api/v1.0.0/order/payments/creditAccount"
+			},
+			"response": []
+		},
+		{
+			"name": "InternalTransfer",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"paymentTransactionReference\": \"TXN123456789\",\r\n    \"paymentReservationReference\": \"RES123456\",\r\n    \"paymentValueDate\": \"20250415\",\r\n    \"debitAccount\": \"158248\",\r\n    \"creditAccount\": \"158167\",\r\n    \"debitCurrency\": \"USD\",\r\n    \"paymentAmount\": \"1000\",\r\n    \"paymentDescription\": \"Transfer to savings\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "http://{{AccDep_URL}}/irf-TBC-accounts-container/api/v1.0.0/order/payments/internalTransfer"
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "AccDep_URL",
+			"value": "deposits-sandbox.northeurope.cloudapp.azure.com",
+			"type": "string"
+		}
+	]
+}

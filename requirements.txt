@@ -1,0 +1,12 @@
+Flask>=2.0.0
+# Add other dependencies as needed, e.g.:
+# Flask-WTF
+# Flask-SQLAlchemy
+# Flask-Migrate
+# python-dotenv
+
+# Azure Event Hub / Kafka connectivity (used in TestConnection)
+confluent-kafka>=2.0.2
+
+# For API requests (used in banking_operations.py)
+requests>=2.25.0 

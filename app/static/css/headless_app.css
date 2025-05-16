@@ -1,0 +1,103 @@
+/* Headless Tab specific styles */
+.headless-container {
+    display: flex;
+    flex-direction: column;
+    /* Let the dashboard CSS handle height or use specific rules here */
+    gap: 20px; /* Space between API and Event sections */
+    padding: 10px; /* Add some padding */
+}
+
+.api-call-section, .event-view-section {
+    border: 1px solid #ccc;
+    padding: 15px;
+    border-radius: 5px;
+    background-color: #fafafa;
+    display: flex;
+    flex-direction: column; /* Ensure content flows vertically */
+}
+
+.api-call-section {
+    flex: 1; /* Allow API section to grow */
+    min-height: 300px; /* Minimum height */
+}
+
+.event-view-section {
+    flex: 1; /* Allow Event section to grow */
+    min-height: 250px; /* Minimum height */
+}
+
+.api-call-form {
+    display: grid;
+    grid-template-columns: auto 1fr auto; /* Method | URI | Button */
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 15px; /* Space below form */
+}
+
+.payload-response-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    flex-grow: 1; /* Allow textareas to fill available space */
+}
+
+.payload-response-container div {
+    display: flex;
+    flex-direction: column;
+}
+
+textarea {
+    width: 100%;
+    flex-grow: 1; /* Make textareas fill their container */
+    box-sizing: border-box;
+    font-family: monospace;
+    font-size: 0.9em;
+    border: 1px solid #ddd;
+    padding: 5px;
+}
+
+#event-list {
+    max-height: none; /* Remove fixed max height */
+    height: 100%; /* Fill container */
+    overflow-y: auto;
+    border: 1px solid #eee;
+    padding: 10px;
+    background-color: #fff;
+    list-style: none;
+    margin: 0;
+    font-family: monospace;
+    font-size: 0.9em;
+    flex-grow: 1;
+}
+
+#event-list li {
+    padding: 4px 2px;
+    border-bottom: 1px dashed #ccfbf1; /* teal-100 */
+    word-break: break-all; /* Prevent long strings from overflowing */
+}
+#event-list li:last-child {
+    border-bottom: none;
+}
+
+/* Headless Tab specific styles - Teal Theme */
+
+/* Tailwind handles most things, just add minor overrides or specific non-tailwind styles */
+
+/* Ensure textareas in this tab use the teal focus ring */
+.headless-container textarea:focus {
+  border-color: #0d9488; /* teal-600 */
+  --tw-ring-color: #0d9488;
+  /* ring-color: #0d9488; /* Equivalent Tailwind class might need configuration */
+}
+
+/* Adjust scrollbar for event list */
+#event-list::-webkit-scrollbar {
+  width: 6px;
+}
+#event-list::-webkit-scrollbar-thumb {
+  background-color: #99f6e4; /* teal-200 */
+  border-radius: 3px;
+}
+#event-list::-webkit-scrollbar-track {
+  background-color: #f0fdfa; /* teal-50 */
+} 

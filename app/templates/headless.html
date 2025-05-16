@@ -1,0 +1,49 @@
+<div class="headless-container flex flex-col h-full p-4 gap-4 bg-gray-50">
+    <!-- API Call Section - Teal Theme -->
+    <div class="api-call-section border border-teal-300 rounded-lg p-4 bg-white shadow flex flex-col flex-1">
+        <h3 class="text-lg font-semibold text-teal-800 mb-3 border-b border-teal-200 pb-2">REST API Call Details</h3>
+        <form id="api-call-form" class="api-call-form grid grid-cols-[auto_1fr_auto] gap-x-3 gap-y-2 items-center mb-4">
+            <label for="api-method" class="text-sm font-medium text-teal-700">Method:</label>
+            <select id="api-method" name="method" class="rounded border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm">
+                <option>GET</option> <option>POST</option> <option>PUT</option> <option>DELETE</option>
+            </select>
+            <div></div>
+            
+            <label for="api-endpoint" class="text-sm font-medium text-teal-700">API:</label>
+            <select id="api-endpoint" name="endpoint" class="rounded border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm">
+                <option value="custom">Custom URI</option>
+                <option value="arrangements">Customer Arrangements</option>
+                <option value="schedules">Loan Schedules</option>
+                <option value="status">Loan Status</option>
+            </select>
+            <div></div>
+            
+            <label for="api-uri" class="text-sm font-medium text-teal-700">URI:</label>
+            <input type="text" id="api-uri" name="uri" placeholder="/api/resource" class="col-span-2 rounded border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm">
+            
+            <div></div>
+            <div></div>
+            <button type="submit" class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 justify-self-end">
+                Send
+            </button>
+        </form>
+        <div class="payload-response-container grid grid-cols-1 md:grid-cols-2 gap-4 flex-grow">
+            <div class="flex flex-col">
+                <label for="api-request-payload" class="text-sm font-medium text-teal-700 mb-1 pb-1 border-b border-teal-100">Request Payload (JSON):</label>
+                <textarea id="api-request-payload" name="request_payload" class="flex-grow rounded border-gray-300 shadow-sm font-mono text-xs p-3 bg-gray-50 focus:border-teal-500 focus:ring-teal-500 h-60"></textarea>
+            </div>
+            <div class="flex flex-col">
+                <label for="api-response-payload" class="text-sm font-medium text-teal-700 mb-1 pb-1 border-b border-teal-100">Response Payload (JSON):</label>
+                <textarea id="api-response-payload" name="response_payload" readonly class="flex-grow rounded border-gray-300 shadow-sm font-mono text-xs p-3 bg-gray-50 focus:border-teal-500 focus:ring-teal-500 h-60"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- Event Viewer Section - Teal Theme -->
+    <div class="event-view-section border border-teal-300 rounded-lg p-4 bg-white shadow flex flex-col flex-1">
+        <h3 class="text-lg font-semibold text-teal-800 mb-3 border-b border-teal-200 pb-2">Platform Event Viewer</h3>
+        <ul id="event-list" class="flex-grow overflow-y-auto font-mono text-xs space-y-1 pr-2">
+            <li class="text-gray-400">Waiting for events...</li>
+        </ul>
+    </div>
+</div> 

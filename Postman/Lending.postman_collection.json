@@ -1,0 +1,541 @@
+{
+	"info": {
+		"_postman_id": "eac56abd-b5d6-43c4-a3af-d1b4c471fd80",
+		"name": "Lending",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "19767728",
+		"_collection_link": "https://speeding-moon-814176.postman.co/workspace/Team-Workspace~5a5d0c03-2bf3-4838-8a39-5ee9726026dd/collection/19767728-eac56abd-b5d6-43c4-a3af-d1b4c471fd80?action=share&source=collection_link&creator=19767728"
+	},
+	"item": [
+		{
+			"name": "createLoan",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"header\": {\r\n        \"override\": { /* overrides are required to be added to avoid 400   */\r\n            \"overrideDetails\": [\r\n                {\r\n                    \"code\": \"O-12005\",\r\n                    \"options\": [\r\n                        \"RECEIVED\",\r\n                        \"NOT RECEIVED\"\r\n                    ],\r\n                    \"description\": \"Have you received Loan Agreement/AAA*203 from 100100}RECEIVED_NOT RECEIVED\",\r\n                    \"id\": \"DM.CONFIRM.DOC\",\r\n                    \"type\": \"Warning\",\r\n                    \"responseCode\": \"RECEIVED\"\r\n                },\r\n                {\r\n                    \"code\": \"O-10985\",\r\n                    \"description\": \"Maturity Date is not a Working Day\",\r\n                    \"id\": \"AA.MATURITY.DATE.NOT.WORKING.DAY\",\r\n                    \"type\": \"Override\"\r\n                }\r\n            ]\r\n        }\r\n    },\r\n    \"body\": {\r\n        \"partyIds\": [\r\n            {\r\n                \"partyId\": \"100100\", \r\n                \"partyRole\": \"OWNER\"\r\n            }\r\n        ],\r\n        \"productId\": \"PERSONAL.LOAN\",\r\n        \"currency\": \"USD\",\r\n        \"schedule\": [\r\n            {\r\n                \"payment\": [\r\n                    {\r\n                        \"paymentFrequency\": \"e0Y e1M e0W e0D e0F\" \r\n                        /*denotes monthly frequency */\r\n                    }\r\n                ]\r\n            }\r\n        ],\r\n        \"settlement\": [\r\n            {\r\n                \"settlement\": [\r\n                    {\r\n                        \"reference\": [\r\n                            {\r\n                                \"payinAccount\": \"21067\"\r\n                                /* repayment account */\r\n                            }\r\n                        ]\r\n                    }\r\n                ],\r\n                \"payout\": [\r\n                    {\r\n                        \"property\": [\r\n                            {\r\n                                \"payoutAccount\": \"11193\"\r\n                                /* target/disbursement account */\r\n                            }\r\n                        ]\r\n                    }\r\n                ]\r\n            }\r\n        ],\r\n        \"commitment\": [\r\n            {\r\n                \"amount\": \"20000\",\r\n                \"term\": \"1Y\"\r\n            }\r\n        ],\r\n        \"principalint\": [\r\n            {\r\n                \"interest\": [\r\n                    {\r\n                        \"floatingRate\": \"3\"\r\n                    }\r\n                ]\r\n            }\r\n        ],\r\n        \"penaltyint\": [\r\n            {\r\n                \"interest\": [\r\n                    {\r\n                        \"floatingRate\": \"2\"\r\n                    }\r\n                ]\r\n            }\r\n        ]\r\n    }\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/personalLoans"
+			},
+			"response": []
+		},
+		{
+			"name": "disburseLoan",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"header\": {\r\n         \"override\": {\r\n        \"overrideDetails\": [\r\n            {\r\n                \"code\": \"O-13755\",\r\n                \"description\": \"Calculated charge for the activity(INSURANCE) is 0.00\",\r\n                \"id\": \"AA.CHG.ZERO.FOR.CURR.ACT\",\r\n                \"type\": \"Override\"\r\n            },\r\n            {\r\n                \"code\": \"O-10985\",\r\n                \"description\": \"Maturity Date is not a Working Day\",\r\n                \"id\": \"AA.MATURITY.DATE.NOT.WORKING.DAY\",\r\n                \"type\": \"Override\"\r\n            },\r\n            {\r\n                \"code\": \"O-10523\",\r\n                \"description\": \"Full committed amount is not disbursed\",\r\n                \"id\": \"AA.FULL.DISBURSE\",\r\n                \"type\": \"Override\"\r\n            },\r\n            {\r\n                \"code\": \"O-10942\",\r\n                \"description\": \"Unauthorised overdraft of USD 10000 on account 124718.\",\r\n                \"id\": \"ACCT.UNAUTH.OD\",\r\n                \"type\": \"Override\"\r\n            },\r\n        \r\n      \r\n            {\r\n                \"code\": \"O-10942\",\r\n                \"description\": \"Unauthorised overdraft of USD 10000 on account 124214.\",\r\n                \"id\": \"ACCT.UNAUTH.OD\",\r\n                \"type\": \"Override\"\r\n            }\r\n        \r\n    \r\n        ]\r\n    }\r\n        \r\n    },\r\n    \"body\": {\r\n        \"currencyId\": \"USD\",\r\n        \"effectiveDate\": \"20240517\",\r\n        \"transactionAmount\": 10000\r\n    }\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/AA24137G4LQS /disbursements"
+			},
+			"response": []
+		},
+		{
+			"name": "getLoanStatus",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": "http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/AA24137G4LQS/status"
+			},
+			"response": [
+				{
+					"name": "getLoanStatus",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": "http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/AA24137G4LQS/status"
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Date",
+							"value": "Mon, 12 May 2025 11:52:15 GMT"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Transfer-Encoding",
+							"value": "chunked"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						},
+						{
+							"key": "Cache-Control",
+							"value": "no-store"
+						},
+						{
+							"key": "X-Permitted-Cross-Domain-Policies",
+							"value": "master-only"
+						},
+						{
+							"key": "Access-Control-Allow-Headers",
+							"value": "Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers"
+						},
+						{
+							"key": "X-XSS-Protection",
+							"value": "1; mode=block"
+						},
+						{
+							"key": "X-Frame-Options",
+							"value": "SAMEORIGIN"
+						},
+						{
+							"key": "Content-Security-Policy",
+							"value": "default-src 'self'"
+						},
+						{
+							"key": "Access-Control-Allow-Origin",
+							"value": "*"
+						},
+						{
+							"key": "X-Content-Type-Options",
+							"value": "nosniff"
+						},
+						{
+							"key": "Strict-Transport-Security",
+							"value": "max-age=31536000; includeSubDomains"
+						},
+						{
+							"key": "Access-Control-Allow-Methods",
+							"value": "GET, HEAD, POST, PUT, DELETE, TRACE, OPTIONS, CONNECT, PATCH"
+						},
+						{
+							"key": "Access-Control-Max-Age",
+							"value": "3600"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"header\": {\n        \"audit\": {\n            \"T24_time\": 128,\n            \"responseParse_time\": 1,\n            \"requestParse_time\": 3\n        },\n        \"page_start\": 1,\n        \"page_token\": \"202405169564642735.00,99\",\n        \"total_size\": 1,\n        \"page_size\": 99,\n        \"status\": \"success\"\n    },\n    \"body\": [\n        {\n            \"arrangementId\": \"AA24137G4LQS\",\n            \"accountId\": \"124214 - USD\",\n            \"arrangementStartDate\": \"16 MAY 2024\",\n            \"arrangementStatus\": \"Current\",\n            \"customerId\": \"100100\",\n            \"beneficialOwner\": \"Harry Crisp\",\n            \"productDescription\": \"Personal Loan\"\n        }\n    ]\n}"
+				}
+			]
+		},
+		{
+			"name": "getPaymentSchedules",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": "http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/AA24137G4LQS/schedules"
+			},
+			"response": [
+				{
+					"name": "getPaymentSchedules",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": "http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/AA24137G4LQS/schedules"
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Date",
+							"value": "Mon, 12 May 2025 11:53:02 GMT"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Transfer-Encoding",
+							"value": "chunked"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						},
+						{
+							"key": "Cache-Control",
+							"value": "no-store"
+						},
+						{
+							"key": "X-Permitted-Cross-Domain-Policies",
+							"value": "master-only"
+						},
+						{
+							"key": "Access-Control-Allow-Headers",
+							"value": "Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers"
+						},
+						{
+							"key": "X-XSS-Protection",
+							"value": "1; mode=block"
+						},
+						{
+							"key": "X-Frame-Options",
+							"value": "SAMEORIGIN"
+						},
+						{
+							"key": "Content-Security-Policy",
+							"value": "default-src 'self'"
+						},
+						{
+							"key": "Access-Control-Allow-Origin",
+							"value": "*"
+						},
+						{
+							"key": "X-Content-Type-Options",
+							"value": "nosniff"
+						},
+						{
+							"key": "Strict-Transport-Security",
+							"value": "max-age=31536000; includeSubDomains"
+						},
+						{
+							"key": "Access-Control-Allow-Methods",
+							"value": "GET, HEAD, POST, PUT, DELETE, TRACE, OPTIONS, CONNECT, PATCH"
+						},
+						{
+							"key": "Access-Control-Max-Age",
+							"value": "3600"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"header\": {\n        \"audit\": {\n            \"T24_time\": 424,\n            \"responseParse_time\": 4,\n            \"requestParse_time\": 247\n        },\n        \"page_start\": 1,\n        \"page_token\": \"202405169564642781.00,99\",\n        \"total_size\": 12,\n        \"page_size\": 99,\n        \"status\": \"success\"\n    },\n    \"body\": [\n        {\n            \"totalAmount\": 865.25,\n            \"outstandingAmount\": -9192.28,\n            \"scheduleType\": \"FUTURE\",\n            \"interestAmount\": 57.53,\n            \"paymentDate\": \"2024-06-16\",\n            \"principalAmount\": 807.72\n        },\n        {\n            \"totalAmount\": 865.25,\n            \"outstandingAmount\": -8379.92,\n            \"scheduleType\": \"FUTURE\",\n            \"interestAmount\": 52.89,\n            \"paymentDate\": \"2024-07-16\",\n            \"principalAmount\": 812.36\n        },\n        {\n            \"totalAmount\": 865.25,\n            \"outstandingAmount\": -7564.49,\n            \"scheduleType\": \"FUTURE\",\n            \"interestAmount\": 49.82,\n            \"paymentDate\": \"2024-08-16\",\n            \"principalAmount\": 815.43\n        },\n        {\n            \"totalAmount\": 865.25,\n            \"outstandingAmount\": -6744.21,\n            \"scheduleType\": \"FUTURE\",\n            \"interestAmount\": 44.97,\n            \"paymentDate\": \"2024-09-16\",\n            \"principalAmount\": 820.28\n        },\n        {\n            \"totalAmount\": 865.25,\n            \"outstandingAmount\": -5917.76,\n            \"scheduleType\": \"FUTURE\",\n            \"interestAmount\": 38.8,\n            \"paymentDate\": \"2024-10-16\",\n            \"principalAmount\": 826.45\n        },\n        {\n            \"totalAmount\": 865.25,\n            \"outstandingAmount\": -5087.69,\n            \"scheduleType\": \"FUTURE\",\n            \"interestAmount\": 35.18,\n            \"paymentDate\": \"2024-11-16\",\n            \"principalAmount\": 830.07\n        },\n        {\n            \"totalAmount\": 865.25,\n            \"outstandingAmount\": -4251.71,\n            \"scheduleType\": \"FUTURE\",\n            \"interestAmount\": 29.27,\n            \"paymentDate\": \"2024-12-16\",\n            \"principalAmount\": 835.98\n        },\n        {\n            \"totalAmount\": 865.25,\n            \"outstandingAmount\": -3411.74,\n            \"scheduleType\": \"FUTURE\",\n            \"interestAmount\": 25.28,\n            \"paymentDate\": \"2025-01-16\",\n            \"principalAmount\": 839.97\n        },\n        {\n            \"totalAmount\": 865.25,\n            \"outstandingAmount\": -2566.77,\n            \"scheduleType\": \"FUTURE\",\n            \"interestAmount\": 20.28,\n            \"paymentDate\": \"2025-02-16\",\n            \"principalAmount\": 844.97\n        },\n        {\n            \"totalAmount\": 865.25,\n            \"outstandingAmount\": -1715.3,\n            \"scheduleType\": \"FUTURE\",\n            \"interestAmount\": 13.78,\n            \"paymentDate\": \"2025-03-16\",\n            \"principalAmount\": 851.47\n        },\n        {\n            \"totalAmount\": 865.25,\n            \"outstandingAmount\": -860.25,\n            \"scheduleType\": \"FUTURE\",\n            \"interestAmount\": 10.2,\n            \"paymentDate\": \"2025-04-16\",\n            \"principalAmount\": 855.05\n        },\n        {\n            \"totalAmount\": 865.2,\n            \"outstandingAmount\": 0,\n            \"scheduleType\": \"FUTURE\",\n            \"interestAmount\": 4.95,\n            \"paymentDate\": \"2025-05-16\",\n            \"principalAmount\": 860.25\n        }\n    ]\n}"
+				}
+			]
+		},
+		{
+			"name": "getInterestScheduleDetails",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": "http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/AA24137G4LQS/loanDetails"
+			},
+			"response": [
+				{
+					"name": "getInterestScheduleDetails",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": "http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/AA24137G4LQS/loanDetails"
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Date",
+							"value": "Mon, 12 May 2025 11:54:13 GMT"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Transfer-Encoding",
+							"value": "chunked"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						},
+						{
+							"key": "Cache-Control",
+							"value": "no-store"
+						},
+						{
+							"key": "X-Permitted-Cross-Domain-Policies",
+							"value": "master-only"
+						},
+						{
+							"key": "Access-Control-Allow-Headers",
+							"value": "Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers"
+						},
+						{
+							"key": "X-XSS-Protection",
+							"value": "1; mode=block"
+						},
+						{
+							"key": "X-Frame-Options",
+							"value": "SAMEORIGIN"
+						},
+						{
+							"key": "Content-Security-Policy",
+							"value": "default-src 'self'"
+						},
+						{
+							"key": "Access-Control-Allow-Origin",
+							"value": "*"
+						},
+						{
+							"key": "X-Content-Type-Options",
+							"value": "nosniff"
+						},
+						{
+							"key": "Strict-Transport-Security",
+							"value": "max-age=31536000; includeSubDomains"
+						},
+						{
+							"key": "Access-Control-Allow-Methods",
+							"value": "GET, HEAD, POST, PUT, DELETE, TRACE, OPTIONS, CONNECT, PATCH"
+						},
+						{
+							"key": "Access-Control-Max-Age",
+							"value": "3600"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"header\": {\n        \"audit\": {\n            \"T24_time\": 34721,\n            \"responseParse_time\": 22,\n            \"requestParse_time\": 106\n        },\n        \"page_start\": 1,\n        \"page_token\": \"202405169564642819.00,99\",\n        \"total_size\": 1,\n        \"page_size\": 99,\n        \"status\": \"success\"\n    },\n    \"body\": [\n        {\n            \"arrangementId\": \"AA24137G4LQS\",\n            \"nextPaymentDate\": \"16 JUN 2024\",\n            \"paidScheduleCount\": \"0\",\n            \"futureScheduleCount\": \"12\",\n            \"coolingOffDate\": \"23 MAY 2024\",\n            \"dueScheduleCount\": \"0\",\n            \"maturesIn\": \"1 Years\",\n            \"maturityDate\": \"16 MAY 2025\",\n            \"schedules\": [\n                {\n                    \"schedulePaymentType\": \"Constant Repayment\",\n                    \"schedulePaymentMethod\": \"Due\",\n                    \"scheduleProperty\": \"Account\",\n                    \"schedulePaymentAmount\": 1730.82,\n                    \"schedulePaymentFrequency\": \"Monthly\"\n                },\n                {\n                    \"scheduleProperty\": \"Principal Interest\"\n                }\n            ],\n            \"lastPayment\": \"16 MAY 2025\",\n            \"term\": \"1 Years\",\n            \"currencyId\": \"USD\",\n            \"interests\": [\n                {\n                    \"interestRate\": \"7% (Fixed Dep Rate  + 0.5%)\",\n                    \"rateType\": \"Variable\",\n                    \"tierType\": \"SINGLE\",\n                    \"interestProperty\": \"PRINCIPALINT\",\n                    \"effectiveRate\": \"7%\",\n                    \"interestPropertyName\": \"Principal Interest\"\n                },\n                {\n                    \"interestRate\": \"7.75% (Prime Rate  + 3.5%)\",\n                    \"rateType\": \"Variable\",\n                    \"tierType\": \"SINGLE\",\n                    \"interestProperty\": \"PENALTYINT\",\n                    \"effectiveRate\": \"7.75%\",\n                    \"interestPropertyName\": \"Penalty Interest\"\n                }\n            ],\n            \"startDate\": \"16 MAY 2024\",\n            \"nextPaymentAmount\": 865.25,\n            \"payoffRequest\": \"Y\"\n        }\n    ]\n}"
+				}
+			]
+		},
+		{
+			"name": "getCustomerArrangements",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": "http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v7.0.0/holdings/customers/100100/arrangements"
+			},
+			"response": [
+				{
+					"name": "getCustomerArrangements",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": "http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v7.0.0/holdings/customers/100100/arrangements"
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Date",
+							"value": "Mon, 12 May 2025 11:54:21 GMT"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Transfer-Encoding",
+							"value": "chunked"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						},
+						{
+							"key": "Cache-Control",
+							"value": "no-store"
+						},
+						{
+							"key": "X-Permitted-Cross-Domain-Policies",
+							"value": "master-only"
+						},
+						{
+							"key": "Access-Control-Allow-Headers",
+							"value": "Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers"
+						},
+						{
+							"key": "X-XSS-Protection",
+							"value": "1; mode=block"
+						},
+						{
+							"key": "X-Frame-Options",
+							"value": "SAMEORIGIN"
+						},
+						{
+							"key": "Content-Security-Policy",
+							"value": "default-src 'self'"
+						},
+						{
+							"key": "Access-Control-Allow-Origin",
+							"value": "*"
+						},
+						{
+							"key": "X-Content-Type-Options",
+							"value": "nosniff"
+						},
+						{
+							"key": "Strict-Transport-Security",
+							"value": "max-age=31536000; includeSubDomains"
+						},
+						{
+							"key": "Access-Control-Allow-Methods",
+							"value": "GET, HEAD, POST, PUT, DELETE, TRACE, OPTIONS, CONNECT, PATCH"
+						},
+						{
+							"key": "Access-Control-Max-Age",
+							"value": "3600"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"header\": {\n        \"audit\": {\n            \"T24_time\": 200,\n            \"responseParse_time\": 5,\n            \"requestParse_time\": 123\n        },\n        \"page_start\": 1,\n        \"page_token\": \"202405169564642861.00,99\",\n        \"total_size\": 1,\n        \"page_size\": 99,\n        \"status\": \"success\"\n    },\n    \"body\": [\n        {\n            \"customerId\": \"100100\",\n            \"productLines\": [\n                {\n                    \"productLine\": \"Relationship Pricing\",\n                    \"productGroupIds\": [\n                        {\n                            \"arrangementId\": \"AA24107RT7S3\",\n                            \"productGroupId\": \"Loyalty Products\",\n                            \"customerRole\": \"OWNER\"\n                        },\n                        {\n                            \"arrangementId\": \"AA24107H3XRG\",\n                            \"productGroupId\": \"Valued Customer\",\n                            \"customerRole\": \"OWNER\"\n                        }\n                    ]\n                },\n                {\n                    \"productLine\": \"Accounts\",\n                    \"productGroupIds\": [\n                        {\n                            \"arrangementId\": \"AA241100Z4RT\",\n                            \"productGroupId\": \"Current Accounts\",\n                            \"customerRole\": \"OWNER\"\n                        },\n                        {\n                            \"arrangementId\": \"AA24110MKWH3\",\n                            \"productGroupId\": \"Savings Accounts\",\n                            \"customerRole\": \"OWNER\"\n                        },\n                        {\n                            \"arrangementId\": \"AA241133HZ74\",\n                            \"productGroupId\": \"Current Accounts\",\n                            \"customerRole\": \"OWNER\"\n                        },\n                        {\n                            \"arrangementId\": \"AA24113N8HFQ\",\n                            \"productGroupId\": \"Current Accounts\",\n                            \"customerRole\": \"OWNER\"\n                        }\n                    ]\n                },\n                {\n                    \"productLine\": \"Lending\",\n                    \"productGroupIds\": [\n                        {\n                            \"arrangementId\": \"AA2411015NGX\",\n                            \"productGroupId\": \"Mortgages\",\n                            \"customerRole\": \"OWNER\"\n                        },\n                        {\n                            \"arrangementId\": \"AA24110R4FCP\",\n                            \"productGroupId\": \"Personal Loans\",\n                            \"customerRole\": \"OWNER\"\n                        },\n                        {\n                            \"arrangementId\": \"AA24110MSQY8\",\n                            \"productGroupId\": \"Profit Upfront Sale\",\n                            \"customerRole\": \"OWNER\"\n                        },\n                        {\n                            \"arrangementId\": \"AA24110584DD\",\n                            \"productGroupId\": \"Profit Upfront Sale\",\n                            \"customerRole\": \"OWNER\"\n                        },\n                        {\n                            \"arrangementId\": \"AA241107YSFR\",\n                            \"productGroupId\": \"Mortgages\",\n                            \"customerRole\": \"OWNER\"\n                        },\n                        {\n                            \"arrangementId\": \"AA241105FWLM\",\n                            \"productGroupId\": \"Mortgages\",\n                            \"customerRole\": \"OWNER\"\n                        },\n                        {\n                            \"arrangementId\": \"AA24110WBYN2\",\n                            \"productGroupId\": \"Mortgages\",\n                            \"customerRole\": \"OWNER\"\n                        },\n                        {\n                            \"arrangementId\": \"AA24110C5461\",\n                            \"productGroupId\": \"Mortgages\",\n                            \"customerRole\": \"OWNER\"\n                        },\n                        {\n                            \"arrangementId\": \"AA241106H4MG\",\n                            \"productGroupId\": \"Mortgages\",\n                            \"customerRole\": \"OWNER\"\n                        },\n                        {\n                            \"arrangementId\": \"AA241132LKM4\",\n                            \"productGroupId\": \"Mortgages\",\n                            \"customerRole\": \"OWNER\"\n                        },\n                        {\n                            \"arrangementId\": \"AA24137KCTZX\",\n                            \"productGroupId\": \"Personal Loans\",\n                            \"customerRole\": \"OWNER\"\n                        },\n                        {\n                            \"arrangementId\": \"AA24137VP5P4\",\n                            \"productGroupId\": \"Personal Loans\",\n                            \"customerRole\": \"OWNER\"\n                        },\n                        {\n                            \"arrangementId\": \"AA24137914S7\",\n                            \"productGroupId\": \"Consumer Loans\",\n                            \"customerRole\": \"OWNER\"\n                        },\n                        {\n                            \"arrangementId\": \"AA24137GY80F\",\n                            \"productGroupId\": \"Personal Loans\",\n                            \"customerRole\": \"OWNER\"\n                        },\n                        {\n                            \"arrangementId\": \"AA24137RCWCD\",\n                            \"productGroupId\": \"Personal Loans\",\n                            \"customerRole\": \"OWNER\"\n                        },\n                        {\n                            \"arrangementId\": \"AA2413796VHW\",\n                            \"productGroupId\": \"Personal Loans\",\n                            \"customerRole\": \"OWNER\"\n                        },\n                        {\n                            \"arrangementId\": \"AA241374KR11\",\n                            \"productGroupId\": \"Personal Loans\",\n                            \"customerRole\": \"OWNER\"\n                        },\n                        {\n                            \"arrangementId\": \"AA241374B6XT\",\n                            \"productGroupId\": \"Personal Loans\",\n                            \"customerRole\": \"OWNER\"\n                        },\n                        {\n                            \"arrangementId\": \"AA24137YMX9H\",\n                            \"productGroupId\": \"Personal Loans\",\n                            \"customerRole\": \"OWNER\"\n                        },\n                        {\n                            \"arrangementId\": \"AA24137G4LQS\",\n                            \"productGroupId\": \"Personal Loans\",\n                            \"customerRole\": \"OWNER\"\n                        }\n                    ]\n                },\n                {\n                    \"productLine\": \"Insurance - External Product\",\n                    \"productGroupIds\": [\n                        {\n                            \"arrangementId\": \"AA24110LY598\",\n                            \"productGroupId\": \"Home Owner Insurance\",\n                            \"customerRole\": \"OWNER\"\n                        }\n                    ]\n                },\n                {\n                    \"productLine\": \"Multi Currency Account\",\n                    \"productGroupIds\": [\n                        {\n                            \"arrangementId\": \"AA24113LF69Q\",\n                            \"productGroupId\": \"Multi Currency Accounts\",\n                            \"customerRole\": \"OWNER\"\n                        }\n                    ]\n                }\n            ]\n        }\n    ]\n}"
+				}
+			]
+		},
+		{
+			"name": "getBalanceDetails",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/balances?arrangementId=AA24137G4LQS",
+					"protocol": "http",
+					"host": [
+						"lendings-sandbox",
+						"northeurope",
+						"cloudapp",
+						"azure",
+						"com"
+					],
+					"path": [
+						"irf-TBC-lending-container",
+						"api",
+						"v8.0.0",
+						"holdings",
+						"loans",
+						"balances"
+					],
+					"query": [
+						{
+							"key": "arrangementId",
+							"value": "AA24137G4LQS"
+						}
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "getBalanceDetails",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/balances?arrangementId=AA24137G4LQS",
+							"protocol": "http",
+							"host": [
+								"lendings-sandbox",
+								"northeurope",
+								"cloudapp",
+								"azure",
+								"com"
+							],
+							"path": [
+								"irf-TBC-lending-container",
+								"api",
+								"v8.0.0",
+								"holdings",
+								"loans",
+								"balances"
+							],
+							"query": [
+								{
+									"key": "arrangementId",
+									"value": "AA24137G4LQS"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Date",
+							"value": "Mon, 12 May 2025 12:57:38 GMT"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Transfer-Encoding",
+							"value": "chunked"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						},
+						{
+							"key": "Cache-Control",
+							"value": "no-store"
+						},
+						{
+							"key": "X-Permitted-Cross-Domain-Policies",
+							"value": "master-only"
+						},
+						{
+							"key": "Access-Control-Allow-Headers",
+							"value": "Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers"
+						},
+						{
+							"key": "X-XSS-Protection",
+							"value": "1; mode=block"
+						},
+						{
+							"key": "X-Frame-Options",
+							"value": "SAMEORIGIN"
+						},
+						{
+							"key": "Content-Security-Policy",
+							"value": "default-src 'self'"
+						},
+						{
+							"key": "Access-Control-Allow-Origin",
+							"value": "*"
+						},
+						{
+							"key": "X-Content-Type-Options",
+							"value": "nosniff"
+						},
+						{
+							"key": "Strict-Transport-Security",
+							"value": "max-age=31536000; includeSubDomains"
+						},
+						{
+							"key": "Access-Control-Allow-Methods",
+							"value": "GET, HEAD, POST, PUT, DELETE, TRACE, OPTIONS, CONNECT, PATCH"
+						},
+						{
+							"key": "Access-Control-Max-Age",
+							"value": "3600"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"header\": {\n        \"audit\": {\n            \"T24_time\": 29829,\n            \"responseParse_time\": 2,\n            \"requestParse_time\": 612\n        },\n        \"page_start\": 1,\n        \"page_token\": \"202405169564646628.00,99\",\n        \"total_size\": 1,\n        \"page_size\": 99,\n        \"status\": \"success\"\n    },\n    \"body\": [\n        {\n            \"arrangementId\": \"AA24137G4LQS\",\n            \"arrangementStatus\": \"CURRENT\",\n            \"loanInterestRate\": \"7\",\n            \"loanStartDate\": \"2024-05-16\",\n            \"roleDisplayName\": \"Beneficial Owner\",\n            \"loanAmount\": 20000,\n            \"loanInterestType\": \"Single\",\n            \"productName\": \"Personal Loan\",\n            \"loanBalance\": -10000,\n            \"loanNextPayDate\": \"2024-06-16\",\n            \"availableBalance\": -10000,\n            \"customerShortName\": \"Harry Crisp\",\n            \"loanProduct\": \"PERSONAL.LOAN\",\n            \"loanAccountId\": \"124214\",\n            \"loanCurrency\": \"USD\",\n            \"loanEndDate\": \"2025-05-16\"\n        }\n    ]\n}"
+				}
+			]
+		}
+	]
+}

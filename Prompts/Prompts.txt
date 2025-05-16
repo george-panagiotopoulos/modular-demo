@@ -1,0 +1,2 @@
+#001
+I want to design a demo user agent for our new Architecture, called modular banking. The goal of the application is to show the business functionality to the business users of the bank we are selling to. At the same time we want to show to the technical users of the bank the underlying architecture. The goal of the demonstration is to show to the business users that the functionality/user experience remains the same - however the underlying technology architecture is 

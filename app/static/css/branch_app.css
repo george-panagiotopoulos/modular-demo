@@ -1,0 +1,49 @@
+/* Branch App specific styles */
+
+/* Tailwind handles most layout and component styling */
+
+/* Add specific overrides or non-Tailwind styles if needed */
+
+/* Example: Style for the sidebar if needed beyond Tailwind */
+/* aside {
+    background-color: #2d3748; 
+} */
+
+/* Example: Ensure scrollbar looks okay if default is bad */
+main::-webkit-scrollbar {
+  width: 8px;
+}
+main::-webkit-scrollbar-thumb {
+  background-color: #a0aec0; /* Tailwind gray-500 */
+  border-radius: 4px;
+}
+main::-webkit-scrollbar-track {
+  background-color: #edf2f7; /* Tailwind gray-200 */
+}
+
+/* Helper to quickly show/hide elements */
+.hidden {
+  display: none;
+}
+
+#branch-app-content { /* If using ID from old template */
+    /* Add specific styles if needed */
+}
+
+/* Reusing common card style from mobile_app.css or a shared file */
+/* If not shared, copy .card and .api-result styles here */
+.card {
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 20px;
+    background-color: #f9f9f9;
+}
+
+.api-result {
+    margin-top: 10px;
+    padding: 10px;
+    border: 1px dashed #ccc;
+    background-color: #f0f8ff; /* Light blue background */
+    min-height: 30px;
+} 

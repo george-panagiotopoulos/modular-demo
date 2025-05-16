@@ -1,0 +1,85 @@
+@startuml
+!theme plain
+
+' Actors
+actor "Bank Customer" as customer
+actor "Back-office Employee" as employee
+
+' Systems
+participant "Deposits\n(R25)" as deposits
+participant "Lending\n(R24)" as lending
+participant "Holdings\n(R25)" as holdings
+participant "Party\n(R24)" as party
+participant "Adapter\n(R25)" as adapter
+participant "Pricing\n(R24)" as pricing
+participant "Product Manager\n(R25)" as productMgr
+participant "Product and Marketing\nCatalogue (R25)" as catalogue
+database "Event Store\n(R25)" as eventStore
+queue "Kafka" as kafka
+
+customer -> deposits: Create new Current Account contract
+activate deposits
+deposits -> party: Verify customer details
+party --> deposits: Customer verified
+deposits --> customer: Current Account created successfully
+deactivate deposits
+note right of customer: Step 1: Current Account created
+
+customer -> deposits: Create new Term Deposit contract
+activate deposits
+deposits -> party: Verify customer details
+party --> deposits: Customer verified  
+deposits --> customer: Term Deposit created successfully
+deactivate deposits
+note right of customer: Step 2: Term Deposit created
+
+customer -> lending: Create new Consumer Loan
+activate lending
+lending -> party: Verify customer details
+party --> lending: Customer verified
+lending -> pricing: Get loan pricing details
+pricing --> lending: Pricing details returned
+lending --> customer: Consumer Loan created successfully
+deactivate lending
+note right of customer: Step 3: Consumer Loan created
+
+employee -> lending: Trigger loan disbursement
+activate lending
+note right of lending: Step 4: Bank employee \ntriggers disbursement
+
+lending -> eventStore: Emit loan disbursement event
+note right of lending: Step 5: Disbursement \nevent emitted
+deactivate lending
+
+activate eventStore
+eventStore -> kafka: Write disbursement event to topic
+note right of eventStore: Step 6: Event written to Kafka
+deactivate eventStore
+
+activate kafka
+kafka -> adapter: Consume disbursement event
+deactivate kafka
+activate adapter
+adapter -> deposits: Call credit API to move money to Current Account
+note right of adapter: Step 7: Adapter converts event \nto Current Account credit API
+deactivate adapter
+
+activate deposits
+deposits -> deposits: Update Current Account balance
+note right of deposits: Step 8: Funds credited \nto Current Account
+deposits --> lending: Acknowledge successful transfer
+deactivate deposits
+
+activate lending
+lending -> lending: Update loan balance and status
+note right of lending: Step 9: Loan balance updated \nand status set to "disbursed"
+deactivate lending
+
+customer -> deposits: Transfer funds from Current Account to Term Deposit
+activate deposits
+deposits -> deposits: Process internal transfer
+deposits --> customer: Transfer completed successfully
+deactivate deposits
+note right of customer: Step 10: Customer moves part of loan \nfunds to Term Deposit for 3 months
+
+@enduml
