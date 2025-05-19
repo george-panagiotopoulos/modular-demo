@@ -1,0 +1,183 @@
+<div class="headless-v2-container flex flex-col h-full p-4 gap-4 bg-gray-50">
+    <div class="flex justify-between items-center mb-2">
+        <h2 class="text-xl font-bold text-teal-800">Demo Sequence Diagram</h2>
+        <button id="toggle-diagram" class="px-3 py-1 bg-teal-600 text-white rounded hover:bg-teal-700 text-sm">
+            Hide Diagram
+        </button>
+    </div>
+    
+    <!-- Sequence Diagram Display -->
+    <div id="diagram-container" class="flex justify-center mb-4">
+        <img src="/static/images/sequence_diagram.png" alt="Sequence Diagram" class="border border-gray-300 shadow-sm rounded" />
+    </div>
+    
+    <!-- Three-column layout for architecture-based API views -->
+    <div class="flex flex-row space-x-4 h-full">
+        <!-- Party/Customer Column -->
+        <div class="flex-1 flex flex-col bg-white border border-teal-300 rounded-lg shadow overflow-hidden">
+            <div class="bg-teal-700 text-white p-2 font-semibold">
+                Party/Customer - R24 (proxy microservice)
+            </div>
+            <!-- API Call Section -->
+            <div class="p-3 flex flex-col h-full overflow-y-auto">
+                <div class="mb-2 border-b border-teal-200 pb-1">
+                    <span class="text-sm font-medium text-teal-800">HTTP Method:</span>
+                    <select id="party-method" class="ml-2 text-sm rounded border-gray-300 focus:border-teal-500 focus:ring-teal-500">
+                        <option>GET</option>
+                        <option>POST</option>
+                        <option>PUT</option>
+                        <option>DELETE</option>
+                    </select>
+                </div>
+                
+                <div class="mb-2 border-b border-teal-200 pb-1">
+                    <span class="text-sm font-medium text-teal-800">API:</span>
+                    <select id="party-endpoint" class="ml-2 text-sm rounded border-gray-300 focus:border-teal-500 focus:ring-teal-500">
+                        <option value="custom">Custom URI</option>
+                        <option value="createCustomer">Create Customer</option>
+                    </select>
+                </div>
+                
+                <div class="mb-2 border-b border-teal-200 pb-1">
+                    <span class="text-sm font-medium text-teal-800">URI:</span>
+                    <input type="text" id="party-uri" placeholder="/api/resource" class="w-full mt-1 text-sm rounded border-gray-300 focus:border-teal-500 focus:ring-teal-500">
+                </div>
+                
+                <div class="flex flex-col mb-2">
+                    <label class="text-sm font-medium text-teal-800 mb-1">Request Payload:</label>
+                    <textarea id="party-request-payload" class="h-28 min-h-[80px] text-xs font-mono p-2 rounded border-gray-300 focus:border-teal-500 focus:ring-teal-500 resize-y"></textarea>
+                </div>
+                
+                <div class="flex flex-col mb-2">
+                    <label class="text-sm font-medium text-teal-800 mb-1">Response:</label>
+                    <textarea id="party-response" readonly class="h-28 min-h-[80px] text-xs font-mono p-2 rounded border-gray-300 bg-gray-50 resize-y"></textarea>
+                </div>
+                
+                <button id="party-send" class="px-3 py-1 bg-teal-600 text-white rounded hover:bg-teal-700 text-sm self-start">Send Request</button>
+                
+                <!-- Events Section -->
+                <div class="mt-4 border-t border-teal-200 pt-2">
+                    <div class="flex justify-between items-center mb-2">
+                        <h4 class="text-sm font-semibold text-teal-800">Events:</h4>
+                        <button id="party-connect" class="px-2 py-0.5 bg-teal-600 text-white rounded text-xs">Connect</button>
+                    </div>
+                    <div id="party-events" class="h-40 min-h-[120px] overflow-y-auto bg-gray-50 p-2 rounded border border-gray-200 text-xs font-mono resize-y">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Deposits/Accounts Column -->
+        <div class="flex-1 flex flex-col bg-white border border-teal-300 rounded-lg shadow overflow-hidden">
+            <div class="bg-teal-700 text-white p-2 font-semibold">
+                Deposits/Accounts Module R25
+            </div>
+            <!-- API Call Section -->
+            <div class="p-3 flex flex-col h-full overflow-y-auto">
+                <div class="mb-2 border-b border-teal-200 pb-1">
+                    <span class="text-sm font-medium text-teal-800">HTTP Method:</span>
+                    <select id="deposits-method" class="ml-2 text-sm rounded border-gray-300 focus:border-teal-500 focus:ring-teal-500">
+                        <option>GET</option>
+                        <option>POST</option>
+                        <option>PUT</option>
+                        <option>DELETE</option>
+                    </select>
+                </div>
+                
+                <div class="mb-2 border-b border-teal-200 pb-1">
+                    <span class="text-sm font-medium text-teal-800">API:</span>
+                    <select id="deposits-endpoint" class="ml-2 text-sm rounded border-gray-300 focus:border-teal-500 focus:ring-teal-500">
+                        <option value="custom">Custom URI</option>
+                        <option value="createCurrentAccount">Create Current Account</option>
+                        <option value="getAccountBalance">Get Account Balance</option>
+                        <option value="getPartyArrangements">Get Party Arrangements</option>
+                    </select>
+                </div>
+                
+                <div class="mb-2 border-b border-teal-200 pb-1">
+                    <span class="text-sm font-medium text-teal-800">URI:</span>
+                    <input type="text" id="deposits-uri" placeholder="/api/resource" class="w-full mt-1 text-sm rounded border-gray-300 focus:border-teal-500 focus:ring-teal-500">
+                </div>
+                
+                <div class="flex flex-col mb-2">
+                    <label class="text-sm font-medium text-teal-800 mb-1">Request Payload:</label>
+                    <textarea id="deposits-request-payload" class="h-28 min-h-[80px] text-xs font-mono p-2 rounded border-gray-300 focus:border-teal-500 focus:ring-teal-500 resize-y"></textarea>
+                </div>
+                
+                <div class="flex flex-col mb-2">
+                    <label class="text-sm font-medium text-teal-800 mb-1">Response:</label>
+                    <textarea id="deposits-response" readonly class="h-28 min-h-[80px] text-xs font-mono p-2 rounded border-gray-300 bg-gray-50 resize-y"></textarea>
+                </div>
+                
+                <button id="deposits-send" class="px-3 py-1 bg-teal-600 text-white rounded hover:bg-teal-700 text-sm self-start">Send Request</button>
+                
+                <!-- Events Section -->
+                <div class="mt-4 border-t border-teal-200 pt-2">
+                    <div class="flex justify-between items-center mb-2">
+                        <h4 class="text-sm font-semibold text-teal-800">Events:</h4>
+                        <button id="deposits-connect" class="px-2 py-0.5 bg-teal-600 text-white rounded text-xs">Connect</button>
+                    </div>
+                    <div id="deposits-events" class="h-40 min-h-[120px] overflow-y-auto bg-gray-50 p-2 rounded border border-gray-200 text-xs font-mono resize-y">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Lending Column -->
+        <div class="flex-1 flex flex-col bg-white border border-teal-300 rounded-lg shadow overflow-hidden">
+            <div class="bg-teal-700 text-white p-2 font-semibold">
+                Lending Module R24
+            </div>
+            <!-- API Call Section -->
+            <div class="p-3 flex flex-col h-full overflow-y-auto">
+                <div class="mb-2 border-b border-teal-200 pb-1">
+                    <span class="text-sm font-medium text-teal-800">HTTP Method:</span>
+                    <select id="lending-method" class="ml-2 text-sm rounded border-gray-300 focus:border-teal-500 focus:ring-teal-500">
+                        <option>GET</option>
+                        <option>POST</option>
+                        <option>PUT</option>
+                        <option>DELETE</option>
+                    </select>
+                </div>
+                
+                <div class="mb-2 border-b border-teal-200 pb-1">
+                    <span class="text-sm font-medium text-teal-800">API:</span>
+                    <select id="lending-endpoint" class="ml-2 text-sm rounded border-gray-300 focus:border-teal-500 focus:ring-teal-500">
+                        <option value="custom">Custom URI</option>
+                        <option value="createLoan">Create Loan</option>
+                        <option value="disburseLoan">Disburse Loan</option>
+                        <option value="schedules">Loan Schedules</option>
+                        <option value="status">Loan Status</option>
+                    </select>
+                </div>
+                
+                <div class="mb-2 border-b border-teal-200 pb-1">
+                    <span class="text-sm font-medium text-teal-800">URI:</span>
+                    <input type="text" id="lending-uri" placeholder="/api/resource" class="w-full mt-1 text-sm rounded border-gray-300 focus:border-teal-500 focus:ring-teal-500">
+                </div>
+                
+                <div class="flex flex-col mb-2">
+                    <label class="text-sm font-medium text-teal-800 mb-1">Request Payload:</label>
+                    <textarea id="lending-request-payload" class="h-28 min-h-[80px] text-xs font-mono p-2 rounded border-gray-300 focus:border-teal-500 focus:ring-teal-500 resize-y"></textarea>
+                </div>
+                
+                <div class="flex flex-col mb-2">
+                    <label class="text-sm font-medium text-teal-800 mb-1">Response:</label>
+                    <textarea id="lending-response" readonly class="h-28 min-h-[80px] text-xs font-mono p-2 rounded border-gray-300 bg-gray-50 resize-y"></textarea>
+                </div>
+                
+                <button id="lending-send" class="px-3 py-1 bg-teal-600 text-white rounded hover:bg-teal-700 text-sm self-start">Send Request</button>
+                
+                <!-- Events Section -->
+                <div class="mt-4 border-t border-teal-200 pt-2">
+                    <div class="flex justify-between items-center mb-2">
+                        <h4 class="text-sm font-semibold text-teal-800">Events:</h4>
+                        <button id="lending-connect" class="px-2 py-0.5 bg-teal-600 text-white rounded text-xs">Connect</button>
+                    </div>
+                    <div id="lending-events" class="h-40 min-h-[120px] overflow-y-auto bg-gray-50 p-2 rounded border border-gray-200 text-xs font-mono resize-y">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> 

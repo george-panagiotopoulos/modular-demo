@@ -1,4 +1,4 @@
-from flask import render_template, jsonify, current_app, url_for, abort, request
+from flask import render_template, jsonify, current_app, url_for, abort, request, Response, stream_with_context
 from . import main_bp
 import os
 import datetime
@@ -6,6 +6,8 @@ import uuid
 import requests
 import json
 from collections import deque
+from confluent_kafka import Consumer, KafkaException, TopicPartition
+import time
 # from app.utils import load_stub_data, save_stub_data # No longer needed
 
 # Store last 10 API calls for headless tab
@@ -16,6 +18,19 @@ PARTY_API_BASE_URI = "http://modulardemo.northeurope.cloudapp.azure.com/ms-party
 LOAN_API_BASE_URI = "http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/consumerLoans"
 LOAN_STATUS_API_URI_TEMPLATE = "http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/{loan_id}/status"
 LOAN_SCHEDULES_API_URI_TEMPLATE = "http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/{loan_id}/schedules"
+
+# Additional API endpoints from Demoflow.py
+CURRENT_ACCOUNT_API_URI = "http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v2.0.0/holdings/accounts/currentAccounts"
+ACCOUNT_BALANCE_API_URI_TEMPLATE = "http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v2.0.0/holdings/accounts/{account_reference}/balances"
+PARTY_ARRANGEMENTS_API_URI_TEMPLATE = "http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v1.0.0/holdings/parties/{party_id}/arrangements"
+LOAN_BALANCES_API_URI_TEMPLATE = "http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/balances?arrangementId={arrangement_id}"
+
+# Kafka/Event Hub constants and topics
+KAFKA_TOPICS = {
+    'party': 'ms-party-outbox',
+    'deposits': 'deposits-event-topic',
+    'lending': 'lending-event-topic'
+}
 
 def track_api_call(uri, method, params=None, payload=None, response=None, error=None):
     """Records an API call for the headless tab to display"""
@@ -28,12 +43,40 @@ def track_api_call(uri, method, params=None, payload=None, response=None, error=
     
     if payload:
         api_call["payload"] = payload
+    
+    # If no response is provided and it's a headless call, try to make the actual API call
+    if response is None and error is None and (uri.startswith('http://') or uri.startswith('https://')):
+        try:
+            headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+            
+            if method == 'GET':
+                resp = requests.get(uri, headers=headers, params=params)
+            elif method == 'POST':
+                resp = requests.post(uri, headers=headers, json=payload)
+            elif method == 'PUT':
+                resp = requests.put(uri, headers=headers, json=payload)
+            elif method == 'DELETE':
+                resp = requests.delete(uri, headers=headers)
+            else:
+                raise ValueError(f"Unsupported method: {method}")
+            
+            api_call["status"] = resp.status_code
+            
+            try:
+                api_call["response"] = resp.json()
+            except:
+                api_call["response"] = {"text": resp.text, "status": resp.status_code}
         
-    if response:
+        except Exception as e:
+            api_call["error"] = {"message": str(e), "status": 500}
+            api_call["status"] = 500
+    
+    # Use provided response/error if available
+    elif response:
         api_call["response"] = response
         api_call["status"] = 200
     
-    if error:
+    elif error:
         api_call["error"] = error
         api_call["status"] = error.get("status", 500)
     
@@ -62,6 +105,11 @@ def tab_branch():
 def tab_headless():
     """Renders the headless tab HTML fragment."""
     return render_template('headless.html')
+
+@main_bp.route('/tab/headless-v2')
+def tab_headless_v2():
+    """Renders the headless v2 tab HTML fragment with architecture focus."""
+    return render_template('headless_v2.html')
 
 @main_bp.route('/tab/architecture')
 def tab_architecture():
@@ -92,9 +140,14 @@ def track_headless_api_call():
     method = data.get('method', 'GET')
     payload = data.get('payload')
     response = data.get('response')
+    domain = data.get('domain')  # Add domain tracking
     
     # Use the existing track_api_call function to record it
     api_call = track_api_call(uri, method, payload=payload, response=response)
+    
+    # Add domain info if provided
+    if domain:
+        api_call['domain'] = domain
     
     return jsonify({"status": "success", "message": "API call tracked", "api_call": api_call})
 
@@ -513,15 +566,29 @@ def get_branch_customers():
             # Format the parties data for the branch app
             customers = []
             
-            # Add the current hardcoded customer if it's not already in the list
-            current_customer = {
+            # Add the default hardcoded customer if it's not already in the list
+            default_customer = {
                 "customerId": "2513655771", 
                 "firstName": "David",
                 "lastName": "Jones",
                 "dateOfBirth": "1985-03-21",
                 "status": "Active"
             }
-            customers.append(current_customer)
+            customers.append(default_customer)
+            
+            # Also check for a party ID from the mobile app params
+            mobile_party_id = request.args.get('mobilePartyId')
+            if mobile_party_id and mobile_party_id != default_customer["customerId"]:
+                # Add the mobile party ID as a customer if it's different
+                print(f"Adding mobile party ID to customer list: {mobile_party_id}")
+                mobile_customer = {
+                    "customerId": mobile_party_id,
+                    "firstName": "Customer",
+                    "lastName": f"ID: {mobile_party_id}",
+                    "dateOfBirth": "",
+                    "status": "Active"
+                }
+                customers.append(mobile_customer)
             
             # Add parties from the API
             for party in parties:
@@ -533,7 +600,7 @@ def get_branch_customers():
                     "status": "Active"  # Default status
                 }
                 # Only add if not the same as current customer
-                if customer["customerId"] != current_customer["customerId"]:
+                if customer["customerId"] != default_customer["customerId"] and (not mobile_party_id or customer["customerId"] != mobile_party_id):
                     customers.append(customer)
             
             # Track the successful API call
@@ -543,6 +610,27 @@ def get_branch_customers():
         else:
             error = {"status": response.status_code, "message": f"Failed to fetch parties: {response.text}"}
             track_api_call(api_url, "GET", error=error)
+            
+            # Check for mobile party ID even if API fails
+            mobile_party_id = request.args.get('mobilePartyId')
+            if mobile_party_id and mobile_party_id != "2513655771":
+                return jsonify([
+                    {
+                        "customerId": "2513655771", 
+                        "firstName": "David",
+                        "lastName": "Jones",
+                        "dateOfBirth": "1985-03-21",
+                        "status": "Active"
+                    },
+                    {
+                        "customerId": mobile_party_id,
+                        "firstName": "Customer",
+                        "lastName": f"ID: {mobile_party_id}",
+                        "dateOfBirth": "",
+                        "status": "Active"
+                    }
+                ])
+            
             # Return hardcoded customer as fallback
             return jsonify([{
                 "customerId": "2513655771", 
@@ -553,6 +641,27 @@ def get_branch_customers():
             }])
     except Exception as e:
         print(f"ERROR: Failed to fetch parties: {str(e)}")
+        
+        # Check for mobile party ID even if exception occurs
+        mobile_party_id = request.args.get('mobilePartyId')
+        if mobile_party_id and mobile_party_id != "2513655771":
+            return jsonify([
+                {
+                    "customerId": "2513655771", 
+                    "firstName": "David",
+                    "lastName": "Jones",
+                    "dateOfBirth": "1985-03-21",
+                    "status": "Active"
+                },
+                {
+                    "customerId": mobile_party_id,
+                    "firstName": "Customer",
+                    "lastName": f"ID: {mobile_party_id}",
+                    "dateOfBirth": "",
+                    "status": "Active"
+                }
+            ])
+        
         # Return hardcoded customer as fallback
         return jsonify([{
             "customerId": "2513655771", 
@@ -1062,4 +1171,400 @@ def branch_customer_search():
 @main_bp.route('/branch/activity/recent')
 def branch_recent_activity():
     # Simulate fetching recent branch activity
-    return "<ul><li>User 'branch_user1' logged in.</li><li>Customer search performed for ID 'cust999'.</li><li>Account details viewed for 'cust999'.</li></ul>" 
+    return "<ul><li>User 'branch_user1' logged in.</li><li>Customer search performed for ID 'cust999'.</li><li>Account details viewed for 'cust999'.</li></ul>"
+
+@main_bp.route('/api/mobile/party/<string:party_id>/arrangements')
+def get_mobile_party_arrangements(party_id):
+    """Provides all arrangements for a specific party on the mobile app."""
+    uri = PARTY_ARRANGEMENTS_API_URI_TEMPLATE.format(party_id=party_id)
+    
+    print(f"Making real API call to fetch arrangements for party: {party_id}")
+    
+    try:
+        # Make the actual API call
+        response = requests.get(
+            uri,
+            headers={"Accept": "application/json"}
+        )
+        
+        # Process the response
+        if response.status_code == 200:
+            try:
+                response_data = response.json()
+                
+                # Track the successful API call
+                track_api_call(uri, "GET", response=response_data)
+                
+                return jsonify(response_data)
+            except json.JSONDecodeError:
+                error_msg = {"status": response.status_code, "message": "Failed to decode API response"}
+                track_api_call(uri, "GET", error=error_msg)
+                return jsonify({"error": "Failed to decode API response"}), 500
+        else:
+            error_msg = {"status": response.status_code, "message": f"API Error: {response.text}"}
+            track_api_call(uri, "GET", error=error_msg)
+            return jsonify({"error": f"API Error: {response.status_code}"}), response.status_code
+    except requests.exceptions.RequestException as e:
+        error_msg = {"status": 500, "message": str(e)}
+        track_api_call(uri, "GET", error=error_msg)
+        return jsonify({"error": str(e)}), 500
+
+@main_bp.route('/api/mobile/accounts/<string:account_id>/balances')
+def get_mobile_account_balances(account_id):
+    """Provides balance details for a specific account for the mobile app."""
+    uri = ACCOUNT_BALANCE_API_URI_TEMPLATE.format(account_reference=account_id)
+    
+    print(f"Making real API call to fetch balance for account: {account_id}")
+    
+    try:
+        # Make the actual API call
+        response = requests.get(
+            uri,
+            headers={"Accept": "application/json"}
+        )
+        
+        # Process the response
+        if response.status_code == 200:
+            try:
+                response_data = response.json()
+                
+                # Track the successful API call
+                track_api_call(uri, "GET", response=response_data)
+                
+                return jsonify(response_data)
+            except json.JSONDecodeError:
+                error_msg = {"status": response.status_code, "message": "Failed to decode API response"}
+                track_api_call(uri, "GET", error=error_msg)
+                return jsonify({"error": "Failed to decode API response"}), 500
+        else:
+            error_msg = {"status": response.status_code, "message": f"API Error: {response.text}"}
+            track_api_call(uri, "GET", error=error_msg)
+            return jsonify({"error": f"API Error: {response.status_code}"}), response.status_code
+    except requests.exceptions.RequestException as e:
+        error_msg = {"status": 500, "message": str(e)}
+        track_api_call(uri, "GET", error=error_msg)
+        return jsonify({"error": str(e)}), 500
+
+@main_bp.route('/api/branch/party/<string:party_id>/arrangements')
+def get_branch_party_arrangements(party_id):
+    """Provides all arrangements for a specific party on the branch app."""
+    uri = PARTY_ARRANGEMENTS_API_URI_TEMPLATE.format(party_id=party_id)
+    
+    print(f"Making real API call to fetch arrangements for party: {party_id}")
+    
+    try:
+        # Make the actual API call
+        response = requests.get(
+            uri,
+            headers={"Accept": "application/json"}
+        )
+        
+        # Process the response
+        if response.status_code == 200:
+            try:
+                response_data = response.json()
+                
+                # Track the successful API call
+                track_api_call(uri, "GET", response=response_data)
+                
+                return jsonify(response_data)
+            except json.JSONDecodeError:
+                error_msg = {"status": response.status_code, "message": "Failed to decode API response"}
+                track_api_call(uri, "GET", error=error_msg)
+                return jsonify({"error": "Failed to decode API response"}), 500
+        else:
+            error_msg = {"status": response.status_code, "message": f"API Error: {response.text}"}
+            track_api_call(uri, "GET", error=error_msg)
+            return jsonify({"error": f"API Error: {response.status_code}"}), response.status_code
+    except requests.exceptions.RequestException as e:
+        error_msg = {"status": 500, "message": str(e)}
+        track_api_call(uri, "GET", error=error_msg)
+        return jsonify({"error": str(e)}), 500
+
+@main_bp.route('/api/branch/accounts/<string:account_id>/balances')
+def get_branch_account_balances(account_id):
+    """Provides balance details for a specific account for the branch app."""
+    uri = ACCOUNT_BALANCE_API_URI_TEMPLATE.format(account_reference=account_id)
+    
+    print(f"Making real API call to fetch balance for account: {account_id}")
+    
+    try:
+        # Make the actual API call
+        response = requests.get(
+            uri,
+            headers={"Accept": "application/json"}
+        )
+        
+        # Process the response
+        if response.status_code == 200:
+            try:
+                response_data = response.json()
+                
+                # Track the successful API call
+                track_api_call(uri, "GET", response=response_data)
+                
+                return jsonify(response_data)
+            except json.JSONDecodeError:
+                error_msg = {"status": response.status_code, "message": "Failed to decode API response"}
+                track_api_call(uri, "GET", error=error_msg)
+                return jsonify({"error": "Failed to decode API response"}), 500
+        else:
+            error_msg = {"status": response.status_code, "message": f"API Error: {response.text}"}
+            track_api_call(uri, "GET", error=error_msg)
+            return jsonify({"error": f"API Error: {response.status_code}"}), response.status_code
+    except requests.exceptions.RequestException as e:
+        error_msg = {"status": 500, "message": str(e)}
+        track_api_call(uri, "GET", error=error_msg)
+        return jsonify({"error": str(e)}), 500
+
+@main_bp.route('/api/branch/loans/<string:loan_id>/balances')
+def get_branch_loan_balances(loan_id):
+    """Provides balance details for a specific loan in the branch app."""
+    try:
+        # Use the loan balances API to get detailed information
+        api_url = LOAN_BALANCES_API_URI_TEMPLATE.format(arrangement_id=loan_id)
+        
+        print(f"Fetching loan balances for loan ID {loan_id} from {api_url}")
+        
+        # Make the API call
+        response = requests.get(
+            api_url,
+            headers={"Accept": "application/json"}
+        )
+        
+        if response.status_code == 200:
+            loan_balances = response.json()
+            
+            # Track the successful API call
+            track_api_call(api_url, "GET", response=loan_balances)
+            
+            # Return the loan balances
+            return jsonify(loan_balances)
+        else:
+            error = {"status": response.status_code, "message": f"Failed to fetch loan balances: {response.text}"}
+            track_api_call(api_url, "GET", error=error)
+            
+            # Return empty response with error code
+            return jsonify({"error": f"Failed to fetch loan balances: {response.status_code}"}), response.status_code
+    except Exception as e:
+        print(f"ERROR: Failed to fetch loan balances for {loan_id}: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+def get_kafka_consumer():
+    """Create and return a configured Kafka consumer"""
+    # For Azure Event Hubs Kafka endpoint
+    bootstrap_servers = os.getenv("BOOTSTRAP_SERVERS")
+    connection_string = os.getenv("CONNECTION_STRING")
+    
+    sasl_username = "$ConnectionString"
+    sasl_password = connection_string
+    
+    # Configure Kafka consumer
+    conf = {
+        'bootstrap.servers': bootstrap_servers,
+        'security.protocol': 'SASL_SSL',
+        'sasl.mechanisms': 'PLAIN',
+        'sasl.username': sasl_username,
+        'sasl.password': sasl_password,
+        'group.id': f'headlessv2-{int(time.time())}',  # Unique group ID
+        'auto.offset.reset': 'earliest',
+        'client.id': 'headlessv2-client',
+        'enable.auto.commit': True,
+        'auto.commit.interval.ms': 5000
+    }
+    
+    return Consumer(conf)
+
+def format_kafka_event(msg):
+    """Format a Kafka message as a JSON object"""
+    result = {}
+    
+    # Add metadata
+    result["topic"] = msg.topic()
+    result["partition"] = msg.partition()
+    result["offset"] = msg.offset()
+    
+    # Add timestamp if available
+    if msg.timestamp()[0] != 0:  # 0 means no timestamp
+        result["timestamp"] = datetime.datetime.fromtimestamp(msg.timestamp()[1]/1000).strftime('%Y-%m-%d %H:%M:%S')
+    else:
+        result["timestamp"] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    
+    # Add key if available
+    if msg.key():
+        try:
+            result["key"] = msg.key().decode('utf-8')
+        except:
+            result["key"] = str(msg.key())
+    
+    # Add value/payload
+    try:
+        # Try to parse as JSON
+        result["payload"] = json.loads(msg.value().decode('utf-8'))
+    except:
+        # If not JSON, just add as string
+        try:
+            result["payload"] = msg.value().decode('utf-8')
+        except:
+            result["payload"] = f"<Binary data of length {len(msg.value())} bytes>"
+    
+    return result
+
+@main_bp.route('/api/headless-v2/events/<domain>')
+def stream_events(domain):
+    """Stream Kafka events for a specific domain using Server-Sent Events (SSE)"""
+    if domain not in KAFKA_TOPICS:
+        return jsonify({"error": f"Unknown domain: {domain}"}), 400
+    
+    topic_name = KAFKA_TOPICS[domain]
+    
+    def event_stream():
+        consumer = None
+        try:
+            # Send initial message
+            yield f"data: {json.dumps({'type': 'info', 'message': f'Connecting to {topic_name}...'})}\n\n"
+            
+            # Special handling for party domain due to performance issues
+            if domain == 'party':
+                yield f"data: {json.dumps({'type': 'info', 'message': 'Connected to party events (simplified mode)'})}\n\n"
+                
+                # Just provide status without attempting to load history for party domain
+                yield f"data: {json.dumps({'type': 'info', 'message': 'Party events streaming active...'})}\n\n"
+                
+                # Create consumer without loading history
+                consumer = get_kafka_consumer()
+                
+                # Assign to topic (only partition 0 for party to reduce load)
+                try:
+                    consumer.assign([TopicPartition(topic_name, 0)])
+                    yield f"data: {json.dumps({'type': 'info', 'message': 'Ready for new events'})}\n\n"
+                except Exception as e:
+                    yield f"data: {json.dumps({'type': 'error', 'message': f'Error assigning to partition: {str(e)}'})}\n\n"
+                    return
+                
+                # Skip to end of partition to only get new messages
+                try:
+                    consumer.seek_to_end(TopicPartition(topic_name, 0))
+                except Exception as e:
+                    yield f"data: {json.dumps({'type': 'error', 'message': f'Error seeking to end: {str(e)}'})}\n\n"
+                
+                # Just stream new messages
+                start_time = time.time()
+                while True:
+                    msg = consumer.poll(timeout=0.2)
+                    
+                    if msg is None:
+                        # Send a ping every 10 seconds to keep the connection alive
+                        if time.time() - start_time > 10:
+                            yield f"data: {json.dumps({'type': 'ping'})}\n\n"
+                            start_time = time.time()
+                        continue
+                    
+                    if msg.error():
+                        if msg.error().code() == KafkaException._PARTITION_EOF:
+                            continue
+                        yield f"data: {json.dumps({'type': 'error', 'message': f'Consumer error: {msg.error()}'})}\n\n"
+                        break
+                    
+                    # Format and send the message
+                    formatted_event = format_kafka_event(msg)
+                    yield f"data: {json.dumps({'type': 'event', 'data': formatted_event})}\n\n"
+            
+            # Standard implementation for other domains
+            else:
+                # Create consumer
+                consumer = get_kafka_consumer()
+                
+                # Get topic metadata to determine partitions
+                metadata = consumer.list_topics(topic_name, timeout=5)
+                
+                if topic_name not in metadata.topics:
+                    yield f"data: {json.dumps({'type': 'error', 'message': f'Topic {topic_name} not found'})}\n\n"
+                    return
+                
+                topic_metadata = metadata.topics[topic_name]
+                partitions = len(topic_metadata.partitions)
+                
+                yield f"data: {json.dumps({'type': 'info', 'message': f'Connected to {topic_name} with {partitions} partitions'})}\n\n"
+                
+                # Assign to all partitions of the topic
+                partition_objects = [TopicPartition(topic_name, i) for i in range(partitions)]
+                consumer.assign(partition_objects)
+                
+                # Set a limit for initial messages
+                buffer_size = 5
+                initial_timeout = 5  # seconds
+                
+                # First, try to get the last few messages
+                buffered_messages = []
+                
+                # Collect initial messages for a brief timeout
+                start_time = time.time()
+                
+                yield f"data: {json.dumps({'type': 'info', 'message': 'Looking for recent events...'})}\n\n"
+                
+                while time.time() - start_time < initial_timeout:
+                    msg = consumer.poll(timeout=0.2)
+                    
+                    if msg is None:
+                        continue
+                    
+                    if msg.error():
+                        if msg.error().code() == KafkaException._PARTITION_EOF:
+                            continue
+                        yield f"data: {json.dumps({'type': 'error', 'message': f'Consumer error: {msg.error()}'})}\n\n"
+                        break
+                    
+                    buffered_messages.append(msg)
+                    if len(buffered_messages) > buffer_size:
+                        buffered_messages.pop(0)
+                
+                # Report on found messages
+                if buffered_messages:
+                    yield f"data: {json.dumps({'type': 'info', 'message': f'Found {len(buffered_messages)} recent events'})}\n\n"
+                    
+                    # Send the buffered messages
+                    for msg in reversed(buffered_messages):
+                        formatted_event = format_kafka_event(msg)
+                        yield f"data: {json.dumps({'type': 'event', 'data': formatted_event})}\n\n"
+                else:
+                    yield f"data: {json.dumps({'type': 'info', 'message': 'No recent events found'})}\n\n"
+                
+                # Now continuously stream new events
+                yield f"data: {json.dumps({'type': 'info', 'message': 'Listening for new events...'})}\n\n"
+                
+                # Continue polling for new messages
+                while True:
+                    msg = consumer.poll(timeout=0.5)
+                    
+                    if msg is None:
+                        # Send a ping every 10 seconds to keep the connection alive
+                        if time.time() - start_time > 10:
+                            yield f"data: {json.dumps({'type': 'ping'})}\n\n"
+                            start_time = time.time()
+                        continue
+                    
+                    if msg.error():
+                        if msg.error().code() == KafkaException._PARTITION_EOF:
+                            continue
+                        yield f"data: {json.dumps({'type': 'error', 'message': f'Consumer error: {msg.error()}'})}\n\n"
+                        break
+                    
+                    # Format and send the message
+                    formatted_event = format_kafka_event(msg)
+                    yield f"data: {json.dumps({'type': 'event', 'data': formatted_event})}\n\n"
+                
+        except Exception as e:
+            error_message = str(e)
+            print(f"Error in stream_events for {domain}: {error_message}")
+            yield f"data: {json.dumps({'type': 'error', 'message': error_message})}\n\n"
+        finally:
+            # Clean up consumer
+            if consumer:
+                try:
+                    consumer.close()
+                    print(f"Closed Kafka consumer for {domain}")
+                except Exception as e:
+                    print(f"Error closing Kafka consumer: {e}")
+    
+    return Response(event_stream(), mimetype="text/event-stream") 

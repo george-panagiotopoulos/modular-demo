@@ -1,0 +1,107 @@
+/* Headless V2 Tab specific styles */
+.headless-v2-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* Column styling */
+.headless-v2-container .flex-1 {
+    min-width: 0; /* Prevent overflow in flex containers */
+    overflow: hidden;
+}
+
+/* Domain column styling */
+.headless-v2-container .flex-col {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Input fields */
+.headless-v2-container input, 
+.headless-v2-container select, 
+.headless-v2-container textarea {
+    transition: all 0.2s ease-in-out;
+}
+
+/* Make sure textareas don't get too large but can be resized */
+.headless-v2-container textarea {
+    resize: vertical;
+    min-height: 80px;
+    max-height: 300px;
+    font-family: monospace;
+    font-size: 0.75rem;
+}
+
+/* Button hover effect */
+.headless-v2-container button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Button active effect */
+.headless-v2-container button:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+/* Improve event boxes */
+#party-events, #deposits-events, #lending-events {
+    line-height: 1.2;
+    word-break: break-word;
+    transition: all 0.2s ease-in-out;
+}
+
+/* Style for event viewer */
+.headless-v2-container pre {
+    white-space: pre-wrap;
+    margin: 0;
+    font-family: monospace;
+    font-size: 0.7rem;
+    line-height: 1.4;
+}
+
+/* Enhance the visibility of event entries */
+.headless-v2-container .border-teal-100 {
+    border-bottom-width: 1px;
+}
+
+/* Connect/Disconnect button styling */
+.headless-v2-container [id$="-connect"] {
+    min-width: 70px;
+    text-align: center;
+}
+
+/* Make sure the scrollbar is usable */
+.headless-v2-container .overflow-y-auto {
+    scrollbar-width: thin;
+    scrollbar-color: #0d9488 #f0fdfa;
+}
+
+.headless-v2-container .overflow-y-auto::-webkit-scrollbar {
+    width: 8px;
+}
+
+.headless-v2-container .overflow-y-auto::-webkit-scrollbar-track {
+    background: #f0fdfa;
+    border-radius: 4px;
+}
+
+.headless-v2-container .overflow-y-auto::-webkit-scrollbar-thumb {
+    background-color: #0d9488;
+    border-radius: 4px;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 1280px) {
+    .headless-v2-container .flex-row {
+        flex-direction: column;
+    }
+    
+    .headless-v2-container .flex-1 {
+        margin-bottom: 16px;
+    }
+} 

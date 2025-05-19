@@ -5,7 +5,7 @@
     // State
     let accountsData = [];
     let loansData = [];
-    let partyId = "2513655771"; // Default party ID that can be changed
+    let partyId = localStorage.getItem('mobileAppPartyId') || "2513655771"; // Get from localStorage with fallback
     let staticListenersAdded = false;
 
     // --- DOM Elements ---
@@ -313,14 +313,80 @@
 
     // --- API Fetching ---
     async function fetchAccounts() {
-        console.log("Fetching accounts...");
+        console.log("Fetching accounts for party ID:", partyId);
         const { accountsListDiv } = getElements();
         if (!accountsListDiv) return;
         try {
-            const response = await fetch(`/api/mobile/accounts?_=${Date.now()}`);
+            // Show loading indicator
+            accountsListDiv.innerHTML = '<div class="text-center text-gray-500 py-4">Loading accounts...</div>';
+            
+            // Make the API call to get party arrangements from the new API
+            const response = await fetch(`/api/mobile/party/${partyId}/arrangements?_=${Date.now()}`);
             if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
-            accountsData = await response.json();
-            console.log("Accounts received:", accountsData);
+            
+            const arrangementsData = await response.json();
+            console.log("Party arrangements received:", arrangementsData);
+            
+            // Check if we have arrangements array
+            const arrangements = arrangementsData.arrangements || [];
+            if (arrangements.length === 0) {
+                accountsListDiv.innerHTML = '<div class="text-center text-gray-500 py-4">No accounts found for this customer.</div>';
+                accountsData = [];
+                return;
+            }
+            
+            // Transform arrangements into account data
+            const accounts = [];
+            for (const arrangement of arrangements) {
+                if (arrangement.productId === "CHECKING.ACCOUNT") {
+                    // Get the balance for this arrangement
+                    try {
+                        const arrangementId = arrangement.arrangementId;
+                        const balanceResponse = await fetch(`/api/mobile/accounts/${arrangementId}/balances?_=${Date.now()}`);
+                        if (balanceResponse.ok) {
+                            const balanceData = await balanceResponse.json();
+                            accounts.push({
+                                accountId: arrangementId,
+                                displayName: arrangement.productName || "Current Account",
+                                productName: arrangement.productTypeName || "Current Account",
+                                type: "current",
+                                currency: arrangement.currencyId || "USD",
+                                currentBalance: balanceData.ledgerBalance || 0,
+                                availableBalance: balanceData.availableBalance || 0,
+                                creditLimit: balanceData.creditLimit || 0
+                            });
+                        } else {
+                            // Add the account with default balance values if balance API fails
+                            accounts.push({
+                                accountId: arrangementId,
+                                displayName: arrangement.productName || "Current Account",
+                                productName: arrangement.productTypeName || "Current Account",
+                                type: "current",
+                                currency: arrangement.currencyId || "USD",
+                                currentBalance: 0,
+                                availableBalance: 0,
+                                creditLimit: 0
+                            });
+                        }
+                    } catch (error) {
+                        console.error(`Error fetching balance for arrangement ${arrangement.arrangementId}:`, error);
+                    }
+                }
+            }
+            
+            accountsData = accounts;
+            console.log("Processed account data:", accountsData);
+            
+            // Update headless tab if it's initialized
+            try {
+                if (window.reloadHeadlessData) {
+                    console.log("Updating headless tab with account API data");
+                    window.reloadHeadlessData();
+                }
+            } catch (e) {
+                console.log("Headless tab not available:", e);
+            }
+            
             renderAccounts(accountsData, accountsListDiv);
             populateFromAccountSelect(accountsData);
         } catch (error) {
@@ -693,7 +759,7 @@
     }
     
     function handlePartyIdChange() {
-        const { partyIdInput, loansListDiv } = getElements();
+        const { partyIdInput, accountsListDiv, loansListDiv } = getElements();
         if (!partyIdInput) return;
         
         const newPartyId = partyIdInput.value.trim();
@@ -702,15 +768,23 @@
             console.log(`Changing party ID from ${partyId} to ${newPartyId}`);
             partyId = newPartyId;
             
-            // Reset loans data
+            // Store in localStorage for persistence
+            localStorage.setItem('mobileAppPartyId', partyId);
+            
+            // Reset data
+            accountsData = [];
             loansData = [];
             
-            // Show loading message
+            // Show loading messages
+            if (accountsListDiv) {
+                accountsListDiv.innerHTML = '<div class="text-center text-gray-500 py-4">Loading accounts...</div>';
+            }
             if (loansListDiv) {
                 loansListDiv.innerHTML = '<div class="text-center text-gray-500 py-4">Loading loans...</div>';
             }
             
-            // Fetch loans with the new party ID
+            // Fetch both accounts and loans with the new party ID
+            fetchAccounts();
             fetchLoans();
         }
     }
@@ -718,6 +792,13 @@
     // --- Initialization ---
     function initMobileAppTab() {
         console.log("Initializing Mobile App Tab...");
+        
+        // Set the input field to show the current party ID
+        const { partyIdInput } = getElements();
+        if (partyIdInput) {
+            partyIdInput.value = partyId;
+        }
+        
         addStaticListeners();
         addPartyIdChangeListener();
         fetchAccounts();

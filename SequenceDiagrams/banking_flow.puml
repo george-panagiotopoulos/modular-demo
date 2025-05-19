@@ -1,0 +1,42 @@
+@startuml Banking Flow
+!theme plain
+
+actor "Bank Customer" as Customer
+actor "Bank Employee" as Employee
+participant "Party (R24)" as Party
+participant "Deposits (R25)" as Deposits
+participant "Lending (R24)" as Lending
+
+title Modular Banking Flow
+
+== Customer Onboarding ==
+Customer -> Party: Complete onboarding process
+note right of Party
+  Party is updated from 
+  master CIF
+end note
+Party --> Customer: Onboarding completed
+
+== Account Creation ==
+Customer -> Deposits: Request new account
+Deposits -> Deposits: Create current account
+Deposits --> Customer: Account created
+
+== Loan Application ==
+Customer -> Employee: Request new loan
+Employee -> Lending: Create new loan for customer
+Lending --> Employee: Loan created
+Employee --> Customer: Loan application approved
+
+== Loan Disbursement ==
+Employee -> Lending: Disburse loan
+activate Lending
+Lending -> Deposits: Transfer funds to customer account
+activate Deposits
+Deposits -> Deposits: Credit customer account
+deactivate Deposits
+Lending --> Employee: Disbursement completed
+deactivate Lending
+Employee --> Customer: Loan disbursed to account
+
+@enduml 

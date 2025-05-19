@@ -11,6 +11,138 @@
             label: "Custom URI", 
             template: "" 
         },
+        createCustomer: {
+            label: "Create Customer", 
+            template: "http://modulardemo.northeurope.cloudapp.azure.com/ms-party-api/api/v5.0.0/party/parties",
+            defaultMethod: "POST",
+            samplePayload: {
+                "dateOfBirth": "2003-05-25",
+                "cityOfBirth": "Paris",
+                "firstName": "Hannah",
+                "middleName": "W",
+                "lastName": "Wilson",
+                "nickName": "Hannah",
+                "suffix": "M.D.",
+                "alias": "Hannah"
+            }
+        },
+        createCurrentAccount: {
+            label: "Create Current Account", 
+            template: "http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v2.0.0/holdings/accounts/currentAccounts",
+            defaultMethod: "POST",
+            samplePayload: {
+                "parties": [
+                    {
+                        "partyId": "2513655771",
+                        "partyRole": "OWNER"
+                    }
+                ],
+                "accountName": "current",
+                "openingDate": "20250517",
+                "productId": "CHECKING.ACCOUNT",
+                "currency": "USD",
+                "branchCode": "01123",
+                "quotationReference": "QUOT246813"
+            }
+        },
+        getAccountBalance: {
+            label: "Get Account Balance", 
+            template: "http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v2.0.0/holdings/accounts/{accountReference}/balances",
+            placeholders: { 
+                accountReference: "1013715226" 
+            },
+            defaultMethod: "GET"
+        },
+        getPartyArrangements: {
+            label: "Get Party Arrangements", 
+            template: "http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v1.0.0/holdings/parties/{partyId}/arrangements",
+            placeholders: { 
+                partyId: "2513655771" 
+            },
+            defaultMethod: "GET"
+        },
+        createLoan: {
+            label: "Create Loan", 
+            template: "http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/consumerLoans",
+            defaultMethod: "POST",
+            samplePayload: {
+                "header": {},
+                "body": {
+                    "partyIds": [
+                        {
+                            "partyId": "2513655771",
+                            "partyRole": "OWNER"
+                        }
+                    ],
+                    "productId": "MORTGAGE.PRODUCT",
+                    "currency": "USD",
+                    "arrangementEffectiveDate": "",
+                    "commitment": [
+                        {
+                            "amount": "263388",
+                            "term": "106M"
+                        }
+                    ],
+                    "schedule": [
+                        {
+                            "payment": [
+                                {},
+                                {
+                                    "paymentFrequency": "e0Y e1M e0W e0D e0F"
+                                }
+                            ]
+                        }
+                    ],
+                    "settlement": [
+                        {
+                            "payout": [
+                                {
+                                    "payoutSettlement": "YES",
+                                    "property": [
+                                        {
+                                            "payoutAccount": "DDAComposable|GB0010001|1013715226"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "assocSettlement": [
+                                {
+                                    "payinSettlement": "YES",
+                                    "reference": [
+                                        {
+                                            "payinAccount": "DDAComposable|GB0010001|1013715226"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "payinSettlement": "YES",
+                                    "reference": [
+                                        {
+                                            "payinAccount": "DDAComposable|GB0010001|1013715226"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        },
+        disburseLoan: {
+            label: "Disburse Loan", 
+            template: "http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/{loanId}/disbursements",
+            placeholders: { 
+                loanId: "AA250735Y2GS" 
+            },
+            defaultMethod: "PUT",
+            samplePayload: {
+                "body": {
+                    "currencyId": "USD",
+                    "effectiveDate": "20250517",
+                    "transactionAmount": 210710
+                }
+            }
+        },
         arrangements: { 
             label: "Customer Arrangements", 
             template: "http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v7.0.0/holdings/customers/{customerId}/arrangements",
@@ -23,7 +155,7 @@
             label: "Loan Schedules", 
             template: "http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/{loanId}/schedules",
             placeholders: { 
-                loanId: "AA25073599N9" 
+                loanId: "AA250735Y2GS" 
             },
             defaultMethod: "GET"
         },
@@ -31,7 +163,7 @@
             label: "Loan Status", 
             template: "http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/{loanId}/status",
             placeholders: { 
-                loanId: "AA25073599N9" 
+                loanId: "AA250735Y2GS" 
             },
             defaultMethod: "GET"
         }
@@ -242,6 +374,9 @@
             // Clear or set appropriate request payload
             if (methodSelect.value === 'GET') {
                 requestPayloadTextarea.value = '// No request payload needed for GET requests';
+            } else if (endpointConfig.samplePayload) {
+                // Add sample payload if available
+                requestPayloadTextarea.value = JSON.stringify(endpointConfig.samplePayload, null, 2);
             } else {
                 requestPayloadTextarea.value = '// Enter your JSON payload here';
             }

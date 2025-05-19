@@ -22,6 +22,9 @@ LOAN_SCHEDULES_API_URI_TEMPLATE = os.getenv("LOAN_SCHEDULES_API_URI_TEMPLATE")
 LOAN_DISBURSEMENT_API_URI_TEMPLATE = os.getenv("LOAN_DISBURSEMENT_API_URI_TEMPLATE")
 CUSTOMER_ARRANGEMENTS_API_URI_TEMPLATE = os.getenv("CUSTOMER_ARRANGEMENTS_API_URI_TEMPLATE")
 
+# Add new constant for party arrangements API
+PARTY_ARRANGEMENTS_API_URI_TEMPLATE = "http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v1.0.0/holdings/parties/{party_id}/arrangements"
+
 # Kafka Event Processing Constants
 STREAM_EVENTS_SCRIPT_PATH = "/Users/gpanagiotopoulos/ModularDemo/TestConnection/stream_events.py"
 KAFKA_LENDING_TOPIC = "lending-event-topic"
@@ -512,6 +515,61 @@ def get_account_balance(account_reference):
         log_api_call(uri, "GET", None, "N/A (Request Failed)", {"error": str(e)})
         return None
 
+def get_party_arrangements(party_id):
+    """Gets all arrangements for a given party_id via API call."""
+    uri = PARTY_ARRANGEMENTS_API_URI_TEMPLATE.format(party_id=party_id)
+    print(f"Attempting to get party arrangements for partyId {party_id} from {uri}")
+    try:
+        start_time = time.time()
+        response = requests.get(uri, headers={'Accept': 'application/json'})
+        end_time = time.time()
+        response_time = end_time - start_time
+        
+        response_data = {}
+        try:
+            response_data = response.json()
+        except json.JSONDecodeError:
+            response_data = {"error": "Failed to decode JSON response", "content": response.text}
+        log_api_call(uri, "GET", None, response.status_code, response_data)
+        if response.status_code == 200:
+            print(f"Successfully fetched party arrangements for partyId {party_id}. Status: {response.status_code}, Response time: {response_time:.3f} seconds")
+            return response_data
+        else:
+            print(f"Failed to fetch party arrangements for partyId {party_id}. Status: {response.status_code}, Response time: {response_time:.3f} seconds")
+            return None
+    except requests.exceptions.RequestException as e:
+        print(f"Error during API call to get party arrangements: {e}")
+        log_api_call(uri, "GET", None, "N/A (Request Failed)", {"error": str(e)})
+        return None
+
+def get_arrangement_balance(arrangement_id):
+    """Gets the balance details for a given arrangement_id via API call."""
+    # Using the same endpoint format as account_reference but with arrangementId
+    uri = ACCOUNT_BALANCE_API_URI_TEMPLATE.format(account_reference=arrangement_id)
+    print(f"Attempting to get balance for arrangementId {arrangement_id} from {uri}")
+    try:
+        start_time = time.time()
+        response = requests.get(uri, headers={'Accept': 'application/json'})
+        end_time = time.time()
+        response_time = end_time - start_time
+        
+        response_data = {}
+        try:
+            response_data = response.json()
+        except json.JSONDecodeError:
+            response_data = {"error": "Failed to decode JSON response", "content": response.text}
+        log_api_call(uri, "GET", None, response.status_code, response_data)
+        if response.status_code == 200:
+            print(f"Successfully fetched balance for arrangementId {arrangement_id}. Status: {response.status_code}, Response time: {response_time:.3f} seconds")
+            return response_data
+        else:
+            print(f"Failed to fetch balance for arrangementId {arrangement_id}. Status: {response.status_code}, Response time: {response_time:.3f} seconds")
+            return None
+    except requests.exceptions.RequestException as e:
+        print(f"Error during API call to get arrangement balance: {e}")
+        log_api_call(uri, "GET", None, "N/A (Request Failed)", {"error": str(e)})
+        return None
+
 if __name__ == "__main__":
     with open(OUTPUT_FILE, "w") as f:
         f.write("Demo Flow Output Log\n")
@@ -552,6 +610,30 @@ if __name__ == "__main__":
                     # Add step to get account balance
                     print("\n--- Step 3: Get Account Balance ---")
                     get_account_balance(account_reference)
+                    
+                    # Add step to get party arrangements
+                    print("\n--- Step 4: Get Party Arrangements ---")
+                    arrangements_response = get_party_arrangements(customer_id)
+                    
+                    # Process arrangements and get balances for each
+                    if arrangements_response and isinstance(arrangements_response, dict):
+                        # Extract the arrangements array from the response
+                        arrangements = arrangements_response.get('arrangements', [])
+                        if arrangements and len(arrangements) > 0:
+                            print(f"Found {len(arrangements)} arrangements for partyId {customer_id}")
+                            
+                            print("\n--- Step 5: Get Balances for All Arrangements ---")
+                            for idx, arrangement in enumerate(arrangements):
+                                if isinstance(arrangement, dict) and 'arrangementId' in arrangement:
+                                    arrangement_id = arrangement.get('arrangementId')
+                                    print(f"Processing arrangement {idx+1}/{len(arrangements)}: {arrangement_id}")
+                                    get_arrangement_balance(arrangement_id)
+                                else:
+                                    print(f"Skipping arrangement {idx+1}/{len(arrangements)}: Invalid format")
+                        else:
+                            print("No arrangements found in the response for partyId. Skipping balances step.")
+                    else:
+                        print("Invalid response format or no response. Skipping balances step.")
                 else:
                     print("Could not extract account reference from account creation response.")
                     account_reference = "123456"  # Use default if we couldn't get the real reference
@@ -559,8 +641,8 @@ if __name__ == "__main__":
                 print("Current account creation step failed.")
                 account_reference = "123456"  # Use default if current account creation failed
             
-            # Continue with loan creation (now step 4)
-            print("\n--- Step 4: Create Loan ---")
+            # Continue with loan creation (now step 6)
+            print("\n--- Step 6: Create Loan ---")
             created_loan_response = create_loan(customer_id, account_reference)
             
             if created_loan_response:
@@ -591,7 +673,7 @@ if __name__ == "__main__":
                                     loan_id = body_for_loan_id_fallback[0].get("id")
 
                 # Renumber subsequent steps
-                print(f"\n--- Step 5: Capture 5 Kafka Events After Loan Creation ---")
+                print(f"\n--- Step 7: Capture 5 Kafka Events After Loan Creation ---")
                 initial_kafka_events = capture_kafka_events(KAFKA_LENDING_TOPIC, 5)  # Use 5 instead of HISTORY_COUNT
                 
                 if initial_kafka_events:
@@ -614,20 +696,20 @@ if __name__ == "__main__":
                     print(f"Error extracting original loan amount: {e}")
                     original_amount = "100000"  # Default to 100,000 on error
                 
-                print(f"\n--- Step 6: Get Loan Status ---")
+                print(f"\n--- Step 8: Get Loan Status ---")
                 get_loan_status(loan_id)
                 
-                print(f"\n--- Step 7: Get Loan Schedules ---")
+                print(f"\n--- Step 9: Get Loan Schedules ---")
                 get_loan_schedules(loan_id)
                 
-                print(f"\n--- Step 8: Disburse Loan ---")
+                print(f"\n--- Step 10: Disburse Loan ---")
                 disburse_result = disburse_loan(loan_id, original_amount)
                 
                 if disburse_result:
                     print("Loan disbursement step completed successfully.")
                     
                     # Capture Kafka events after disbursement (13 events)
-                    print(f"\n--- Step 9: Capture Last {HISTORY_COUNT} Kafka Events After Disbursement ---")
+                    print(f"\n--- Step 11: Capture Last {HISTORY_COUNT} Kafka Events After Disbursement ---")
                     captured_kafka_events = capture_kafka_events(KAFKA_LENDING_TOPIC, HISTORY_COUNT)  # Keep 13 for disbursement
                     
                     if captured_kafka_events:
@@ -648,7 +730,7 @@ if __name__ == "__main__":
             else:
                 print("Loan creation step failed. Skipping subsequent loan-related and Kafka steps.")
 
-            print("\n--- Step 10: Get Customer Arrangements ---")
+            print("\n--- Step 12: Get Customer Arrangements ---")
             get_customer_arrangements(customer_id)
         else:
             print("Could not extract customer ID from customer creation response. Skipping subsequent steps.")
