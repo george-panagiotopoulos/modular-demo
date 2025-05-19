@@ -8,6 +8,7 @@ import json
 from collections import deque
 from confluent_kafka import Consumer, KafkaException, TopicPartition
 import time
+from dotenv import load_dotenv
 # from app.utils import load_stub_data, save_stub_data # No longer needed
 
 # Store last 10 API calls for headless tab
@@ -1352,10 +1353,22 @@ def get_branch_loan_balances(loan_id):
 
 def get_kafka_consumer():
     """Create and return a configured Kafka consumer"""
+    # Explicitly load .env here for debugging
+    dotenv_path = os.path.join(os.path.dirname(__file__), '..', '..', '.env') # Assumes .env is in project root
+    load_dotenv(dotenv_path=dotenv_path)
+    print(f"Attempting to load .env from: {dotenv_path}")
+
     # For Azure Event Hubs Kafka endpoint
     bootstrap_servers = os.getenv("BOOTSTRAP_SERVERS")
     connection_string = os.getenv("CONNECTION_STRING")
     
+    # Debug prints
+    print(f"DEBUG: BOOTSTRAP_SERVERS from env: {bootstrap_servers}")
+    if connection_string:
+        print(f"DEBUG: CONNECTION_STRING from env: loaded, length {len(connection_string)}, first 5 chars: {connection_string[:5]}...")
+    else:
+        print("DEBUG: CONNECTION_STRING from env: NOT LOADED or EMPTY")
+
     sasl_username = "$ConnectionString"
     sasl_password = connection_string
     
