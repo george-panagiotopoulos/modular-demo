@@ -339,12 +339,6 @@
         // Store the EventSource in the right variable
         if (domain === 'party') {
             partyEventSource = eventSource;
-            
-            // Add a "waiting for events" message for party only
-            const waitingMsg = document.createElement('div');
-            waitingMsg.className = 'mb-1 text-teal-600 text-center text-xs italic';
-            waitingMsg.textContent = 'Connected. Waiting for new events...';
-            eventsContainer.appendChild(waitingMsg);
         } else if (domain === 'deposits') {
             depositsEventSource = eventSource;
         } else if (domain === 'lending') {
@@ -365,7 +359,8 @@
                     if (domain !== 'party' || 
                         data.message.includes('Connecting') || 
                         data.message.includes('Connected') || 
-                        data.message.includes('Found')) {
+                        data.message.includes('Found') ||
+                        data.message.includes('Listening')) {
                         const infoElement = document.createElement('div');
                         infoElement.className = 'mb-1 text-blue-600';
                         infoElement.textContent = data.message;
@@ -393,19 +388,11 @@
                     const headerDiv = document.createElement('div');
                     headerDiv.className = 'flex justify-between items-center text-xs text-teal-700 font-bold';
                     
-                    if (domain === 'party') {
-                        // Simplified header for party domain
-                        headerDiv.innerHTML = `
-                            <span>${timestamp}</span>
-                            <span>Offset: ${eventData.offset || 'N/A'}</span>
-                        `;
-                    } else {
-                        // Full header for other domains
-                        headerDiv.innerHTML = `
-                            <span>${timestamp}</span>
-                            <span>Topic: ${eventData.topic}, Partition: ${eventData.partition}, Offset: ${eventData.offset}</span>
-                        `;
-                    }
+                    // Use the same header format for all domains
+                    headerDiv.innerHTML = `
+                        <span>${timestamp}</span>
+                        <span>Topic: ${eventData.topic}, Partition: ${eventData.partition}, Offset: ${eventData.offset}</span>
+                    `;
                     eventElement.appendChild(headerDiv);
                     
                     // Add event payload as collapsible section
@@ -415,12 +402,8 @@
                     // Format the payload
                     if (eventData.payload) {
                         if (typeof eventData.payload === 'object') {
-                            // Use a more efficient formatting for party domain
-                            if (domain === 'party') {
-                                payloadDiv.innerHTML = `<pre class="whitespace-pre-wrap overflow-x-auto">${JSON.stringify(eventData.payload, null, 2)}</pre>`;
-                            } else {
-                                payloadDiv.innerHTML = `<pre class="whitespace-pre-wrap overflow-x-auto">${formatJSON(eventData.payload)}</pre>`;
-                            }
+                            // Use the same formatting for all domains
+                            payloadDiv.innerHTML = `<pre class="whitespace-pre-wrap overflow-x-auto">${formatJSON(eventData.payload)}</pre>`;
                         } else {
                             payloadDiv.innerHTML = `<pre class="whitespace-pre-wrap overflow-x-auto">${eventData.payload}</pre>`;
                         }
@@ -428,21 +411,21 @@
                     
                     eventElement.appendChild(payloadDiv);
                     
-                    // Add to the top of the events container
+                    // Always add to the top of the events container (newest first)
                     eventsContainer.insertBefore(eventElement, eventsContainer.firstChild);
                     
-                    // Limit number of events shown (only for party)
-                    if (domain === 'party') {
-                        const children = Array.from(eventsContainer.children);
-                        // Keep only the first 20 real event elements (not info/error messages)
-                        const eventElements = children.filter(child => 
-                            child.classList.contains('mb-2') && 
-                            child.classList.contains('p-1') && 
-                            child.classList.contains('border-b')
-                        );
-                        
-                        if (eventElements.length > 20) {
-                            for (let i = 20; i < eventElements.length; i++) {
+                    // Limit number of events shown to prevent browser performance issues
+                    const children = Array.from(eventsContainer.children);
+                    // Keep only the first 25 real event elements (not info/error messages)
+                    const eventElements = children.filter(child => 
+                        child.classList.contains('mb-2') && 
+                        child.classList.contains('p-1') && 
+                        child.classList.contains('border-b')
+                    );
+                    
+                    if (eventElements.length > 25) {
+                        for (let i = 25; i < eventElements.length; i++) {
+                            if (eventElements[i] && eventElements[i].parentNode === eventsContainer) {
                                 eventsContainer.removeChild(eventElements[i]);
                             }
                         }

@@ -1422,14 +1422,15 @@ def stream_events(domain):
         consumer = None
         try:
             # Send initial message
-            yield f"data: {json.dumps({'type': 'info', 'message': f'Connecting to {topic_name}...'})}\n\n"
+            yield f"data: {json.dumps({'type': 'info', 'message': f'Connecting to {topic_name}...' })}\n\n"
             
             # Special handling for party domain due to performance issues
             if domain == 'party':
-                yield f"data: {json.dumps({'type': 'info', 'message': 'Connected to party events (simplified mode)'})}\n\n"
+                yield f"data: {json.dumps({'type': 'info', 'message': 'Connected to party events (simplified mode)' })}\n\n"
                 
                 # Just provide status without attempting to load history for party domain
-                yield f"data: {json.dumps({'type': 'info', 'message': 'Party events streaming active...'})}\n\n"
+                yield f"data: {json.dumps({'type': 'info', 'message': 'Looking for recent events...' })}\n\n"
+                yield f"data: {json.dumps({'type': 'info', 'message': 'Using optimized streaming (skipping history)' })}\n\n"
                 
                 # Create consumer without loading history
                 consumer = get_kafka_consumer()
@@ -1437,16 +1438,18 @@ def stream_events(domain):
                 # Assign to topic (only partition 0 for party to reduce load)
                 try:
                     consumer.assign([TopicPartition(topic_name, 0)])
-                    yield f"data: {json.dumps({'type': 'info', 'message': 'Ready for new events'})}\n\n"
                 except Exception as e:
-                    yield f"data: {json.dumps({'type': 'error', 'message': f'Error assigning to partition: {str(e)}'})}\n\n"
+                    yield f"data: {json.dumps({'type': 'error', 'message': f'Error assigning to partition: {str(e)}' })}\n\n"
                     return
                 
                 # Skip to end of partition to only get new messages
                 try:
                     consumer.seek_to_end(TopicPartition(topic_name, 0))
                 except Exception as e:
-                    yield f"data: {json.dumps({'type': 'error', 'message': f'Error seeking to end: {str(e)}'})}\n\n"
+                    yield f"data: {json.dumps({'type': 'error', 'message': f'Error seeking to end: {str(e)}' })}\n\n"
+                
+                # Now continuously stream new events
+                yield f"data: {json.dumps({'type': 'info', 'message': 'Listening for new events...' })}\n\n"
                 
                 # Just stream new messages
                 start_time = time.time()
@@ -1463,12 +1466,12 @@ def stream_events(domain):
                     if msg.error():
                         if msg.error().code() == KafkaException._PARTITION_EOF:
                             continue
-                        yield f"data: {json.dumps({'type': 'error', 'message': f'Consumer error: {msg.error()}'})}\n\n"
+                        yield f"data: {json.dumps({'type': 'error', 'message': f'Consumer error: {msg.error()}' })}\n\n"
                         break
                     
                     # Format and send the message
                     formatted_event = format_kafka_event(msg)
-                    yield f"data: {json.dumps({'type': 'event', 'data': formatted_event})}\n\n"
+                    yield f"data: {json.dumps({'type': 'event', 'data': formatted_event })}\n\n"
             
             # Standard implementation for other domains
             else:
@@ -1479,13 +1482,13 @@ def stream_events(domain):
                 metadata = consumer.list_topics(topic_name, timeout=5)
                 
                 if topic_name not in metadata.topics:
-                    yield f"data: {json.dumps({'type': 'error', 'message': f'Topic {topic_name} not found'})}\n\n"
+                    yield f"data: {json.dumps({'type': 'error', 'message': f'Topic {topic_name} not found' })}\n\n"
                     return
                 
                 topic_metadata = metadata.topics[topic_name]
                 partitions = len(topic_metadata.partitions)
                 
-                yield f"data: {json.dumps({'type': 'info', 'message': f'Connected to {topic_name} with {partitions} partitions'})}\n\n"
+                yield f"data: {json.dumps({'type': 'info', 'message': f'Connected to {topic_name} with {partitions} partitions' })}\n\n"
                 
                 # Assign to all partitions of the topic
                 partition_objects = [TopicPartition(topic_name, i) for i in range(partitions)]
@@ -1496,12 +1499,12 @@ def stream_events(domain):
                 initial_timeout = 5  # seconds
                 
                 # First, try to get the last few messages
-                buffered_messages = []
+                all_initial_messages = [] # Collect all messages polled initially
                 
                 # Collect initial messages for a brief timeout
                 start_time = time.time()
                 
-                yield f"data: {json.dumps({'type': 'info', 'message': 'Looking for recent events...'})}\n\n"
+                yield f"data: {json.dumps({'type': 'info', 'message': 'Looking for recent events...' })}\n\n"
                 
                 while time.time() - start_time < initial_timeout:
                     msg = consumer.poll(timeout=0.2)
@@ -1512,28 +1515,43 @@ def stream_events(domain):
                     if msg.error():
                         if msg.error().code() == KafkaException._PARTITION_EOF:
                             continue
-                        yield f"data: {json.dumps({'type': 'error', 'message': f'Consumer error: {msg.error()}'})}\n\n"
+                        yield f"data: {json.dumps({'type': 'error', 'message': f'Consumer error: {msg.error()}' })}\n\n"
                         break
                     
-                    buffered_messages.append(msg)
-                    if len(buffered_messages) > buffer_size:
-                        buffered_messages.pop(0)
+                    all_initial_messages.append(msg) # Collect all messages
                 
                 # Report on found messages
-                if buffered_messages:
-                    yield f"data: {json.dumps({'type': 'info', 'message': f'Found {len(buffered_messages)} recent events'})}\n\n"
+                if all_initial_messages:
+                    messages_to_send = []
+                    if domain == 'deposits':
+                        # Sort by offset ASCENDING for deposits, take the tail (highest offsets)
+                        all_initial_messages.sort(key=lambda m: m.offset())
+                        messages_to_send = all_initial_messages[-buffer_size:]
+                        yield f"data: {json.dumps({'type': 'info', 'message': f'Found {len(messages_to_send)} recent DEPOSITS events (sorted by offset, from {len(all_initial_messages)} polled)' })}\n\n"
+                    else: # For lending (and any other future non-party domains)
+                        # Sort ALL collected messages by Kafka timestamp in descending order
+                        # Treat messages with no valid timestamp as very old (-1)
+                        all_initial_messages.sort(
+                            key=lambda m: m.timestamp()[1] if m.timestamp() and m.timestamp()[0] != 0 else -1,
+                            reverse=True
+                        )
+                        # Take the top 'buffer_size' messages (newest by timestamp)
+                        messages_to_send = all_initial_messages[:buffer_size]
+                        yield f"data: {json.dumps({'type': 'info', 'message': f'Found {len(messages_to_send)} recent events (sorted by timestamp, from {len(all_initial_messages)} polled)' })}\n\n"
                     
-                    # Send the buffered messages
-                    for msg in reversed(buffered_messages):
-                        formatted_event = format_kafka_event(msg)
-                        yield f"data: {json.dumps({'type': 'event', 'data': formatted_event})}\n\n"
+                    # Send the selected & sorted messages
+                    for msg_to_send in messages_to_send:
+                        formatted_event = format_kafka_event(msg_to_send)
+                        yield f"data: {json.dumps({'type': 'event', 'data': formatted_event })}\n\n"
                 else:
-                    yield f"data: {json.dumps({'type': 'info', 'message': 'No recent events found'})}\n\n"
+                    yield f"data: {json.dumps({'type': 'info', 'message': 'No recent events found' })}\n\n"
                 
                 # Now continuously stream new events
-                yield f"data: {json.dumps({'type': 'info', 'message': 'Listening for new events...'})}\n\n"
+                yield f"data: {json.dumps({'type': 'info', 'message': 'Listening for new events...' })}\n\n"
+                start_time = time.time() # Reset start_time for ping timer in continuous stream
                 
                 # Continue polling for new messages
+                last_offset = {}  # Track highest offset seen for each partition
                 while True:
                     msg = consumer.poll(timeout=0.5)
                     
@@ -1547,17 +1565,28 @@ def stream_events(domain):
                     if msg.error():
                         if msg.error().code() == KafkaException._PARTITION_EOF:
                             continue
-                        yield f"data: {json.dumps({'type': 'error', 'message': f'Consumer error: {msg.error()}'})}\n\n"
+                        yield f"data: {json.dumps({'type': 'error', 'message': f'Consumer error: {msg.error()}' })}\n\n"
                         break
                     
-                    # Format and send the message
+                    # Check if we've seen this message before (for multiple partitions)
+                    partition = msg.partition()
+                    offset = msg.offset()
+                    
+                    if partition in last_offset and offset <= last_offset[partition]:
+                        # Skip messages we've already processed (can happen with multiple partitions)
+                        continue
+                    
+                    # Update last seen offset for this partition
+                    last_offset[partition] = offset
+                    
+                    # Format and send the message IMMEDIATELY
                     formatted_event = format_kafka_event(msg)
-                    yield f"data: {json.dumps({'type': 'event', 'data': formatted_event})}\n\n"
+                    yield f"data: {json.dumps({'type': 'event', 'data': formatted_event })}\n\n"
                 
         except Exception as e:
             error_message = str(e)
             print(f"Error in stream_events for {domain}: {error_message}")
-            yield f"data: {json.dumps({'type': 'error', 'message': error_message})}\n\n"
+            yield f"data: {json.dumps({'type': 'error', 'message': error_message })}\n\n"
         finally:
             # Clean up consumer
             if consumer:
