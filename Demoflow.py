@@ -25,6 +25,15 @@ CUSTOMER_ARRANGEMENTS_API_URI_TEMPLATE = os.getenv("CUSTOMER_ARRANGEMENTS_API_UR
 # Add new constant for party arrangements API
 PARTY_ARRANGEMENTS_API_URI_TEMPLATE = "http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v1.0.0/holdings/parties/{party_id}/arrangements"
 
+# New API Endpoints for Debit/Credit Transactions
+DEBIT_ACCOUNT_API_URI = "http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v1.0.0/order/payments/debitAccount"
+CREDIT_ACCOUNT_API_URI = "http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v1.0.0/order/payments/creditAccount"
+
+# New API Endpoints for Holdings Microservice
+HOLDINGS_PARTY_ARRANGEMENTS_API_URI_TEMPLATE = "http://modulardemo.northeurope.cloudapp.azure.com/ms-holdings-api/api/v1.0.0/holdings/parties/{party_id}/arrangements"
+HOLDINGS_ACCOUNT_BALANCES_API_URI_TEMPLATE = "http://modulardemo.northeurope.cloudapp.azure.com/ms-holdings-api/api/v3.0.0/holdings/accounts/{account_id}/balances"
+HOLDINGS_ACCOUNT_TRANSACTIONS_API_URI_TEMPLATE = "http://modulardemo.northeurope.cloudapp.azure.com/ms-holdings-api/api/v3.0.0/holdings/accounts/{account_id}/transactions"
+
 # Kafka Event Processing Constants
 STREAM_EVENTS_SCRIPT_PATH = "/Users/gpanagiotopoulos/ModularDemo/TestConnection/stream_events.py"
 KAFKA_LENDING_TOPIC = "lending-event-topic"
@@ -42,7 +51,17 @@ last_names = ["Smith", "Jones", "Williams", "Brown", "Davis", "Miller", "Wilson"
 cities = ["New York", "London", "Paris", "Tokyo", "Berlin", "Moscow", "Rome", "Madrid", "Sydney", "Cairo"]
 suffixes = ["Jr.", "Sr.", "B.A.", "M.Sc.", "Ph.D.", "M.D."]
 
-# Add new constants for current account APIs
+# Reasons for transactions
+DEBIT_REASONS = ["Utility Bill Payment", "Online Shopping", "Subscription Renewal", "Cash Withdrawal", "Outgoing Fund Transfer"]
+CREDIT_REASONS = ["Salary Deposit", "Incoming Fund Transfer", "Refund Processed", "Interest Earned", "Stock Dividend"]
+
+# Helper function to generate transaction reference
+def generate_transaction_reference(reason_text, type_prefix="TXN"):
+    reason_code = "".join(filter(str.isalnum, reason_text.upper()))[:10] # UTILITYBIL
+    timestamp_ms = int(time.time() * 1000)
+    random_suffix = random.randint(100, 999)
+    return f"{type_prefix}_{reason_code}_{timestamp_ms}_{random_suffix}"
+
 # Kafka functions (adapted from stream_events.py)
 def get_consumer():
     """Create and return a configured Kafka consumer"""
@@ -443,7 +462,7 @@ def disburse_loan(loan_id, original_amount):
 def generate_current_account_payload(party_id):
     """Generates a payload for creating a current account."""
     # Format today's date as YYYYMMDD
-    today_str = datetime.today().strftime("%Y%m%d")
+    today_str = "20250314"
     
     return {
         "parties": [
@@ -570,6 +589,236 @@ def get_arrangement_balance(arrangement_id):
         log_api_call(uri, "GET", None, "N/A (Request Failed)", {"error": str(e)})
         return None
 
+#--- Holdings Microservice API Functions ---
+def get_holdings_party_arrangements(party_id):
+    """
+    Gets all arrangements for a given party_id across deposits and lending from the Holdings microservice.
+    
+    The Holdings microservice provides a consolidated view of all arrangements for a party,
+    regardless of which product line (ACCOUNTS, LENDING, etc.) they belong to.
+    
+    Example party_id: 2514040984
+    Example response:
+    {
+        "arrangements": [
+            {
+                "arrangementId": "ARR25140YSLA5HCRJN",  # Unique identifier in Holdings
+                "extArrangementId": "GB0010001-AA25073FPYFY",  # External ID in format [legalEntityId]-[contractReference]
+                "productGroup": "MORTGAGE.PRODUCT",
+                "productLine": "LENDING",  # Indicates this is a lending product
+                "systemReference": "lending",
+                "contractReference": "AA25073FPYFY",  # This corresponds to the arrangementId in the lending system
+                "alternateReferences": [
+                    {
+                        "alternateType": "ACCOUNT",
+                        "alternateId": "GB0010001-1013716125"  # Format: [legalEntityId]-[account_reference]
+                    }
+                ]
+            },
+            {
+                "arrangementId": "ARR25140JJV71PY4I1",  # Different arrangement (deposit account)
+                "productLine": "ACCOUNTS",  # Indicates this is a deposit account
+                "systemReference": "deposits",
+                "contractReference": "AA250731T5YN",  # This corresponds to the arrangementId in the deposits system
+                "alternateReferences": [
+                    {
+                        "alternateType": "ACCOUNT",
+                        "alternateId": "GB0010001-1013715536"  # The account_reference from create_account API
+                    }
+                ]
+            }
+        ]
+    }
+    """
+    uri = HOLDINGS_PARTY_ARRANGEMENTS_API_URI_TEMPLATE.format(party_id=party_id)
+    print(f"Attempting to get holdings party arrangements for partyId {party_id} from {uri}")
+    try:
+        start_time = time.time()
+        response = requests.get(uri, headers={'Accept': 'application/json'})
+        end_time = time.time()
+        response_time = end_time - start_time
+        
+        response_data = {}
+        try:
+            response_data = response.json()
+        except json.JSONDecodeError:
+            response_data = {"error": "Failed to decode JSON response", "content": response.text}
+        log_api_call(uri, "GET", None, response.status_code, response_data)
+        if response.status_code == 200:
+            print(f"Successfully fetched holdings party arrangements for partyId {party_id}. Status: {response.status_code}, Response time: {response_time:.3f} seconds")
+            return response_data
+        else:
+            print(f"Failed to fetch holdings party arrangements for partyId {party_id}. Status: {response.status_code}, Response time: {response_time:.3f} seconds")
+            return None
+    except requests.exceptions.RequestException as e:
+        print(f"Error during API call to get holdings party arrangements: {e}")
+        log_api_call(uri, "GET", None, "N/A (Request Failed)", {"error": str(e)})
+        return None
+
+def get_holdings_account_balances(account_id):
+    """
+    Gets balance details for an account using the Holdings microservice.
+    
+    The account_id here is the alternateId from a party arrangement response,
+    typically in the format [legalEntityId]-[account_reference] (e.g., GB0010001-1013715536).
+    This endpoint returns a list of balance items under the "items" key.
+    
+    Example account_id: GB0010001-1013715536
+    Example response:
+    {
+        "items": [
+            {
+                "companyReference": "GB0010001",
+                "systemReference": "deposits",
+                "contractReference": "AA250731T5YN",  # Corresponds to arrangementId in deposits
+                "accountId": "GB0010001-1013715536",
+                "availableBalance": 1500,
+                "workingBalance": 1500,
+                "onlineActualBalance": 1500,
+                "currencyId": "USD",
+                "customerId": "2514040984"  # Party ID of the account owner
+            }
+        ]
+    }
+    """
+    uri = HOLDINGS_ACCOUNT_BALANCES_API_URI_TEMPLATE.format(account_id=account_id)
+    print(f"Attempting to get holdings account balances for accountId {account_id} from {uri}")
+    try:
+        start_time = time.time()
+        response = requests.get(uri, headers={'Accept': 'application/json'})
+        end_time = time.time()
+        response_time = end_time - start_time
+        
+        response_data = {}
+        try:
+            response_data = response.json()
+        except json.JSONDecodeError:
+            response_data = {"error": "Failed to decode JSON response", "content": response.text}
+        log_api_call(uri, "GET", None, response.status_code, response_data)
+        if response.status_code == 200:
+            print(f"Successfully fetched holdings account balances for accountId {account_id}. Status: {response.status_code}, Response time: {response_time:.3f} seconds")
+            return response_data
+        else:
+            print(f"Failed to fetch holdings account balances for accountId {account_id}. Status: {response.status_code}, Response time: {response_time:.3f} seconds")
+            return None
+    except requests.exceptions.RequestException as e:
+        print(f"Error during API call to get holdings account balances: {e}")
+        log_api_call(uri, "GET", None, "N/A (Request Failed)", {"error": str(e)})
+        return None
+
+def get_holdings_account_transactions(account_id):
+    """
+    Gets transaction details for an account using the Holdings microservice.
+    
+    The account_id here is the alternateId from a party arrangement response,
+    typically in the format [legalEntityId]-[account_reference] (e.g., GB0010001-1013715536).
+    This endpoint returns a list of transaction items under the "items" key.
+    
+    Example account_id: GB0010001-1013715536
+    Example response:
+    {
+        "items": [
+            {
+                "companyReference": "GB0010001",
+                "systemReference": "deposits",
+                "contractReference": "AA250731T5YN",
+                "id": "209603907542576.020001",
+                "accountId": "GB0010001-1013715536",
+                "valueDate": "2025-03-14",
+                "bookingDate": "2025-03-14",
+                "amountInAccountCurrency": 1500,
+                "transactionAmount": 1500,
+                "currency": "USD",
+                "narrative": "Account Parameter",
+                "paymentIndicator": "Credit",
+                "customerId": "2514040984"
+            }
+        ]
+    }
+    """
+    uri = HOLDINGS_ACCOUNT_TRANSACTIONS_API_URI_TEMPLATE.format(account_id=account_id)
+    print(f"Attempting to get holdings account transactions for accountId {account_id} from {uri}")
+    try:
+        start_time = time.time()
+        response = requests.get(uri, headers={'Accept': 'application/json'})
+        end_time = time.time()
+        response_time = end_time - start_time
+        
+        response_data = {}
+        try:
+            response_data = response.json()
+        except json.JSONDecodeError:
+            response_data = {"error": "Failed to decode JSON response", "content": response.text}
+        log_api_call(uri, "GET", None, response.status_code, response_data)
+        if response.status_code == 200:
+            print(f"Successfully fetched holdings account transactions for accountId {account_id}. Status: {response.status_code}, Response time: {response_time:.3f} seconds")
+            return response_data
+        else:
+            print(f"Failed to fetch holdings account transactions for accountId {account_id}. Status: {response.status_code}, Response time: {response_time:.3f} seconds")
+            return None
+    except requests.exceptions.RequestException as e:
+        print(f"Error during API call to get holdings account transactions: {e}")
+        log_api_call(uri, "GET", None, "N/A (Request Failed)", {"error": str(e)})
+        return None
+
+# --- Functions for Debit/Credit Transactions ---
+def generate_debit_payload(account_reference):
+    """Generates a randomized payload for a debit transaction."""
+    reason = random.choice(DEBIT_REASONS)
+    txn_ref = generate_transaction_reference(reason, "DEBIT")
+    amount = str(random.randint(10, 1000))
+    return {
+        "paymentTransactionReference": txn_ref,
+        "paymentReservationReference": txn_ref, # Using same as txn_ref as per example
+        "paymentValueDate": "20250415",
+        "debitAccount": account_reference,
+        "debitCurrency": "USD",
+        "paymentAmount": amount,
+        "paymentDescription": reason
+    }
+
+def generate_credit_payload(account_reference):
+    """Generates a randomized payload for a credit transaction."""
+    reason = random.choice(CREDIT_REASONS)
+    txn_ref = generate_transaction_reference(reason, "CREDIT")
+    amount = str(random.randint(10, 1000))
+    return {
+        "paymentTransactionReference": txn_ref,
+        "paymentReservationReference": txn_ref,
+        "paymentValueDate": "20250415",
+        "creditAccount": account_reference, # Assuming API uses 'creditAccount'
+        "creditCurrency": "USD",
+        "paymentAmount": amount,
+        "paymentDescription": reason
+    }
+
+def perform_account_transaction(api_uri, payload, transaction_type):
+    """Performs an account transaction (debit or credit) via API call."""
+    print(f"Attempting to perform {transaction_type} transaction...")
+    try:
+        start_time = time.time()
+        response = requests.post(api_uri, json=payload, headers={'Content-Type': 'application/json'})
+        end_time = time.time()
+        response_time = end_time - start_time
+        
+        response_data = {}
+        try:
+            response_data = response.json()
+        except json.JSONDecodeError:
+            response_data = {"error": "Failed to decode JSON response", "content": response.text}
+        log_api_call(api_uri, "POST", payload, response.status_code, response_data)
+        if response.status_code >= 200 and response.status_code < 300:
+            print(f"{transaction_type.capitalize()} transaction successful. Status: {response.status_code}, Response time: {response_time:.3f} seconds")
+            return response_data
+        else:
+            print(f"Failed to perform {transaction_type} transaction. Status: {response.status_code}, Response time: {response_time:.3f} seconds")
+            print(f"Response body: {json.dumps(response_data, indent=2)}")
+            return None
+    except requests.exceptions.RequestException as e:
+        print(f"Error during API call for {transaction_type} transaction: {e}")
+        log_api_call(api_uri, "POST", payload, "N/A (Request Failed)", {"error": str(e)})
+        return None
+
 if __name__ == "__main__":
     with open(OUTPUT_FILE, "w") as f:
         f.write("Demo Flow Output Log\n")
@@ -623,10 +872,14 @@ if __name__ == "__main__":
                             print(f"Found {len(arrangements)} arrangements for partyId {customer_id}")
                             
                             print("\n--- Step 5: Get Balances for All Arrangements ---")
+                            # Iterate through arrangements and get balance for each arrangement ID
                             for idx, arrangement in enumerate(arrangements):
                                 if isinstance(arrangement, dict) and 'arrangementId' in arrangement:
                                     arrangement_id = arrangement.get('arrangementId')
                                     print(f"Processing arrangement {idx+1}/{len(arrangements)}: {arrangement_id}")
+                                    
+                                    # Call the balance API using the arrangementId as alternative key
+                                    # Note: The same balance API can fetch balance using either account_reference or arrangementId
                                     get_arrangement_balance(arrangement_id)
                                 else:
                                     print(f"Skipping arrangement {idx+1}/{len(arrangements)}: Invalid format")
@@ -701,23 +954,14 @@ if __name__ == "__main__":
                 
                 print(f"\n--- Step 9: Get Loan Schedules ---")
                 get_loan_schedules(loan_id)
-                
-                print(f"\n--- Step 10: Disburse Loan ---")
-                disburse_result = disburse_loan(loan_id, original_amount)
-                
-                if disburse_result:
-                    print("Loan disbursement step completed successfully.")
-                    
-                    # Capture Kafka events after disbursement (13 events)
-                    print(f"\n--- Step 11: Capture Last {HISTORY_COUNT} Kafka Events After Disbursement ---")
-                    captured_kafka_events = capture_kafka_events(KAFKA_LENDING_TOPIC, HISTORY_COUNT)  # Keep 13 for disbursement
-                    
-                    if captured_kafka_events:
-                        print(f"Successfully captured {len(captured_kafka_events)} events from Kafka topic {KAFKA_LENDING_TOPIC} after disbursement.")
-                    else:
-                        print(f"Failed to capture events from Kafka topic {KAFKA_LENDING_TOPIC} after disbursement.")
+
+                print(f"\n--- Step 10: Get Account Balance (after loan disbursement) ---")
+                if account_reference:
+                    get_account_balance(account_reference)
                 else:
-                    print("Loan disbursement step failed.")
+                    print("Skipping account balance check as account_reference is not available.")
+                
+                # REMOVED Step 10: Disburse Loan and subsequent Kafka capture
 
                 # aaa_id is not directly used by capture_kafka_events, but good to know if it was found
                 if aaa_id:
@@ -728,9 +972,85 @@ if __name__ == "__main__":
                 if loan_id:
                     print(f"Successfully identified loanId for API calls: {loan_id}")
             else:
-                print("Loan creation step failed. Skipping subsequent loan-related and Kafka steps.")
+                print("Loan creation step failed. Skipping subsequent loan-related steps.")
 
-            print("\n--- Step 12: Get Customer Arrangements ---")
+            # --- New Debit/Credit Transaction Steps ---
+            if account_reference: # Only proceed if we have an account reference
+                print(f"\n--- Step 12: Perform Debit Transaction ---")
+                debit_payload = generate_debit_payload(account_reference)
+                perform_account_transaction(DEBIT_ACCOUNT_API_URI, debit_payload, "debit")
+
+                print(f"\n--- Step 13: Perform First Credit Transaction ---")
+                credit_payload1 = generate_credit_payload(account_reference)
+                perform_account_transaction(CREDIT_ACCOUNT_API_URI, credit_payload1, "credit")
+
+                print(f"\n--- Step 14: Perform Second Credit Transaction ---")
+                credit_payload2 = generate_credit_payload(account_reference)
+                perform_account_transaction(CREDIT_ACCOUNT_API_URI, credit_payload2, "credit")
+
+                print(f"\n--- Step 15: Get Account Balance (after transactions) ---")
+                get_account_balance(account_reference)
+            else:
+                print("Skipping debit/credit transactions and final balance check as account_reference is not available.")
+            # --- End of New Debit/Credit Transaction Steps ---
+
+            # --- Add Holdings Microservice API calls ---
+            print("\n--- Step 16: Get Holdings Party Arrangements ---")
+            print("# The Holdings microservice provides a consolidated view of arrangements across all product lines")
+            print("# It acts as an aggregator, connecting party IDs with their arrangements in different systems")
+            holdings_arrangements = get_holdings_party_arrangements(customer_id)
+            
+            # Process Holdings arrangements
+            if holdings_arrangements and isinstance(holdings_arrangements, dict):
+                arrangements = holdings_arrangements.get('arrangements', [])
+                if arrangements and len(arrangements) > 0:
+                    # Extract the first account's alternateId for balance and transaction calls
+                    account_id = None
+                    
+                    print("\n--- Party ID to Arrangement ID Relationships ---")
+                    print("# Each arrangement has these key identifiers:")
+                    print("# 1. arrangementId: A unique identifier in the Holdings system (e.g., ARR25140JJV71PY4I1)")
+                    print("# 2. contractReference: Maps to the arrangementId in source systems (e.g., AA250731T5YN)")
+                    print("# 3. alternateId: Contains the account_reference with format legalEntityId-accountRef (e.g., GB0010001-1013715536)")
+                    
+                    # Iterate through arrangements to find a suitable account_id for balance check
+                    for arrangement in arrangements:
+                        if isinstance(arrangement, dict):
+                            # Print mapping information for each arrangement
+                            print(f"\nArrangement: {arrangement.get('arrangementId')}")
+                            print(f"  Product Line: {arrangement.get('productLine', 'Unknown')}")
+                            print(f"  System Reference: {arrangement.get('systemReference', 'Unknown')}")
+                            print(f"  Contract Reference: {arrangement.get('contractReference', 'Unknown')}")
+                            
+                            # Look for alternateReferences with type ACCOUNT 
+                            alt_refs = arrangement.get('alternateReferences', [])
+                            for alt_ref in alt_refs:
+                                if isinstance(alt_ref, dict) and alt_ref.get('alternateType') == 'ACCOUNT':
+                                    alt_id = alt_ref.get('alternateId')
+                                    print(f"  Account Alternate ID: {alt_id}")
+                                    
+                                    # Use the first account ID we find for subsequent API calls
+                                    if not account_id:
+                                        account_id = alt_id
+                    
+                    # If we found an account_id, use it for balance and transaction calls
+                    if account_id:
+                        print(f"\n--- Step 17: Get Holdings Account Balances ---")
+                        print(f"# Using account_id {account_id} from Holdings arrangement")
+                        get_holdings_account_balances(account_id)
+                        
+                        print(f"\n--- Step 18: Get Holdings Account Transactions ---")
+                        print(f"# Using account_id {account_id} from Holdings arrangement")
+                        get_holdings_account_transactions(account_id)
+                    else:
+                        print("\nNo suitable account ID found in Holdings arrangements. Skipping balance and transaction steps.")
+                else:
+                    print("No arrangements found in Holdings response. Skipping additional Holdings API calls.")
+            else:
+                print("Failed to retrieve Holdings arrangements. Skipping additional Holdings API calls.")
+            # --- End of Holdings Microservice API calls ---
+
+            print("\n--- Step 19: Get Customer Arrangements ---")
             get_customer_arrangements(customer_id)
         else:
             print("Could not extract customer ID from customer creation response. Skipping subsequent steps.")

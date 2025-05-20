@@ -16,32 +16,45 @@
     const apiEndpoints = {
         // Party/Customer APIs
         party: {
-            custom: { 
-                label: "Custom URI", 
-                template: "" 
-            },
             createCustomer: {
                 label: "Create Customer", 
                 template: "http://modulardemo.northeurope.cloudapp.azure.com/ms-party-api/api/v5.0.0/party/parties",
                 defaultMethod: "POST",
                 samplePayload: {
-                    "dateOfBirth": "1985-03-21",
+                    "dateOfBirth": "1990-05-15",
                     "cityOfBirth": "London",
-                    "firstName": "David",
-                    "middleName": "A",
-                    "lastName": "Jones",
-                    "nickName": "David",
-                    "suffix": "Jr.",
-                    "alias": "David"
+                    "firstName": "Alice",
+                    "middleName": "M",
+                    "lastName": "Smith",
+                    "nickName": "Alice",
+                    "suffix": "B.A.",
+                    "alias": "Alice"
                 }
+            },
+            getCustomerDetails: {
+                label: "Get Customer Details", 
+                template: "http://modulardemo.northeurope.cloudapp.azure.com/ms-party-api/api/v5.0.0/party/parties/{customerId}",
+                defaultMethod: "GET",
+                samplePayload: "",
+                params: ['customerId']
             }
         },
         
         // Deposits/Accounts APIs
         deposits: {
-            custom: { 
-                label: "Custom URI", 
-                template: "" 
+            getPartyArrangements: {
+                label: "Get Party Arrangements (Deposits)", 
+                template: "http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v1.0.0/holdings/parties/{partyId}/arrangements",
+                defaultMethod: "GET",
+                samplePayload: "",
+                params: ['partyId']
+            },
+            getAccountBalance: {
+                label: "Get Account Balance", 
+                template: "http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v2.0.0/holdings/accounts/{accountId}/balances",
+                defaultMethod: "GET",
+                samplePayload: "",
+                params: ['accountId']
             },
             createCurrentAccount: {
                 label: "Create Current Account", 
@@ -50,84 +63,86 @@
                 samplePayload: {
                     "parties": [
                         {
-                            "partyId": "2513655771",
+                            "partyId": "2513533518",
                             "partyRole": "OWNER"
                         }
                     ],
                     "accountName": "current",
-                    "openingDate": new Date().toISOString().slice(0,10).replace(/-/g,""),
+                    "openingDate": "20250314",
                     "productId": "CHECKING.ACCOUNT",
                     "currency": "USD",
                     "branchCode": "01123",
                     "quotationReference": "QUOT246813"
                 }
             },
-            getAccountBalance: {
-                label: "Get Account Balance", 
-                template: "http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v2.0.0/holdings/accounts/{account_reference}/balances",
-                defaultMethod: "GET",
-                samplePayload: {}
+            debitAccount: {
+                label: "Debit Account",
+                template: "http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v1.0.0/order/payments/debitAccount",
+                defaultMethod: "POST",
+                samplePayload: {
+                    "paymentTransactionReference": "DEBIT_UTILBILL_1716422512345_789",
+                    "paymentReservationReference": "DEBIT_UTILBILL_1716422512345_789",
+                    "paymentValueDate": "20250415",
+                    "debitAccount": "1013715398",
+                    "debitCurrency": "USD",
+                    "paymentAmount": "75",
+                    "paymentDescription": "Utility Bill Payment"
+                }
             },
-            getPartyArrangements: {
-                label: "Get Party Arrangements", 
-                template: "http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v1.0.0/holdings/parties/{party_id}/arrangements",
-                defaultMethod: "GET",
-                samplePayload: {}
+            creditAccount: {
+                label: "Credit Account",
+                template: "http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v1.0.0/order/payments/creditAccount",
+                defaultMethod: "POST",
+                samplePayload: {
+                    "paymentTransactionReference": "CREDIT_SALARYDEPOSIT_1716422523456_123",
+                    "paymentReservationReference": "CREDIT_SALARYDEPOSIT_1716422523456_123",
+                    "paymentValueDate": "20250415",
+                    "creditAccount": "1013715398",
+                    "creditCurrency": "USD",
+                    "paymentAmount": "2500",
+                    "paymentDescription": "Salary Deposit"
+                }
             }
         },
         
         // Lending APIs
         lending: {
-            custom: { 
-                label: "Custom URI", 
-                template: "" 
-            },
             createLoan: {
-                label: "Create Loan", 
+                label: "Create & Disburse Loan",
                 template: "http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/consumerLoans",
                 defaultMethod: "POST",
                 samplePayload: {
                     "header": {},
                     "body": {
-                        "partyIds": [{"partyId": "2513655771", "partyRole": "OWNER"}],
+                        "partyIds": [{"partyId": "2513533518", "partyRole": "OWNER"}],
                         "productId": "MORTGAGE.PRODUCT",
                         "currency": "USD",
                         "arrangementEffectiveDate": "",
-                        "commitment": [{"amount": "120000", "term": "3Y"}],
+                        "commitment": [{"amount": "150000", "term": "10Y"}],
                         "schedule": [{"payment": [{}, {"paymentFrequency": "e0Y e1M e0W e0D e0F"}]}],
                         "settlement": [{
-                            "payout": [{"payoutSettlement": "YES", "property": [{"payoutAccount": "DDAComposable|GB0010001|123456"}]}],
+                            "payout": [{"payoutSettlement": "YES", "property": [{"payoutAccount": "DDAComposable|GB0010001|1013715398"}]}],
                             "assocSettlement": [
-                                {"payinSettlement": "YES", "reference": [{"payinAccount": "DDAComposable|GB0010001|123456"}]},
-                                {"payinSettlement": "YES", "reference": [{"payinAccount": "DDAComposable|GB0010001|123456"}]}
+                                {"payinSettlement": "YES", "reference": [{"payinAccount": "DDAComposable|GB0010001|1013715398"}]},
+                                {"payinSettlement": "YES", "reference": [{"payinAccount": "DDAComposable|GB0010001|1013715398"}]}
                             ]
                         }]
                     }
                 }
             },
-            disburseLoan: {
-                label: "Disburse Loan", 
-                template: "http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/{loan_id}/disbursement",
-                defaultMethod: "PUT",
-                samplePayload: {
-                    "body": {
-                        "currencyId": "USD",
-                        "effectiveDate": new Date().toISOString().slice(0,10).replace(/-/g,""),
-                        "transactionAmount": 96000
-                    }
-                }
-            },
-            schedules: {
-                label: "Loan Schedules", 
-                template: "http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/{loan_id}/schedules",
+            getLoanStatus: {
+                label: "Get Loan Status", 
+                template: "http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/{loanId}/status",
                 defaultMethod: "GET",
-                samplePayload: {}
+                samplePayload: "",
+                params: ['loanId']
             },
-            status: {
-                label: "Loan Status", 
-                template: "http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/{loan_id}/status",
+            getLoanSchedules: {
+                label: "Get Loan Schedules", 
+                template: "http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/{loanId}/schedules",
                 defaultMethod: "GET",
-                samplePayload: {}
+                samplePayload: "",
+                params: ['loanId']
             }
         }
     };
@@ -170,35 +185,64 @@
         }
     }
 
-    function updateUri(column, endpoint) {
-        const uriField = document.getElementById(`${column}-uri`);
-        const methodField = document.getElementById(`${column}-method`);
-        const payloadField = document.getElementById(`${column}-request-payload`);
-        
-        const endpoints = apiEndpoints[column];
-        const selected = endpoints[endpoint];
-        
-        if (selected) {
-            uriField.value = selected.template;
-            
-            // Set method if default is specified
-            if (selected.defaultMethod) {
-                const options = methodField.options;
-                for (let i = 0; i < options.length; i++) {
-                    if (options[i].text === selected.defaultMethod) {
-                        methodField.selectedIndex = i;
-                        break;
+    function populateApiDropdowns() {
+        const columns = ['party', 'deposits', 'lending'];
+        columns.forEach(column => {
+            const selectElement = document.getElementById(`${column}-endpoint`);
+            if (selectElement) {
+                // Clear existing options except for the first "Choose an API" placeholder
+                while (selectElement.options.length > 1) {
+                    selectElement.remove(1);
+                }
+                // Repopulate based on the apiEndpoints structure
+                for (const apiKey in apiEndpoints[column]) {
+                    if (apiEndpoints[column].hasOwnProperty(apiKey)) {
+                        const option = document.createElement('option');
+                        option.value = apiKey; // e.g., createCustomer, getPartyArrangements
+                        option.textContent = apiEndpoints[column][apiKey].label; // e.g., "Create Customer"
+                        selectElement.appendChild(option);
                     }
                 }
             }
-            
-            // Set sample payload if available
-            if (selected.samplePayload) {
-                // Format the payload without HTML styling for the textarea
-                payloadField.value = JSON.stringify(selected.samplePayload, null, 2);
+        });
+    }
+
+    function updateUri(column, endpointKey) {
+        const uriField = document.getElementById(`${column}-uri`);
+        const payloadField = document.getElementById(`${column}-request-payload`);
+        const methodSelect = document.getElementById(`${column}-method`);
+
+        if (!apiEndpoints[column] || !apiEndpoints[column][endpointKey]) {
+            uriField.value = '';
+            payloadField.value = '';
+            return;
+        }
+
+        const selectedApi = apiEndpoints[column][endpointKey];
+
+        let uri = selectedApi.template;
+        if (selectedApi.params && selectedApi.params.length > 0) {
+            selectedApi.params.forEach(param => {
+                const paramValue = prompt(`Enter value for ${param}:`);
+                uri = uri.replace(`{${param}}`, paramValue || '');
+            });
+        }
+        uriField.value = uri;
+
+        if (selectedApi.defaultMethod === 'GET') {
+            payloadField.value = '';
+        } else if (selectedApi.samplePayload) {
+            if (typeof selectedApi.samplePayload === 'object') {
+                payloadField.value = JSON.stringify(selectedApi.samplePayload, null, 2);
             } else {
-                payloadField.value = '';
+                payloadField.value = selectedApi.samplePayload;
             }
+        } else {
+            payloadField.value = '';
+        }
+
+        if (selectedApi.defaultMethod) {
+            methodSelect.value = selectedApi.defaultMethod;
         }
     }
 
@@ -212,11 +256,14 @@
         const uri = uriField.value;
         let payload = null;
         
-        try {
-            payload = payloadField.value ? JSON.parse(payloadField.value) : null;
-        } catch (e) {
-            responseField.value = `Error parsing JSON payload: ${e.message}`;
-            return;
+        // For GET requests, ensure payload is null
+        if (method !== 'GET' && payloadField.value) {
+            try {
+                payload = JSON.parse(payloadField.value);
+            } catch (e) {
+                responseField.value = `Error parsing JSON payload: ${e.message}`;
+                return;
+            }
         }
         
         // Show loading state
@@ -613,18 +660,27 @@
         // Load data from backend
         loadHeadlessData();
         
+        // Populate dropdowns first
+        populateApiDropdowns(); // Call this before setting default values
+
         // Set default API for each column
-        const partyEndpoint = document.getElementById('party-endpoint');
-        partyEndpoint.value = 'createCustomer';
-        updateUri('party', 'createCustomer');
+        const partyEndpointSelect = document.getElementById('party-endpoint');
+        if (partyEndpointSelect) {
+            partyEndpointSelect.value = 'createCustomer';
+            updateUri('party', 'createCustomer');
+        }
         
-        const depositsEndpoint = document.getElementById('deposits-endpoint');
-        depositsEndpoint.value = 'createCurrentAccount';
-        updateUri('deposits', 'createCurrentAccount');
+        const depositsEndpointSelect = document.getElementById('deposits-endpoint');
+        if (depositsEndpointSelect) {
+            depositsEndpointSelect.value = 'createCurrentAccount';
+            updateUri('deposits', 'createCurrentAccount');
+        }
         
-        const lendingEndpoint = document.getElementById('lending-endpoint');
-        lendingEndpoint.value = 'createLoan';
-        updateUri('lending', 'createLoan');
+        const lendingEndpointSelect = document.getElementById('lending-endpoint');
+        if (lendingEndpointSelect) {
+            lendingEndpointSelect.value = 'createLoan';
+            updateUri('lending', 'createLoan');
+        }
         
         // Make reload function available globally
         window.reloadHeadlessData = loadHeadlessData;
@@ -639,28 +695,43 @@
         stopEventStream('deposits');
         stopEventStream('lending');
         
-        // Remove event listeners
+        // Remove event listeners dynamically if they were added
+        const partyEndpoint = document.getElementById('party-endpoint');
+        if (partyEndpoint) partyEndpoint.replaceWith(partyEndpoint.cloneNode(true));
+        const partySend = document.getElementById('party-send');
+        if (partySend) partySend.replaceWith(partySend.cloneNode(true));
+        const partyConnect = document.getElementById('party-connect');
+        if (partyConnect) partyConnect.replaceWith(partyConnect.cloneNode(true));
+
+        const depositsEndpoint = document.getElementById('deposits-endpoint');
+        if (depositsEndpoint) depositsEndpoint.replaceWith(depositsEndpoint.cloneNode(true));
+        const depositsSend = document.getElementById('deposits-send');
+        if (depositsSend) depositsSend.replaceWith(depositsSend.cloneNode(true));
+        const depositsConnect = document.getElementById('deposits-connect');
+        if (depositsConnect) depositsConnect.replaceWith(depositsConnect.cloneNode(true));
+
+        const lendingEndpoint = document.getElementById('lending-endpoint');
+        if (lendingEndpoint) lendingEndpoint.replaceWith(lendingEndpoint.cloneNode(true));
+        const lendingSend = document.getElementById('lending-send');
+        if (lendingSend) lendingSend.replaceWith(lendingSend.cloneNode(true));
+        const lendingConnect = document.getElementById('lending-connect');
+        if (lendingConnect) lendingConnect.replaceWith(lendingConnect.cloneNode(true));
+
         const toggleDiagramBtn = document.getElementById('toggle-diagram');
         if (toggleDiagramBtn) {
-            toggleDiagramBtn.removeEventListener('click', null);
+            toggleDiagramBtn.replaceWith(toggleDiagramBtn.cloneNode(true));
         }
-        
-        document.getElementById('party-endpoint').removeEventListener('change', null);
-        document.getElementById('party-send').removeEventListener('click', null);
-        document.getElementById('party-connect').removeEventListener('click', null);
-        
-        document.getElementById('deposits-endpoint').removeEventListener('change', null);
-        document.getElementById('deposits-send').removeEventListener('click', null);
-        document.getElementById('deposits-connect').removeEventListener('click', null);
-        
-        document.getElementById('lending-endpoint').removeEventListener('change', null);
-        document.getElementById('lending-send').removeEventListener('click', null);
-        document.getElementById('lending-connect').removeEventListener('click', null);
         
         // Remove the global functions
         delete window.reloadHeadlessData;
+        delete window.cleanupCurrentTab; // Self-remove after execution if desired, or manage centrally
     };
 
     // --- Initial Execution ---
-    initHeadlessV2Tab();
+    // Ensure DOM is fully loaded before initializing
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initHeadlessV2Tab);
+    } else {
+        initHeadlessV2Tab();
+    }
 })(); 

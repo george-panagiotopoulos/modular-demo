@@ -5,7 +5,18 @@
     // State
     let accountsData = [];
     let loansData = [];
-    let partyId = localStorage.getItem('mobileAppPartyId') || "2513655771"; // Get from localStorage with fallback
+    const knownGoodPartyId = "2514044333"; // Party ID known to work from curl tests
+    let partyId = localStorage.getItem('mobileAppPartyId');
+    
+    // If localStorage had a value, check if it's the problematic one or if it's null/empty
+    // If it is problematic, or no PartyId in local storage, use the known good one.
+    if (!partyId || partyId === "2513960210") {
+        partyId = knownGoodPartyId;
+        localStorage.setItem('mobileAppPartyId', partyId); // Update localStorage with the good one
+    }
+    
+    console.log("Using Party ID:", partyId); // Log the partyId being used
+
     let staticListenersAdded = false;
 
     // --- DOM Elements ---
@@ -62,13 +73,44 @@
     function renderTransactionItem(transaction) {
         const amountClass = transaction.amount < 0 ? 'text-red-600' : 'text-green-600';
         const formattedAmount = new Intl.NumberFormat('en-US', { style: 'currency', currency: transaction.currency }).format(transaction.amount);
-        const date = new Date(transaction.bookingDate).toLocaleDateString();
+        
+        // Format date - handle both YYYY-MM-DD and other formats
+        const formatDate = (dateStr) => {
+            if (!dateStr) return "N/A";
+            
+            try {
+                // Try to parse as ISO date first (YYYY-MM-DD)
+                if (dateStr.includes('-')) {
+                    const date = new Date(dateStr);
+                    return date.toLocaleDateString();
+                } else if (dateStr.length === 8) {
+                    // Handle YYYYMMDD format
+                    const year = dateStr.substring(0, 4);
+                    const month = dateStr.substring(4, 6);
+                    const day = dateStr.substring(6, 8);
+                    return new Date(`${year}-${month}-${day}`).toLocaleDateString();
+                }
+                return dateStr; // Return as is if we can't parse
+            } catch (e) {
+                return dateStr; // Return original on error
+            }
+        };
+        
+        const date = formatDate(transaction.bookingDate);
+        const icon = transaction.amount < 0 
+            ? `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>`
+            : `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>`;
 
         return `
-            <div class="flex justify-between items-center border-b border-gray-100 py-2 last:border-b-0">
-                <div>
-                    <div class="text-sm font-medium text-gray-800">${transaction.description}</div>
-                    <div class="text-xs text-gray-500">${date} - ${transaction.type}</div>
+            <div class="flex justify-between items-center border-b border-gray-100 py-2 last:border-b-0 hover:bg-gray-50 transition-colors duration-150 rounded px-2">
+                <div class="flex items-center">
+                    <div class="mr-3 bg-gray-100 rounded-full p-2">
+                        ${icon}
+                    </div>
+                    <div>
+                        <div class="text-sm font-medium text-gray-800">${transaction.description}</div>
+                        <div class="text-xs text-gray-500">${date} • ${transaction.type}</div>
+                    </div>
                 </div>
                 <div class="text-sm font-semibold ${amountClass}">${formattedAmount}</div>
             </div>
@@ -79,6 +121,9 @@
         const formattedPrincipal = new Intl.NumberFormat('en-US', { style: 'currency', currency: loan.currency }).format(loan.principalAmount);
         const formattedOutstanding = new Intl.NumberFormat('en-US', { style: 'currency', currency: loan.currency }).format(loan.outstandingBalance);
         const formattedNextPayment = new Intl.NumberFormat('en-US', { style: 'currency', currency: loan.currency }).format(loan.nextPaymentAmount);
+        
+        // Improved loan display name
+        const loanDisplayName = `${loan.productName === 'MORTGAGE.PRODUCT' ? 'Mortgage' : (loan.productName || 'Loan')} (${loan.loanId})`;
         
         // Format the date from YYYYMMDD to a more readable format
         const formatDate = (dateStr) => {
@@ -95,8 +140,8 @@
         return `
             <div class="bg-white p-5 rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-200">
                 <div class="flex justify-between items-center mb-3">
-                    <span class="font-semibold text-gray-800 text-lg">${loan.displayName}</span>
-                    <span class="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full font-medium">${loan.productName}</span>
+                    <span class="font-semibold text-gray-800 text-lg truncate" title="${loanDisplayName}">${loanDisplayName}</span>
+                    <span class="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full font-medium whitespace-nowrap">${loan.productName === 'MORTGAGE.PRODUCT' ? 'Mortgage' : loan.productName}</span>
                 </div>
                 <div class="text-2xl font-bold text-gray-900 mb-4">${formattedOutstanding}</div>
                 
@@ -131,10 +176,15 @@
                     </div>
                 </div>
                 
-                <div class="flex justify-between items-center">
+                <div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-100">
                     <span class="text-xs text-gray-500">ID: ${loan.loanId}</span>
-                    <button data-loan-id="${loan.loanId}" class="view-loan-details-btn bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
-                        View Schedule
+                    <button data-loan-id="${loan.loanId}" class="view-loan-transactions-btn text-sm text-blue-600 hover:underline focus:outline-none">
+                        View Transactions
+                    </button>
+                </div>
+                <div class="mt-3">
+                    <button data-loan-id="${loan.loanId}" class="view-loan-details-btn w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+                        View Payment Schedule
                     </button>
                 </div>
             </div>
@@ -320,12 +370,19 @@
             // Show loading indicator
             accountsListDiv.innerHTML = '<div class="text-center text-gray-500 py-4">Loading accounts...</div>';
             
-            // Make the API call to get party arrangements from the new API
-            const response = await fetch(`/api/mobile/party/${partyId}/arrangements?_=${Date.now()}`);
-            if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+            // Make the API call via the Flask proxy
+            const apiUrl = `/api/proxy/holdings/parties/${partyId}/arrangements?_=${Date.now()}`;
+            console.log("Fetching accounts from URL (via proxy for arrangements): " + apiUrl);
+            
+            const response = await fetch(apiUrl);
+            if (!response.ok) {
+                const errorText = await response.text().catch(() => "Failed to get error text");
+                console.error(`HTTP Error ${response.status}: ${response.statusText}`, errorText);
+                throw new Error(`HTTP Error: ${response.status} - ${response.statusText}`);
+            }
             
             const arrangementsData = await response.json();
-            console.log("Party arrangements received:", arrangementsData);
+            console.log("Holdings arrangements received:", arrangementsData);
             
             // Check if we have arrangements array
             const arrangements = arrangementsData.arrangements || [];
@@ -338,38 +395,68 @@
             // Transform arrangements into account data
             const accounts = [];
             for (const arrangement of arrangements) {
-                if (arrangement.productId === "CHECKING.ACCOUNT") {
-                    // Get the balance for this arrangement
+                // Only process accounts from the ACCOUNTS product line
+                if (arrangement.productLine === "ACCOUNTS") {
+                    // Get the account_id from alternateReferences 
+                    let accountId = null;
+                    if (arrangement.alternateReferences && arrangement.alternateReferences.length > 0) {
+                        for (const ref of arrangement.alternateReferences) {
+                            if (ref.alternateType === "ACCOUNT") {
+                                accountId = ref.alternateId;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (!accountId) {
+                        // If no alternate ID found, use the arrangement ID
+                        accountId = arrangement.arrangementId;
+                    }
+                    
+                    // Get the balance for this account
                     try {
-                        const arrangementId = arrangement.arrangementId;
-                        const balanceResponse = await fetch(`/api/mobile/accounts/${arrangementId}/balances?_=${Date.now()}`);
+                        const balanceUrl = `/api/proxy/holdings/accounts/${accountId}/balances?_=${Date.now()}`;
+                        console.log("Fetching balance from URL:", balanceUrl);
+                        
+                        const balanceResponse = await fetch(balanceUrl);
                         if (balanceResponse.ok) {
                             const balanceData = await balanceResponse.json();
-                            accounts.push({
-                                accountId: arrangementId,
-                                displayName: arrangement.productName || "Current Account",
-                                productName: arrangement.productTypeName || "Current Account",
-                                type: "current",
-                                currency: arrangement.currencyId || "USD",
-                                currentBalance: balanceData.ledgerBalance || 0,
-                                availableBalance: balanceData.availableBalance || 0,
-                                creditLimit: balanceData.creditLimit || 0
-                            });
+                            console.log(`Balance data for ${accountId}:`, balanceData);
+                            
+                            // Check if we have balance items
+                            const balanceItems = balanceData.items || [];
+                            if (balanceItems.length > 0) {
+                                const balance = balanceItems[0]; // Use the first balance item
+                                
+                                accounts.push({
+                                    accountId: accountId,
+                                    displayName: arrangement.productName || "Current Account",
+                                    productName: arrangement.productGroup || "Current Account",
+                                    type: "current",
+                                    currency: balance.currencyId || "USD",
+                                    currentBalance: balance.onlineActualBalance || 0,
+                                    availableBalance: balance.availableBalance || 0,
+                                    arrangementId: arrangement.arrangementId // Store the arrangement ID for later use
+                                });
+                            }
                         } else {
+                            const errorText = await balanceResponse.text().catch(() => "Failed to get error text");
+                            console.error(`Balance API Error ${balanceResponse.status}: ${balanceResponse.statusText}`, errorText);
+                            
                             // Add the account with default balance values if balance API fails
                             accounts.push({
-                                accountId: arrangementId,
+                                accountId: accountId,
                                 displayName: arrangement.productName || "Current Account",
-                                productName: arrangement.productTypeName || "Current Account",
+                                productName: arrangement.productGroup || "Current Account",
                                 type: "current",
-                                currency: arrangement.currencyId || "USD",
+                                currency: "USD",
                                 currentBalance: 0,
                                 availableBalance: 0,
-                                creditLimit: 0
+                                arrangementId: arrangement.arrangementId
                             });
                         }
                     } catch (error) {
-                        console.error(`Error fetching balance for arrangement ${arrangement.arrangementId}:`, error);
+                        console.error(`Error fetching balance for account ${accountId}:`, error);
                     }
                 }
             }
@@ -391,7 +478,7 @@
             populateFromAccountSelect(accountsData);
         } catch (error) {
             console.error("Error fetching accounts:", error);
-            accountsListDiv.innerHTML = '<div class="text-center text-red-500 py-4">Could not load accounts.</div>';
+            accountsListDiv.innerHTML = `<div class="text-center text-red-500 py-4">Could not load accounts: ${error.message}</div>`;
         }
     }
 
@@ -404,12 +491,158 @@
             // Show loading indicator
             loansListDiv.innerHTML = '<div class="text-center text-gray-500 py-4">Loading loans...</div>';
             
-            // Make the API call
-            const response = await fetch(`/api/mobile/party/${partyId}/loans?_=${Date.now()}`);
-            if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+            // Make the API call via the Flask proxy
+            const apiUrl = `/api/proxy/holdings/parties/${partyId}/arrangements?_=${Date.now()}`;
+            console.log("Fetching loans from URL (via proxy for arrangements): " + apiUrl);
             
-            loansData = await response.json();
-            console.log("Loans received:", loansData);
+            const response = await fetch(apiUrl);
+            if (!response.ok) {
+                const errorText = await response.text().catch(() => "Failed to get error text");
+                console.error(`HTTP Error ${response.status}: ${response.statusText}`, errorText);
+                throw new Error(`HTTP Error: ${response.status} - ${response.statusText}`);
+            }
+            
+            const arrangementsData = await response.json();
+            console.log("Holdings arrangements received:", arrangementsData);
+            
+            // Check if we have arrangements array
+            const arrangements = arrangementsData.arrangements || [];
+            
+            // Filter for loan arrangements (LENDING product line)
+            const loanArrangements = arrangements.filter(arr => arr.productLine === "LENDING");
+            console.log("Filtered LENDING arrangements:", JSON.stringify(loanArrangements, null, 2)); // Log filtered loan arrangements
+
+            if (loanArrangements.length === 0) {
+                loansListDiv.innerHTML = '<div class="text-center text-gray-500 py-4">No loans found for this customer.</div>';
+                loansData = [];
+                return;
+            }
+            
+            // Process each loan arrangement
+            const loans = [];
+            for (const arrangement of loanArrangements) {
+                try {
+                    // Get loan details from the contract reference
+                    const loanId = arrangement.contractReference;
+                    console.log(`Processing LENDING arrangement: ${arrangement.arrangementId}, contractReference (loanId): ${loanId}`); // Log loanId
+
+                    if (!loanId) continue;
+                    
+                    // Get the account_id from alternateReferences for balance and potentially transactions
+                    let accountIdForTransactions = null; // Changed variable name for clarity
+                    if (arrangement.alternateReferences && arrangement.alternateReferences.length > 0) {
+                        for (const ref of arrangement.alternateReferences) {
+                            if (ref.alternateType === "ACCOUNT") {
+                                accountIdForTransactions = ref.alternateId;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // If we have an account ID, fetch the balance
+                    let balanceData = null;
+                    if (accountIdForTransactions) { // Use the renamed variable
+                        try {
+                            const balanceUrl = `/api/proxy/holdings/accounts/${accountIdForTransactions}/balances?_=${Date.now()}`;
+                            console.log(`Fetching loan balance from URL:`, balanceUrl);
+                            
+                            const balanceResponse = await fetch(balanceUrl);
+                            if (balanceResponse.ok) {
+                                const balanceResult = await balanceResponse.json();
+                                if (balanceResult.items && balanceResult.items.length > 0) {
+                                    balanceData = balanceResult.items[0];
+                                }
+                            } else {
+                                const errorText = await balanceResponse.text().catch(() => "Failed to get error text");
+                                console.error(`Loan Balance API Error ${balanceResponse.status}: ${balanceResponse.statusText}`, errorText);
+                            }
+                        } catch (error) {
+                            console.error(`Error fetching balance for loan account ${accountIdForTransactions}:`, error);
+                        }
+                    }
+                    
+                    // Get additional loan details if needed (status, payment schedule, etc.)
+                    const statusUrl = `/api/proxy/lending/arrangements/${loanId}/status?_=${Date.now()}`;
+                    console.log(`Fetching loan status from URL:`, statusUrl);
+                    
+                    let statusResponse = null;
+                    try {
+                        statusResponse = await fetch(statusUrl);
+                        if (!statusResponse.ok) {
+                            console.error(`Failed to get loan status: ${statusResponse.status} ${statusResponse.statusText}`);
+                        }
+                    } catch (error) {
+                        console.error(`Error fetching loan status: ${error}`);
+                    }
+                    
+                    // Create a loan object with the data we have so far
+                    const loan = {
+                        loanId: loanId,
+                        displayName: `Loan ${loanId.slice(-4)}`,
+                        productName: arrangement.productGroup || "Personal Loan",
+                        currency: balanceData?.currencyId || "USD",
+                        principalAmount: 0,
+                        outstandingBalance: balanceData?.onlineActualBalance || 0,
+                        nextPaymentAmount: 0,
+                        nextPaymentDate: "",
+                        status: "Active",
+                        interestRate: 4.5,
+                        maturityDate: "",
+                        arrangementId: arrangement.arrangementId,
+                        accountIdForTransactions: accountIdForTransactions // Store it here
+                    };
+                    
+                    // Add status data if available
+                    if (statusResponse && statusResponse.ok) {
+                        try {
+                            const statusData = await statusResponse.json();
+                            console.log(`Status data for ${loanId}:`, statusData);
+                            
+                            if (statusData && statusData.body) {
+                                const status = statusData.body;
+                                
+                                // Update loan object with status data
+                                if (status.outstandingBalance) {
+                                    loan.outstandingBalance = parseFloat(status.outstandingBalance);
+                                }
+                                
+                                if (status.principalAmount) {
+                                    loan.principalAmount = parseFloat(status.principalAmount);
+                                }
+                                
+                                if (status.nextPaymentAmount) {
+                                    loan.nextPaymentAmount = parseFloat(status.nextPaymentAmount);
+                                }
+                                
+                                if (status.nextPaymentDate) {
+                                    loan.nextPaymentDate = status.nextPaymentDate;
+                                }
+                                
+                                if (status.status) {
+                                    loan.status = status.status;
+                                }
+                                
+                                if (status.interestRate) {
+                                    loan.interestRate = parseFloat(status.interestRate);
+                                }
+                                
+                                if (status.maturityDate) {
+                                    loan.maturityDate = status.maturityDate;
+                                }
+                            }
+                        } catch (error) {
+                            console.error(`Error processing loan status data for ${loanId}:`, error);
+                        }
+                    }
+                    
+                    loans.push(loan);
+                } catch (error) {
+                    console.error(`Error processing loan arrangement:`, error);
+                }
+            }
+            
+            loansData = loans;
+            console.log("Processed loan data:", loansData);
             
             // Update headless tab if it's initialized
             try {
@@ -424,24 +657,57 @@
             renderLoans(loansData, loansListDiv);
         } catch (error) {
             console.error("Error fetching loans:", error);
-            loansListDiv.innerHTML = '<div class="text-center text-red-500 py-4">Could not load loans.</div>';
+            loansListDiv.innerHTML = `<div class="text-center text-red-500 py-4">Could not load loans: ${error.message}</div>`;
         }
     }
 
     async function fetchTransactions(accountId) {
-        console.log(`Fetching transactions for ${accountId}...`);
+        console.log(`Fetching transactions for account ID: ${accountId}`);
         const { transactionsListDiv } = getElements();
         if (!transactionsListDiv) return;
-        transactionsListDiv.innerHTML = '<div class="text-center text-gray-500 py-4">Loading transactions...</div>'; // Show loading
+        
         try {
-            const response = await fetch(`/api/mobile/accounts/${accountId}/transactions?_=${Date.now()}`);
-            if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
-            const transactions = await response.json();
-            console.log(`Transactions for ${accountId}:`, transactions);
-            renderTransactions(transactions, transactionsListDiv);
+            // Show loading indicator
+            transactionsListDiv.innerHTML = '<div class="text-center text-gray-500 py-4">Loading transactions...</div>';
+            
+            // Fetch transactions directly from the Holdings API
+            const apiUrl = `/api/proxy/holdings/accounts/${accountId}/transactions?_=${Date.now()}`;
+            console.log("Fetching transactions from URL:", apiUrl);
+            
+            const response = await fetch(apiUrl);
+            
+            if (!response.ok) {
+                const errorText = await response.text().catch(() => "Failed to get error text");
+                console.error(`HTTP Error ${response.status}: ${response.statusText}`, errorText);
+                throw new Error(`HTTP Error: ${response.status} - ${response.statusText}`);
+            }
+            
+            const transactionsData = await response.json();
+            console.log("Transactions data received:", transactionsData);
+            
+            // Check if we have transaction items
+            const transactions = transactionsData.items || [];
+            if (transactions.length === 0) {
+                transactionsListDiv.innerHTML = '<div class="text-center text-gray-500 py-4">No transactions found for this account.</div>';
+                return;
+            }
+            
+            // Transform API data into transaction objects for rendering
+            const formattedTransactions = transactions.map(tx => ({
+                id: tx.id || `tx-${Math.random().toString(36).substring(2, 10)}`,
+                date: tx.valueDate || tx.bookingDate,
+                amount: tx.transactionAmount || 0,
+                currency: tx.currency || "USD",
+                description: tx.narrative || "Transaction",
+                type: tx.paymentIndicator || "Debit",
+                icon: tx.paymentIndicator === "Credit" ? "arrow-down" : "arrow-up",
+                status: "Completed"
+            }));
+            
+            renderTransactions(formattedTransactions, transactionsListDiv);
         } catch (error) {
-            console.error(`Error fetching transactions for ${accountId}:`, error);
-            transactionsListDiv.innerHTML = '<div class="text-center text-red-500 py-4">Could not load transactions.</div>';
+            console.error("Error fetching transactions:", error);
+            transactionsListDiv.innerHTML = `<div class="text-center text-red-500 py-4">Could not load transactions: ${error.message}</div>`;
         }
     }
 
@@ -453,26 +719,35 @@
         transferResultDiv.className = 'mt-4 text-center text-gray-600'; // Reset style
 
         try {
-            const response = await fetch(`/api/mobile/transfer?_=${Date.now()}`, {
+            // Use the debit account API from Demoflow.py
+            const debitPayload = {
+                paymentTransactionReference: `TRF_${Date.now()}`,
+                paymentReservationReference: `TRF_${Date.now()}`,
+                paymentValueDate: new Date().toISOString().split('T')[0].replace(/-/g, ''),
+                debitAccount: formData.from_account,
+                debitCurrency: "USD",
+                paymentAmount: formData.amount.toString(),
+                paymentDescription: `Transfer to ${formData.to_account}`
+            };
+            
+            const response = await fetch(`/api/proxy/deposits/payments/debitAccount`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData),
+                body: JSON.stringify(debitPayload),
             });
+            
             if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
             const result = await response.json();
             console.log("Transfer result:", result);
 
-            if (result.status === 'Completed') {
-                transferResultDiv.textContent = `Success: ${result.message} (ID: ${result.transferId})`;
-                transferResultDiv.className = 'mt-4 text-center text-green-600 font-semibold';
-                // Optionally clear form or close section after delay
-                setTimeout(() => {
-                    hideTransfer(); // Close transfer section after success
-                    fetchAccounts(); // Refresh account list to show new balance
-                }, 2000); // Reduced delay slightly
-            } else {
-                throw new Error(result.message || 'Transfer failed');
-            }
+            transferResultDiv.textContent = `Success: Transfer completed (ID: ${debitPayload.paymentTransactionReference})`;
+            transferResultDiv.className = 'mt-4 text-center text-green-600 font-semibold';
+            
+            // Optionally clear form or close section after delay
+            setTimeout(() => {
+                hideTransfer(); // Close transfer section after success
+                fetchAccounts(); // Refresh account list to show new balance
+            }, 2000); // Reduced delay slightly
         } catch (error) {
             console.error("Error submitting transfer:", error);
             transferResultDiv.textContent = `Error: ${error.message}`;
@@ -481,58 +756,100 @@
     }
 
     async function fetchLoanSchedule(loanId) {
-        console.log(`Fetching payment schedule for loan ${loanId}...`);
-        const { loanScheduleList } = getElements();
-        if (!loanScheduleList) return;
+        console.log(`[fetchLoanSchedule] Attempting to fetch schedule for loan ID: ${loanId}`);
+        const { loanScheduleList, loanScheduleInfo } = getElements(); // Corrected from loanScheduleDiv, loanScheduleInfoDiv
         
-        loanScheduleList.innerHTML = '<div class="text-center text-gray-500 py-4">Loading payment schedule...</div>'; // Show loading
-        
+        if (!loanScheduleList) {
+            console.error("[fetchLoanSchedule] loanScheduleList element not found in DOM!");
+            // Optionally, display an error message in a general error area if available
+            return null; // Exit if essential element is missing
+        }
+        if (!loanScheduleInfo) {
+            console.warn("[fetchLoanSchedule] loanScheduleInfo element not found in DOM. Info will not be displayed.");
+        }
+        console.log("[fetchLoanSchedule] DOM elements for schedule:", { loanScheduleList, loanScheduleInfo });
+
         try {
-            // Make the API call
-            const response = await fetch(`/api/mobile/loans/${loanId}/schedules?_=${Date.now()}`);
+            // Show loading indicator
+            loanScheduleList.innerHTML = '<div class="text-center text-gray-500 py-4">Loading loan schedule...</div>';
+            
+            // Get the loan from our cached data
+            const loan = loansData.find(l => l.loanId === loanId);
+            if (!loan) {
+                throw new Error("Loan not found in cached data");
+            }
+            
+            // Fetch the loan schedule directly
+            const apiUrl = `/api/proxy/lending/arrangements/${loanId}/schedules?_=${Date.now()}`;
+            console.log("Fetching loan schedule from URL:", apiUrl);
+            
+            const response = await fetch(apiUrl);
+            
             if (!response.ok) {
-                console.error(`HTTP Error: ${response.status} - ${response.statusText}`);
-                throw new Error(`HTTP Error: ${response.status}`);
+                const errorText = await response.text().catch(() => "Failed to get error text");
+                console.error(`HTTP Error ${response.status}: ${response.statusText}`, errorText);
+                throw new Error(`HTTP Error: ${response.status} - ${response.statusText}`);
             }
             
-            const schedule = await response.json();
-            console.log(`Payment schedule for ${loanId}:`, schedule);
+            const scheduleData = await response.json();
+            console.log(`Schedule data for ${loanId}:`, scheduleData);
             
-            // Validate schedule data
-            if (!schedule) {
-                console.error("Empty schedule data received");
-                throw new Error("No schedule data received from server");
-            }
-            
-            if (!schedule.payments || !Array.isArray(schedule.payments)) {
-                console.error("Invalid or missing payments array in schedule data:", schedule);
+            // The API returns payments directly in the "body" array, not as body.schedule
+            if (!scheduleData || !scheduleData.body || !Array.isArray(scheduleData.body)) {
                 throw new Error("Invalid schedule data format");
             }
             
-            // Update headless tab to show schedules API call
-            try {
-                if (window.reloadHeadlessData) {
-                    console.log("Updating headless tab with schedule API data");
-                    setTimeout(() => {
-                        if (window.showLoanSchedulesApiCall) {
-                            window.showLoanSchedulesApiCall();
-                        }
-                    }, 500); // Give time for the API call to be stored
+            // Process the schedule data
+            const rawSchedule = scheduleData.body; // Directly use the array of payments
+            
+            // Transform the schedule data
+            const schedule = {
+                currency: loan.currency || "USD",
+                nextPaymentDate: loan.nextPaymentDate,
+                remainingPayments: rawSchedule.length,
+                payments: []
+            };
+            
+            // Extract payments from the schedule
+            let paymentNumber = 1;
+            
+            for (const item of rawSchedule) {
+                // Skip entries without payment amount or due date
+                if (!item.totalAmount || !item.paymentDate) continue;
+                
+                // Determine if payment is past due
+                const dueDate = new Date(item.paymentDate);
+                const today = new Date();
+                
+                // Simple logic to set status based on scheduleType or date comparison
+                let paymentStatus = "Due";
+                if (item.scheduleType === "DUE") {
+                    paymentStatus = "Due Today";
+                } else if (dueDate < today) {
+                    paymentStatus = "Paid";
                 }
-            } catch (e) {
-                console.log("Headless tab not available:", e);
+                
+                schedule.payments.push({
+                    paymentNumber: paymentNumber++,
+                    dueDate: item.paymentDate,
+                    status: paymentStatus,
+                    totalAmount: parseFloat(item.totalAmount),
+                    principal: parseFloat(item.principalAmount || 0),
+                    interest: parseFloat(item.interestAmount || 0),
+                });
             }
             
+            console.log(`Processed payment schedule for ${loanId}:`, schedule);
+            
             // Find the loan details
-            const loan = loansData.find(loan => loan.loanId === loanId);
-            if (!loan) {
+            const loanDetails = loansData.find(l => l.loanId === loanId);
+            if (!loanDetails) {
                 console.error(`Loan details not found for ${loanId} in`, loansData);
                 throw new Error(`Loan details not found for ${loanId}`);
             }
             
             // Update the UI
-            const { loanScheduleInfo } = getElements();
-            renderLoanScheduleInfo(schedule, loan, loanScheduleInfo);
+            renderLoanScheduleInfo(schedule, loanDetails, loanScheduleInfo);
             renderLoanSchedule(schedule, loanScheduleList);
             
             return schedule;
@@ -544,15 +861,158 @@
     }
 
     // --- UI Interaction ---
-    function showTransactions(accountId) {
-        const account = accountsData.find(acc => acc.accountId === accountId);
-        if (!account) return;
+    function showHome() {
+        const { accountsSectionDiv, loansSectionDiv, transactionsSection, transferSection, loanScheduleSection } = getElements();
+        
+        // Show the main sections
+        if(accountsSectionDiv) accountsSectionDiv.classList.remove('hidden');
+        if(loansSectionDiv) loansSectionDiv.classList.remove('hidden');
+        
+        // Hide other detail sections
+        if(transactionsSection) transactionsSection.classList.add('hidden');
+        if(transferSection) transferSection.classList.add('hidden');
+        if(loanScheduleSection) loanScheduleSection.classList.add('hidden');
+        
+        console.log("[showHome] Returned to home screen");
+    }
+    
+    function showTransactions(id) {
+        // Get the elements we need
+        const { accountsSectionDiv, loansSectionDiv, transactionsSection, transferSection, loanScheduleSection } = getElements();
+        console.log("[showTransactions] Destructured elements:", 
+            { accountsSectionDiv, loansSectionDiv, transactionsSection, transferSection, loanScheduleSection });
 
-        const { accountsSectionDiv, transactionsSection, transactionsTitle } = getElements();
-        if(accountsSectionDiv) accountsSectionDiv.classList.add('hidden');
-        if(transactionsSection) transactionsSection.classList.remove('hidden');
-        if(transactionsTitle) transactionsTitle.textContent = `Transactions for ${account.displayName}`;
-        fetchTransactions(accountId);
+        // Hide other sections
+        if (accountsSectionDiv) {
+            accountsSectionDiv.classList.add('hidden');
+        } else {
+            console.error("[showTransactions] accountsSectionDiv is null/undefined BEFORE classList access.");
+        }
+
+        if (loansSectionDiv) {
+            loansSectionDiv.classList.add('hidden');
+        } else {
+            console.error("[showTransactions] loansSectionDiv is null/undefined BEFORE classList access.");
+        }
+
+        if (transferSection) {
+            transferSection.classList.add('hidden');
+        } else {
+            console.error("[showTransactions] transferSection is null/undefined BEFORE classList access.");
+        }
+
+        if (loanScheduleSection) {
+            loanScheduleSection.classList.add('hidden');
+        } else {
+            console.error("[showTransactions] loanScheduleSection is null/undefined BEFORE classList access.");
+        }
+        
+        // Show transactions section
+        if (transactionsSection) {
+            transactionsSection.classList.remove('hidden');
+        } else {
+            console.error("[showTransactions] transactionsSection is null/undefined BEFORE classList access.");
+        }
+        
+        // Update the header
+        const account = accountsData.find(acc => acc.accountId === id);
+        const loan = loansData.find(loan => loan.loanId === id);
+        
+        // Get the transaction header element
+        const transactionHeader = document.querySelector('#transactions-section .flex.justify-between.items-center');
+        
+        // If there's no back button, create one
+        let backButton = document.getElementById('transactions-back-button');
+        if (!backButton && transactionHeader) {
+            // Create a back button if it doesn't exist
+            backButton = document.createElement('button');
+            backButton.id = 'transactions-back-button';
+            backButton.className = 'text-blue-600 hover:underline';
+            backButton.innerHTML = '&larr; Back';
+            
+            // Add it to the header
+            transactionHeader.insertBefore(backButton, transactionHeader.firstChild);
+            
+            // Add click event - always go back to home
+            backButton.addEventListener('click', showHome);
+        }
+        
+        // Set the account or loan name in the header
+        const accountNameElem = document.getElementById('transaction-account-name');
+        if (accountNameElem) {
+            if (account) {
+                const formattedBalance = new Intl.NumberFormat('en-US', { style: 'currency', currency: account.currency }).format(account.currentBalance);
+                accountNameElem.textContent = `${account.displayName} (${account.accountId}) · ${formattedBalance}`;
+            } else if (loan) {
+                const formattedBalance = new Intl.NumberFormat('en-US', { style: 'currency', currency: loan.currency }).format(loan.outstandingBalance);
+                const loanDisplayName = `${loan.productName || 'Loan'} (${loan.loanId})`;
+                accountNameElem.textContent = `${loanDisplayName} · ${formattedBalance}`;
+            } else {
+                accountNameElem.textContent = "Account Details";
+            }
+        }
+        
+        // Fetch account transactions - make sure we use the correct accountId for API call
+        if (account) {
+            // Use account.accountId, not just 'id', to ensure correct API call
+            console.log(`[showTransactions] Fetching transactions for account: ${account.accountId}`);
+            fetchTransactions(account.accountId);
+        } 
+        // Fetch loan transactions using the Holdings API
+        else if (loan) {
+            const { transactionsListDiv } = getElements();
+            transactionsListDiv.innerHTML = '<div class="text-center text-gray-500 py-4">Loading transactions...</div>';
+            console.log(`[showTransactions] Showing transactions for loan: ${loan.loanId}`);
+            
+            if (loan.accountIdForTransactions) {
+                const apiUrl = `/api/proxy/holdings/accounts/${loan.accountIdForTransactions}/transactions?_=${Date.now()}`;
+                console.log("Fetching loan transactions from URL (using accountIdForTransactions from loan object):", apiUrl);
+                
+                fetch(apiUrl)
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.text().then(text => {
+                                console.error(`HTTP Error ${response.status}: ${text}`);
+                                throw new Error(`HTTP Error: ${response.status} - ${response.statusText}`);
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log("Loan transactions data received:", data);
+                        
+                        const transactions = data.items || [];
+                        if (transactions.length === 0) {
+                            transactionsListDiv.innerHTML = '<div class="text-center text-gray-500 py-4">No transactions found for this loan.</div>';
+                            return;
+                        }
+                        
+                        // Format the transactions for display
+                        const formattedTransactions = transactions.map(tx => ({
+                            id: tx.id || `tx-${Math.random().toString(36).substring(2, 10)}`,
+                            date: tx.valueDate || tx.bookingDate,
+                            amount: tx.transactionAmount || 0,
+                            currency: tx.currency || loan.currency,
+                            description: tx.narrative || "Loan Transaction",
+                            type: tx.paymentIndicator || "Debit",
+                            icon: tx.paymentIndicator === "Credit" ? "arrow-down" : "arrow-up",
+                            status: "Completed"
+                        }));
+                        
+                        renderTransactions(formattedTransactions, transactionsListDiv);
+                    })
+                    .catch(error => {
+                        console.error("Error fetching loan transactions:", error);
+                        transactionsListDiv.innerHTML = `<div class="text-center text-red-500 py-4">Could not load loan transactions: ${error.message}</div>`;
+                    });
+            } else {
+                console.warn(`Loan ${loan.loanId} does not have an accountIdForTransactions. Cannot fetch transactions.`);
+                transactionsListDiv.innerHTML = '<div class="text-center text-gray-500 py-4">Transaction details are not available for this loan.</div>';
+            }
+        } else {
+            const { transactionsListDiv } = getElements();
+            transactionsListDiv.innerHTML = '<div class="text-center text-red-500 py-4">Account or loan not found.</div>';
+        }
     }
 
     function showAccounts() {
@@ -596,8 +1056,56 @@
         const { loansSectionDiv, loanScheduleSection, loanScheduleTitle } = getElements();
         if(loansSectionDiv) loansSectionDiv.classList.add('hidden');
         if(loanScheduleSection) loanScheduleSection.classList.remove('hidden');
-        if(loanScheduleTitle) loanScheduleTitle.textContent = `Payment Schedule: ${loan.displayName}`;
         
+        // Get the schedule header element for adding back button
+        const scheduleHeader = document.querySelector('#loan-schedule-section .flex.justify-between.items-center');
+        
+        // If there's no back button, create one
+        let backButton = document.getElementById('back-to-loans');
+        if (!backButton && scheduleHeader) {
+            // Create a back button if it doesn't exist
+            backButton = document.createElement('button');
+            backButton.id = 'back-to-loans';
+            backButton.className = 'text-blue-600 hover:underline';
+            backButton.innerHTML = '&larr; Back';
+            
+            // Add it to the header
+            scheduleHeader.insertBefore(backButton, scheduleHeader.firstChild);
+            
+            // Add click event - always go back to home
+            backButton.addEventListener('click', showHome);
+        }
+        
+        // Ensure loanScheduleList exists
+        let loanScheduleList = document.getElementById('loan-schedule-list');
+        if (!loanScheduleList && loanScheduleSection) {
+            // Create the loan schedule list
+            loanScheduleList = document.createElement('div');
+            loanScheduleList.id = 'loan-schedule-list';
+            loanScheduleList.className = 'space-y-2 max-h-96 overflow-y-auto p-2';
+            loanScheduleSection.appendChild(loanScheduleList);
+        }
+        
+        // Ensure loanScheduleInfo exists
+        let loanScheduleInfo = document.getElementById('loan-schedule-info');
+        if (!loanScheduleInfo && loanScheduleSection) {
+            // Create the loan schedule info
+            loanScheduleInfo = document.createElement('div');
+            loanScheduleInfo.id = 'loan-schedule-info';
+            loanScheduleInfo.className = 'bg-blue-50 p-4 border-b border-blue-100';
+            
+            // Add it before the schedule list
+            if (loanScheduleList) {
+                loanScheduleSection.insertBefore(loanScheduleInfo, loanScheduleList);
+            } else {
+                loanScheduleSection.appendChild(loanScheduleInfo);
+            }
+        }
+        
+        const loanDisplayName = `${loan.productName || 'Loan'} (${loan.loanId})`;
+        if(loanScheduleTitle) loanScheduleTitle.textContent = `Payment Schedule: ${loanDisplayName}`;
+        
+        console.log(`[showLoanSchedule] Showing schedule for loan: ${loan.loanId}`);
         // Fetch the schedule, which will update the headless tab automatically
         fetchLoanSchedule(loanId);
     }
@@ -616,7 +1124,9 @@
         closeTransfer: null,
         submitTransferForm: null,
         viewTransaction: [], // Array for dynamic buttons
-        viewLoanDetails: [] // Array for dynamic loan detail button listeners
+        viewLoanDetails: [], // Array for dynamic loan detail button listeners
+        changePartyId: null,
+        fetchAccountBalance: null
     };
 
     function addTransactionButtonListeners() {
@@ -640,15 +1150,24 @@
     function addLoanButtonListeners() {
         const { loansListDiv } = getElements();
         if (!loansListDiv) return;
-
-        // Remove previous dynamic listeners if they exist
+        
+        // Clear existing handlers for loan detail buttons if any
         if (!eventHandlers.viewLoanDetails) {
             eventHandlers.viewLoanDetails = [];
         } else {
             eventHandlers.viewLoanDetails.forEach(({button, handler}) => button.removeEventListener('click', handler));
             eventHandlers.viewLoanDetails = [];
         }
+        
+        // Clear existing handlers for loan transaction buttons if any
+        if (!eventHandlers.viewLoanTransactions) {
+            eventHandlers.viewLoanTransactions = [];
+        } else {
+            eventHandlers.viewLoanTransactions.forEach(({button, handler}) => button.removeEventListener('click', handler));
+            eventHandlers.viewLoanTransactions = [];
+        }
 
+        // Add handlers for schedule buttons
         loansListDiv.querySelectorAll('.view-loan-details-btn').forEach(button => {
              const handler = (e) => {
                 const loanId = e.target.getAttribute('data-loan-id');
@@ -657,36 +1176,49 @@
              button.addEventListener('click', handler);
              eventHandlers.viewLoanDetails.push({ button, handler });
         });
+        
+        // Add handlers for transaction buttons
+        loansListDiv.querySelectorAll('.view-loan-transactions-btn').forEach(button => {
+             const handler = (e) => {
+                const loanId = e.target.getAttribute('data-loan-id');
+                showTransactions(loanId);
+             };
+             button.addEventListener('click', handler);
+             eventHandlers.viewLoanTransactions.push({ button, handler });
+        });
     }
 
     function addStaticListeners() {
         if (staticListenersAdded) return;
+        
         const { 
             backToAccountsButton, 
             backToLoansButton, 
             showTransferButton, 
-            closeTransferButton, 
-            transferForm 
+            closeTransferButton,
+            transferForm,
+            changePartyIdButton,
         } = getElements();
 
+        // Hide the static back buttons since we're creating dynamic ones
         if (backToAccountsButton) {
-             eventHandlers.backToAccounts = showAccounts;
-             backToAccountsButton.addEventListener('click', eventHandlers.backToAccounts);
+            backToAccountsButton.classList.add('hidden');
         }
         
         if (backToLoansButton) {
-            eventHandlers.backToLoans = showLoans;
-            backToLoansButton.addEventListener('click', eventHandlers.backToLoans);
+            backToLoansButton.classList.add('hidden');
         }
         
         if (showTransferButton) {
             eventHandlers.showTransfer = showTransfer;
             showTransferButton.addEventListener('click', eventHandlers.showTransfer);
         }
+        
         if (closeTransferButton) {
             eventHandlers.closeTransfer = hideTransfer;
             closeTransferButton.addEventListener('click', eventHandlers.closeTransfer);
         }
+        
         if (transferForm) {
             eventHandlers.submitTransferForm = (e) => {
                 e.preventDefault();
@@ -699,47 +1231,87 @@
             };
             transferForm.addEventListener('submit', eventHandlers.submitTransferForm);
         }
+        
+        if (changePartyIdButton) {
+            eventHandlers.changePartyId = handlePartyIdChange;
+            changePartyIdButton.addEventListener('click', eventHandlers.changePartyId);
+        }
+        
         staticListenersAdded = true;
     }
 
     function removeAllListeners() {
-        console.log("Removing Mobile App listeners...");
+        console.log("Removing all event listeners");
+        
+        // Get all elements
         const { 
             backToAccountsButton, 
-            backToLoansButton,
+            backToLoansButton, 
             showTransferButton, 
-            closeTransferButton, 
-            transferForm 
+            closeTransferButton,
+            transferForm,
+            changePartyIdButton,
         } = getElements();
 
-         if (eventHandlers.backToAccounts && backToAccountsButton) {
+        // Remove handlers for dynamic transaction buttons
+        if (eventHandlers.viewTransaction.length > 0) {
+            const transactionButtons = document.querySelectorAll('.view-transactions-btn');
+            transactionButtons.forEach((btn, index) => {
+                if (eventHandlers.viewTransaction[index]) {
+                    btn.removeEventListener('click', eventHandlers.viewTransaction[index]);
+                }
+            });
+            eventHandlers.viewTransaction = [];
+        }
+
+        // Remove handlers for dynamic loan detail buttons
+        if (eventHandlers.viewLoanDetails.length > 0) {
+            const loanDetailsButtons = document.querySelectorAll('.view-loan-details-btn');
+            loanDetailsButtons.forEach((btn, index) => {
+                if (eventHandlers.viewLoanDetails[index]) {
+                    btn.removeEventListener('click', eventHandlers.viewLoanDetails[index]);
+                }
+            });
+            eventHandlers.viewLoanDetails = [];
+        }
+
+        // Remove back to accounts handler
+        if (backToAccountsButton && eventHandlers.backToAccounts) {
             backToAccountsButton.removeEventListener('click', eventHandlers.backToAccounts);
             eventHandlers.backToAccounts = null;
         }
         
-        if (eventHandlers.backToLoans && backToLoansButton) {
+        // Remove back to loans handler
+        if (backToLoansButton && eventHandlers.backToLoans) {
             backToLoansButton.removeEventListener('click', eventHandlers.backToLoans);
             eventHandlers.backToLoans = null;
         }
         
-         if (eventHandlers.showTransfer && showTransferButton) {
+        // Remove show transfer handler
+        if (showTransferButton && eventHandlers.showTransfer) {
             showTransferButton.removeEventListener('click', eventHandlers.showTransfer);
             eventHandlers.showTransfer = null;
         }
-        if (eventHandlers.closeTransfer && closeTransferButton) {
+        
+        // Remove close transfer handler
+        if (closeTransferButton && eventHandlers.closeTransfer) {
             closeTransferButton.removeEventListener('click', eventHandlers.closeTransfer);
             eventHandlers.closeTransfer = null;
         }
-        if (eventHandlers.submitTransferForm && transferForm) {
+        
+        // Remove transfer form submit handler
+        if (transferForm && eventHandlers.submitTransferForm) {
             transferForm.removeEventListener('submit', eventHandlers.submitTransferForm);
             eventHandlers.submitTransferForm = null;
         }
-        eventHandlers.viewTransaction.forEach(({button, handler}) => button.removeEventListener('click', handler));
-        eventHandlers.viewTransaction = [];
-        eventHandlers.viewLoanDetails.forEach(({button, handler}) => button.removeEventListener('click', handler));
-        eventHandlers.viewLoanDetails = [];
+        
+        // Remove change party ID handler
+        if (changePartyIdButton && eventHandlers.changePartyId) {
+            changePartyIdButton.removeEventListener('click', eventHandlers.changePartyId);
+            eventHandlers.changePartyId = null;
+        }
+        
         staticListenersAdded = false;
-        console.log("Mobile App listeners removed.");
     }
 
     // --- Party ID Change Handling ---
@@ -828,5 +1400,18 @@
 
     // Initialize when loaded
     initMobileAppTab();
+
+    // Helper to get account or loan by ID
+    function getAccountOrLoanById(id) {
+        // First check accounts
+        const account = accountsData.find(acc => acc.accountId === id || acc.arrangementId === id);
+        if (account) return { item: account, type: 'account' };
+        
+        // Then check loans
+        const loan = loansData.find(l => l.loanId === id || l.arrangementId === id || l.accountId === id);
+        if (loan) return { item: loan, type: 'loan' };
+        
+        return null;
+    }
 
 })(); // End of IIFE 

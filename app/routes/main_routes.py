@@ -1609,4 +1609,200 @@ def stream_events(domain):
                 except Exception as e:
                     print(f"Error closing Kafka consumer: {e}")
     
-    return Response(event_stream(), mimetype="text/event-stream") 
+    return Response(event_stream(), mimetype="text/event-stream")
+
+# --- Proxy API Routes ---
+# These routes proxy requests to external APIs to avoid CORS issues
+
+# Holdings microservice proxy routes
+@main_bp.route('/api/proxy/holdings/parties/<string:party_id>/arrangements')
+def proxy_holdings_party_arrangements(party_id):
+    """Proxy for Holdings party arrangements endpoint"""
+    # Use the same URL format as in Demoflow.py
+    target_url = f"http://modulardemo.northeurope.cloudapp.azure.com/ms-holdings-api/api/v1.0.0/holdings/parties/{party_id}/arrangements"
+    print(f"Proxying request to: {target_url}")
+    
+    try:
+        # Log headers being sent by the proxy
+        request_headers = {"Accept": "application/json"}
+        print(f"Proxy request headers: {request_headers}")
+        print(f"Proxy request params: {request.args}")
+
+        response = requests.get(
+            target_url,
+            headers=request_headers,
+            params=request.args
+        )
+        
+        print(f"Target API response status: {response.status_code}")
+        try:
+            response_content = response.json()
+        except json.JSONDecodeError:
+            response_content = response.text
+        print(f"Target API response content: {response_content}")
+
+        # Track the API call
+        track_api_call(target_url, "GET", params=dict(request.args), response=response_content if response.ok else None, error=None if response.ok else {"message": response_content, "status": response.status_code})
+        
+        # Return the response
+        if response.ok:
+            return jsonify(response_content), response.status_code
+        else:
+            # Ensure we return what the target API returned, even if it's not perfect JSON
+            return jsonify({"error": "Proxied API call failed", "details": response_content}), response.status_code
+
+    except requests.exceptions.RequestException as e:
+        print(f"RequestException during proxy to holdings party arrangements: {str(e)}")
+        track_api_call(target_url, "GET", params=dict(request.args), error={"message": str(e), "status": 500})
+        return jsonify({"error": "Proxy request failed due to network or connection issue", "details": str(e)}), 500
+    except Exception as e:
+        # Catch any other unexpected errors
+        print(f"Generic Exception during proxy to holdings party arrangements: {str(e)}")
+        track_api_call(target_url, "GET", params=dict(request.args), error={"message": str(e), "status": 500})
+        return jsonify({"error": "An unexpected error occurred in the proxy", "details": str(e)}), 500
+
+@main_bp.route('/api/proxy/holdings/accounts/<string:account_id>/balances')
+def proxy_holdings_account_balances(account_id):
+    """Proxy for Holdings account balances endpoint"""
+    # Use the same URL format as in Demoflow.py
+    target_url = f"http://modulardemo.northeurope.cloudapp.azure.com/ms-holdings-api/api/v3.0.0/holdings/accounts/{account_id}/balances"
+    print(f"Proxying request to: {target_url}")
+    
+    try:
+        response = requests.get(
+            target_url,
+            headers={"Accept": "application/json"},
+            params=request.args
+        )
+        
+        # Track the API call
+        track_api_call(target_url, "GET", params=dict(request.args), response=response.json() if response.ok else None)
+        
+        # Return the response
+        return jsonify(response.json() if response.ok else {"error": response.text}), response.status_code
+    except Exception as e:
+        print(f"Error proxying request to holdings account balances: {str(e)}")
+        track_api_call(target_url, "GET", params=dict(request.args), error={"message": str(e), "status": 500})
+        return jsonify({"error": str(e)}), 500
+
+@main_bp.route('/api/proxy/holdings/accounts/<string:account_id>/transactions')
+def proxy_holdings_account_transactions(account_id):
+    """Proxy for Holdings account transactions endpoint"""
+    # Use the same URL format as in Demoflow.py
+    target_url = f"http://modulardemo.northeurope.cloudapp.azure.com/ms-holdings-api/api/v3.0.0/holdings/accounts/{account_id}/transactions"
+    print(f"Proxying request to: {target_url}")
+    
+    try:
+        response = requests.get(
+            target_url,
+            headers={"Accept": "application/json"},
+            params=request.args
+        )
+        
+        # Track the API call
+        track_api_call(target_url, "GET", params=dict(request.args), response=response.json() if response.ok else None)
+        
+        # Return the response
+        return jsonify(response.json() if response.ok else {"error": response.text}), response.status_code
+    except Exception as e:
+        print(f"Error proxying request to holdings account transactions: {str(e)}")
+        track_api_call(target_url, "GET", params=dict(request.args), error={"message": str(e), "status": 500})
+        return jsonify({"error": str(e)}), 500
+
+@main_bp.route('/api/proxy/holdings/arrangements/<string:identifier>/transactions')
+def proxy_holdings_arrangement_transactions(identifier):
+    """Proxy for Holdings transactions endpoint, using a generic identifier that could be an accountId or arrangementId based on context."""
+    # This endpoint is called by the mobile app with loan.arrangementId, 
+    # which is actually the accountId (alternateId) for transaction fetching.
+    target_url = f"http://modulardemo.northeurope.cloudapp.azure.com/ms-holdings-api/api/v3.0.0/holdings/accounts/{identifier}/transactions"
+    print(f"Proxying holdings transactions request to: {target_url} using identifier: {identifier}")
+    
+    try:
+        response = requests.get(
+            target_url,
+            headers={"Accept": "application/json"},
+            params=request.args
+        )
+        
+        # Track the API call
+        track_api_call(target_url, "GET", params=dict(request.args), response=response.json() if response.ok else None)
+        
+        # Return the response
+        return jsonify(response.json() if response.ok else {"error": response.text}), response.status_code
+    except Exception as e:
+        print(f"Error proxying request to holdings arrangement transactions: {str(e)}")
+        track_api_call(target_url, "GET", params=dict(request.args), error={"message": str(e), "status": 500})
+        return jsonify({"error": str(e)}), 500
+
+# Lending microservice proxy routes
+@main_bp.route('/api/proxy/lending/arrangements/<string:loan_id>/status')
+def proxy_lending_arrangement_status(loan_id):
+    """Proxy for Lending arrangement status endpoint"""
+    # Use the same URL format as in Demoflow.py
+    target_url = f"http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/{loan_id}/status"
+    print(f"Proxying request to: {target_url}")
+    
+    try:
+        headers = {
+            'Accept': 'application/json',
+        }
+        # Lending API is sensitive to unknown query params, so we pass None
+        resp = requests.get(target_url, headers=headers, params=None)
+        
+        # Track the API call
+        track_api_call(target_url, "GET", params=None, response=resp.json() if resp.ok else None, error=None if resp.ok else {"message": resp.text, "status": resp.status_code})
+        
+        # Return the response
+        return jsonify(resp.json() if resp.ok else {"error": resp.text}), resp.status_code
+    except Exception as e:
+        print(f"Error proxying request to lending arrangement status: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@main_bp.route('/api/proxy/lending/arrangements/<string:loan_id>/schedules')
+def proxy_lending_arrangement_schedules(loan_id):
+    """Proxy for Lending arrangement schedules endpoint"""
+    # Use the same URL format as in Demoflow.py
+    target_url = f"http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/{loan_id}/schedules"
+    print(f"Proxying request to: {target_url}")
+    
+    try:
+        headers = {
+            'Accept': 'application/json',
+        }
+        # Lending API is sensitive to unknown query params, so we pass None
+        resp = requests.get(target_url, headers=headers, params=None)
+        
+        # Track the API call
+        track_api_call(target_url, "GET", params=None, response=resp.json() if resp.ok else None, error=None if resp.ok else {"message": resp.text, "status": resp.status_code})
+        
+        # Return the response
+        return jsonify(resp.json() if resp.ok else {"error": resp.text}), resp.status_code
+    except Exception as e:
+        print(f"Error proxying request to lending arrangement schedules: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+# Deposits microservice proxy routes
+@main_bp.route('/api/proxy/deposits/payments/debitAccount', methods=['POST'])
+def proxy_deposits_debit_account():
+    """Proxy for Deposits debit account endpoint"""
+    # Use the same URL format as in Demoflow.py
+    target_url = f"http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v1.0.0/order/payments/debitAccount"
+    print(f"Proxying request to: {target_url}")
+    
+    try:
+        payload = request.get_json()
+        response = requests.post(
+            target_url,
+            headers={"Content-Type": "application/json", "Accept": "application/json"},
+            json=payload
+        )
+        
+        # Track the API call
+        track_api_call(target_url, "POST", payload=payload, response=response.json() if response.ok else None)
+        
+        # Return the response
+        return jsonify(response.json() if response.ok else {"error": response.text}), response.status_code
+    except Exception as e:
+        print(f"Error proxying request to deposits debit account: {str(e)}")
+        track_api_call(target_url, "POST", payload=request.get_json(), error={"message": str(e), "status": 500})
+        return jsonify({"error": str(e)}), 500 
