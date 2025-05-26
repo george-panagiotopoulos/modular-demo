@@ -4,46 +4,46 @@ Demo Flow Output Log
 API Call: POST http://modulardemo.northeurope.cloudapp.azure.com/ms-party-api/api/v5.0.0/party/parties
 Request Payload:
 {
-  "dateOfBirth": "1976-11-16",
-  "cityOfBirth": "New York",
-  "firstName": "Bob",
-  "middleName": "Z",
-  "lastName": "Taylor",
-  "nickName": "Bob",
-  "suffix": "M.Sc.",
-  "alias": "Bob"
+  "dateOfBirth": "1962-08-11",
+  "cityOfBirth": "London",
+  "firstName": "Charlie",
+  "middleName": "A",
+  "lastName": "Miller",
+  "nickName": "Charlie",
+  "suffix": "Ph.D.",
+  "alias": "Charlie"
 }
 Response Status Code: 200
 Response Body:
 {
-  "id": "2514635932",
+  "id": "2514646824",
   "status": "Success",
   "message": "Party created successfully"
 }
 --------------------------------------------------
 
-API Call: GET http://modulardemo.northeurope.cloudapp.azure.com/ms-party-api/api/v5.0.0/party/parties/2514635932
+API Call: GET http://modulardemo.northeurope.cloudapp.azure.com/ms-party-api/api/v5.0.0/party/parties/2514646824
 Request Payload: None (GET request)
 Response Status Code: 200
 Response Body:
 {
-  "partyId": "2514635932",
-  "dateOfBirth": "1976-11-16",
-  "cityOfBirth": "New York",
-  "firstName": "Bob",
+  "partyId": "2514646824",
+  "dateOfBirth": "1962-08-11",
+  "cityOfBirth": "London",
+  "firstName": "Charlie",
   "firstNamesLanguage": [],
-  "middleName": "Z",
+  "middleName": "A",
   "middleNamesLanguage": [],
-  "lastName": "Taylor",
+  "lastName": "Miller",
   "lastNamesLanguage": [],
-  "nickName": "Bob",
+  "nickName": "Charlie",
   "nickNamesLanguage": [],
-  "suffix": "M.Sc.",
-  "alias": "Bob",
+  "suffix": "Ph.D.",
+  "alias": "Charlie",
   "aliasLanguage": [],
   "entityNamesLanguage": [],
   "nameStartDate": "2025-05-26",
-  "creationDateTime": "2025-05-26 09:58:52",
+  "creationDateTime": "2025-05-26 13:00:24",
   "nationalities": [],
   "partyLanguages": [],
   "citizenships": [],
@@ -75,7 +75,7 @@ Request Payload:
 {
   "parties": [
     {
-      "partyId": "2514635932",
+      "partyId": "2514646824",
       "partyRole": "OWNER"
     }
   ],
@@ -89,16 +89,16 @@ Request Payload:
 Response Status Code: 200
 Response Body:
 {
-  "accountReference": "1013716729"
+  "accountReference": "1013716777"
 }
 --------------------------------------------------
 
-API Call: GET http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v2.0.0/holdings/accounts/1013716729/balances
+API Call: GET http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v2.0.0/holdings/accounts/1013716777/balances
 Request Payload: None (GET request)
 Response Status Code: 200
 Response Body:
 {
-  "accountReference": "1013716729",
+  "accountReference": "1013716777",
   "accountName": "Current Account",
   "productId": "CHECKING.ACCOUNT",
   "currency": "USD",
@@ -108,15 +108,15 @@ Response Body:
 }
 --------------------------------------------------
 
-API Call: GET http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v1.0.0/holdings/parties/2514635932/arrangements
+API Call: GET http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v1.0.0/holdings/parties/2514646824/arrangements
 Request Payload: None (GET request)
 Response Status Code: 200
 Response Body:
 {
-  "partyId": "2514635932",
+  "partyId": "2514646824",
   "arrangements": [
     {
-      "arrangementId": "AA25073HS2S5",
+      "arrangementId": "AA25073VH2L1",
       "accountName": "current",
       "productLineId": "ACCOUNTS",
       "productLineName": "Accounts",
@@ -132,12 +132,12 @@ Response Body:
 }
 --------------------------------------------------
 
-API Call: GET http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v2.0.0/holdings/accounts/AA25073HS2S5/balances
+API Call: GET http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v2.0.0/holdings/accounts/AA25073VH2L1/balances
 Request Payload: None (GET request)
 Response Status Code: 200
 Response Body:
 {
-  "accountReference": "1013716729",
+  "accountReference": "1013716777",
   "accountName": "Current Account",
   "productId": "CHECKING.ACCOUNT",
   "currency": "USD",
@@ -154,7 +154,7 @@ Request Payload:
   "body": {
     "partyIds": [
       {
-        "partyId": "2514635932",
+        "partyId": "2514646824",
         "partyRole": "OWNER"
       }
     ],
@@ -163,8 +163,8 @@ Request Payload:
     "arrangementEffectiveDate": "",
     "commitment": [
       {
-        "amount": "228977",
-        "term": "74M"
+        "amount": "180946",
+        "term": "68M"
       }
     ],
     "schedule": [
@@ -184,7 +184,7 @@ Request Payload:
             "payoutSettlement": "YES",
             "property": [
               {
-                "payoutAccount": "DDAComposable|GB0010001|1013716729"
+                "payoutAccount": "DDAComposable|GB0010001|1013716777"
               }
             ]
           }
@@ -194,7 +194,7 @@ Request Payload:
             "payinSettlement": "YES",
             "reference": [
               {
-                "payinAccount": "DDAComposable|GB0010001|1013716729"
+                "payinAccount": "DDAComposable|GB0010001|1013716777"
               }
             ]
           },
@@ -202,7 +202,7 @@ Request Payload:
             "payinSettlement": "YES",
             "reference": [
               {
-                "payinAccount": "DDAComposable|GB0010001|1013716729"
+                "payinAccount": "DDAComposable|GB0010001|1013716777"
               }
             ]
           }
@@ -217,22 +217,22 @@ Response Body:
   "header": {
     "transactionStatus": "Live",
     "audit": {
-      "T24_time": 4543,
-      "responseParse_time": 74,
+      "T24_time": 6488,
+      "responseParse_time": 108,
       "requestParse_time": 4
     },
-    "aaaId": "AAACT250730Q8P2WBZ",
-    "id": "AA25073VKVH2",
+    "aaaId": "AAACT250735BF4RL6D",
+    "id": "AA25073TC93W",
     "status": "success"
   },
   "body": {
     "arrangementActivity": {
-      "arrangementId": "AA25073VKVH2",
+      "arrangementId": "AA25073TC93W",
       "activityId": "LENDING-NEW-ARRANGEMENT",
       "partyIds": [
         {
           "partyRole": "OWNER",
-          "partyId": "2514635932"
+          "partyId": "2514646824"
         }
       ],
       "productId": "MORTGAGE.PRODUCT",
@@ -243,37 +243,37 @@ Response Body:
       "disbursementRecordCreated": {
         "activity": "LENDING-ISSUEBILL-SCHEDULE*DISBURSEMENT.%",
         "transactionStatus": "Live",
-        "id": "AAACT250730Q8P2WKG"
+        "id": "AAACT250735BF4RLM9"
       },
       "scheduledDisbursement": {
         "activity": "LENDING-MAKEDUE.DISBURSE-SCHEDULE",
         "transactionStatus": "Live",
-        "id": "AAACT250730Q8P2WKH"
+        "id": "AAACT250735BF4RLMB"
       },
       "newArrangementFeeDue": {
         "activity": "LENDING-MAKEDUE-NEWARRFEE",
         "transactionStatus": "Live",
-        "id": "AAACT250730Q8P2WKK"
+        "id": "AAACT250735BF4RLMD"
       },
       "newArrangement": {
         "activity": "LENDING-NEW-ARRANGEMENT",
         "transactionStatus": "Live",
-        "id": "AAACT250730Q8P2WBZ"
+        "id": "AAACT250735BF4RL6D"
       },
       "issueBill(newArrangementFee)": {
         "activity": "LENDING-ISSUEBILL-NEWARRFEE",
         "transactionStatus": "Live",
-        "id": "AAACT250730Q8P2WKF"
+        "id": "AAACT250735BF4RLM8"
       },
       "settleViaInstructions": {
         "activity": "LENDING-SETTLE-SETTLEMENT",
         "transactionStatus": "Live",
-        "id": "AAACT250730Q8P2WKL"
+        "id": "AAACT250735BF4RLMF"
       },
       "updateCashflow": {
         "activity": "LENDING-UPDATE.CASHFLOW-REPORTING",
         "transactionStatus": "Live",
-        "id": "AAACT250730Q8P2WNR"
+        "id": "AAACT250735BF4RLQK"
       }
     },
     "properties": {
@@ -283,7 +283,7 @@ Response Body:
           "audit": {
             "versionNumber": "1"
           },
-          "id": "AA25073VKVH2-NEWARRFEE-20250314.1",
+          "id": "AA25073TC93W-NEWARRFEE-20250314.1",
           "status": "success"
         },
         "body": {}
@@ -291,7 +291,7 @@ Response Body:
       "prindecreasefee": {
         "header": {
           "transactionStatus": "Live",
-          "id": "AA25073VKVH2-PRINDECREASEFEE-20250314.1",
+          "id": "AA25073TC93W-PRINDECREASEFEE-20250314.1",
           "status": "success"
         }
       },
@@ -301,7 +301,7 @@ Response Body:
           "audit": {
             "versionNumber": "1"
           },
-          "id": "AA25073VKVH2-PRINCIPALINT-20250314.1",
+          "id": "AA25073TC93W-PRINCIPALINT-20250314.1",
           "status": "success"
         },
         "body": {
@@ -319,14 +319,14 @@ Response Body:
       "penaltyint": {
         "header": {
           "transactionStatus": "Live",
-          "id": "AA25073VKVH2-PENALTYINT-20250314.1",
+          "id": "AA25073TC93W-PENALTYINT-20250314.1",
           "status": "success"
         }
       },
       "solicitorfee": {
         "header": {
           "transactionStatus": "Live",
-          "id": "AA25073VKVH2-SOLICITORFEE-20250314.1",
+          "id": "AA25073TC93W-SOLICITORFEE-20250314.1",
           "status": "success"
         }
       },
@@ -336,7 +336,7 @@ Response Body:
           "audit": {
             "versionNumber": "1"
           },
-          "id": "AA25073VKVH2-ARRANGEMENT.RULES-20250314.1",
+          "id": "AA25073TC93W-ARRANGEMENT.RULES-20250314.1",
           "status": "success"
         },
         "body": {
@@ -358,13 +358,13 @@ Response Body:
           "audit": {
             "versionNumber": "1"
           },
-          "id": "AA25073VKVH2-COMMITMENT-20250314.1",
+          "id": "AA25073TC93W-COMMITMENT-20250314.1",
           "status": "success"
         },
         "body": {
-          "amount": "228977.00",
-          "maturityDate": "20310514",
-          "term": "74M",
+          "amount": "180946.00",
+          "maturityDate": "20301114",
+          "term": "68M",
           "revolving": "NO"
         }
       },
@@ -374,7 +374,7 @@ Response Body:
           "audit": {
             "versionNumber": "1"
           },
-          "id": "AA25073VKVH2-PAYOFF-20250314.1",
+          "id": "AA25073TC93W-PAYOFF-20250314.1",
           "status": "success"
         },
         "body": {
@@ -387,7 +387,7 @@ Response Body:
       "tax": {
         "header": {
           "transactionStatus": "Live",
-          "id": "AA25073VKVH2-TAX-20250314.1",
+          "id": "AA25073TC93W-TAX-20250314.1",
           "status": "success"
         }
       },
@@ -397,7 +397,7 @@ Response Body:
           "audit": {
             "versionNumber": "1"
           },
-          "id": "AA25073VKVH2-SETTLEMENT-20250314.1",
+          "id": "AA25073TC93W-SETTLEMENT-20250314.1",
           "status": "success"
         },
         "body": {
@@ -408,7 +408,7 @@ Response Body:
                 {
                   "payoutProperty": "ACCOUNT",
                   "payoutActivity": "ACCOUNTS-DEBIT-ARRANGEMENT",
-                  "payoutAccount": "DDAComposable|GB0010001|1013716729"
+                  "payoutAccount": "DDAComposable|GB0010001|1013716777"
                 }
               ],
               "payoutSettlement": "YES"
@@ -419,7 +419,7 @@ Response Body:
               "reference": [
                 {
                   "payinActivity": "ACCOUNTS-DEBIT-ARRANGEMENT",
-                  "payinAccount": "DDAComposable|GB0010001|1013716729"
+                  "payinAccount": "DDAComposable|GB0010001|1013716777"
                 }
               ],
               "payinSettlement": "YES",
@@ -429,7 +429,7 @@ Response Body:
             {
               "reference": [
                 {
-                  "payinAccount": "DDAComposable|GB0010001|1013716729"
+                  "payinAccount": "DDAComposable|GB0010001|1013716777"
                 }
               ],
               "payinSettlement": "YES",
@@ -445,7 +445,7 @@ Response Body:
           "audit": {
             "versionNumber": "1"
           },
-          "id": "AA25073VKVH2-SCHEDULE-20250314.1",
+          "id": "AA25073TC93W-SCHEDULE-20250314.1",
           "status": "success"
         },
         "body": {
@@ -471,7 +471,7 @@ Response Body:
               "billType": "INSTALLMENT",
               "payments": [
                 {
-                  "calcAmount": "3269.18"
+                  "calcAmount": "2799.15"
                 }
               ],
               "property": [
@@ -532,7 +532,7 @@ Response Body:
           "audit": {
             "versionNumber": "1"
           },
-          "id": "AA25073VKVH2-PAYOFFFEE-20250314.1",
+          "id": "AA25073TC93W-PAYOFFFEE-20250314.1",
           "status": "success"
         },
         "body": {}
@@ -543,7 +543,7 @@ Response Body:
           "audit": {
             "versionNumber": "1"
           },
-          "id": "AA25073VKVH2-ACTIVITY.CHARGES-20250314.1",
+          "id": "AA25073TC93W-ACTIVITY.CHARGES-20250314.1",
           "status": "success"
         },
         "body": {
@@ -568,21 +568,21 @@ Response Body:
       "overdue": {
         "header": {
           "transactionStatus": "Live",
-          "id": "AA25073VKVH2-OVERDUE-20250314",
+          "id": "AA25073TC93W-OVERDUE-20250314",
           "status": "success"
         }
       },
       "mortginsurance": {
         "header": {
           "transactionStatus": "Live",
-          "id": "AA25073VKVH2-MORTGINSURANCE-20250314.1",
+          "id": "AA25073TC93W-MORTGINSURANCE-20250314.1",
           "status": "success"
         }
       },
       "limit": {
         "header": {
           "transactionStatus": "Live",
-          "id": "AA25073VKVH2-LIMIT-20250314.1",
+          "id": "AA25073TC93W-LIMIT-20250314.1",
           "status": "success"
         }
       },
@@ -592,7 +592,7 @@ Response Body:
           "audit": {
             "versionNumber": "1"
           },
-          "id": "AA25073VKVH2-DISBURSEMENTFEE-20250314.1",
+          "id": "AA25073TC93W-DISBURSEMENTFEE-20250314.1",
           "status": "success"
         },
         "body": {
@@ -602,7 +602,7 @@ Response Body:
       "closure": {
         "header": {
           "transactionStatus": "Live",
-          "id": "AA25073VKVH2-CLOSURE-20250314",
+          "id": "AA25073TC93W-CLOSURE-20250314",
           "status": "success"
         }
       },
@@ -612,11 +612,11 @@ Response Body:
           "audit": {
             "versionNumber": "1"
           },
-          "id": "AA25073VKVH2-ACCOUNT-20250314.1",
+          "id": "AA25073TC93W-ACCOUNT-20250314.1",
           "status": "success"
         },
         "body": {
-          "accountId": "1013716737",
+          "accountId": "1013716753",
           "alternateIds": [
             {
               "alternateIdType": "LEGACY"
@@ -639,7 +639,7 @@ Response Body:
       "reporting": {
         "header": {
           "transactionStatus": "Live",
-          "id": "AA25073VKVH2-REPORTING-20250314",
+          "id": "AA25073TC93W-REPORTING-20250314",
           "status": "success"
         }
       },
@@ -649,7 +649,7 @@ Response Body:
           "audit": {
             "versionNumber": "1"
           },
-          "id": "AA25073VKVH2-CUSTOMER-20250314.1",
+          "id": "AA25073TC93W-CUSTOMER-20250314.1",
           "status": "success"
         },
         "body": {
@@ -659,7 +659,7 @@ Response Body:
               "limitAllocactionPercentage": "100",
               "GLAllocactionPercentage": "100",
               "customerRole": "OWNER",
-              "customer": "2514635932"
+              "customer": "2514646824"
             }
           ]
         }
@@ -674,58 +674,58 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
 {
   "topic": "lending-event-topic",
   "partition": 0,
-  "offset": 3030,
-  "key": "lending|GB0010001|AAACT250730Q8P2X2K",
-  "timestamp": "2025-05-26 12:59:10",
+  "offset": 3060,
+  "key": "lending|GB0010001|AAACT250735BF4RMBV",
+  "timestamp": "2025-05-26 16:00:44",
   "payload": {
     "specversion": "1.0",
-    "id": "05258877-b442-4288-8002-c6cfab5e51f7",
+    "id": "4544e395-33c0-499d-8c3d-a1b7132d31e1",
     "source": "https://temenos.com/microservice/cloudevents/lending",
     "type": "financialAccounting.updateAccountingJournalEntries.accountingJournalEntriesUpdated",
     "datacontenttype": "application/json",
     "subject": "event",
-    "time": "2025-05-26T09:59:09.616Z",
-    "businesskey": "lending|GB0010001|AAACT250730Q8P2X2K",
-    "correlationid": "05258877-b442-4288-8002-c6cfab5e51f7",
+    "time": "2025-05-26T13:00:44.384Z",
+    "businesskey": "lending|GB0010001|AAACT250735BF4RMBV",
+    "correlationid": "4544e395-33c0-499d-8c3d-a1b7132d31e1",
     "data": {
       "sourceSystem": "lending",
       "accountActivityBalances": [
         {
           "companyId": "GB0010001",
-          "activityBalance": "-228977",
+          "activityBalance": "-180946",
           "balanceType": "CURACCOUNT",
-          "debitMovement": "-228977",
+          "debitMovement": "-180946",
           "activityBalanceDate": "20250314",
-          "contractId": "1013716737",
+          "contractId": "1013716753",
           "activityBalanceDateType": "BOOKING"
         },
         {
-          "creditMovement": "228977",
+          "creditMovement": "180946",
           "companyId": "GB0010001",
           "activityBalance": "0",
           "balanceType": "AASUSPENSE",
-          "debitMovement": "-228977",
+          "debitMovement": "-180946",
           "activityBalanceDate": "20250314",
-          "contractId": "1013716737",
+          "contractId": "1013716753",
           "activityBalanceDateType": "BOOKING"
         },
         {
           "companyId": "GB0010001",
-          "activityBalance": "-228977",
+          "activityBalance": "-180946",
           "balanceType": "CURACCOUNT",
-          "debitMovement": "-228977",
+          "debitMovement": "-180946",
           "activityBalanceDate": "20250314",
-          "contractId": "1013716737",
+          "contractId": "1013716753",
           "activityBalanceDateType": "VALUE"
         },
         {
-          "creditMovement": "228977",
+          "creditMovement": "180946",
           "companyId": "GB0010001",
           "activityBalance": "0",
           "balanceType": "AASUSPENSE",
-          "debitMovement": "-228977",
+          "debitMovement": "-180946",
           "activityBalanceDate": "20250314",
-          "contractId": "1013716737",
+          "contractId": "1013716753",
           "activityBalanceDateType": "VALUE"
         }
       ],
@@ -733,11 +733,11 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
       "balanceUpdateStage": "Accounting",
       "contractBalances": [
         {
-          "onlineClearedBalance": "-230121.89",
-          "onlineActualBalance": "-230121.89",
-          "workingBalance": "-230121.89",
+          "onlineClearedBalance": "-181850.73",
+          "onlineActualBalance": "-181850.73",
+          "workingBalance": "-181850.73",
           "receivableBalance": "0",
-          "contractId": "1013716737",
+          "contractId": "1013716753",
           "payableBalance": "0",
           "balanceTypeBalances": [
             {
@@ -746,11 +746,11 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
             },
             {
               "balanceType": "TOTCOMMITMENT",
-              "balanceAmount": "-228977"
+              "balanceAmount": "-180946"
             },
             {
               "balanceType": "DUENEWARRFEE",
-              "balanceAmount": "-1144.89"
+              "balanceAmount": "-904.73"
             },
             {
               "balanceType": "AVLACCOUNT",
@@ -762,7 +762,7 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
             },
             {
               "balanceType": "CURACCOUNT",
-              "balanceAmount": "-228977"
+              "balanceAmount": "-180946"
             }
           ]
         }
@@ -771,18 +771,18 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
         {
           "journalEntryType": "STMT",
           "positionType": "TR",
-          "entryDateTime": "20250526095908784",
+          "entryDateTime": "20250526130043677",
           "departmentId": "1",
           "processingDate": "20250314",
           "creditDebitIndicator": "DEBIT",
-          "onlineClearedBalance": "-230121.89",
+          "onlineClearedBalance": "-181850.73",
           "balanceType": "CURACCOUNT",
-          "uniqueFlag": "209660197735948.010001",
-          "workingBalance": "-230121.89",
-          "customerId": "2514635932",
+          "uniqueFlag": "209661468146843.010001",
+          "workingBalance": "-181850.73",
+          "customerId": "2514646824",
           "contractSystemId": "AC",
           "currency": "USD",
-          "entryReference": "AA25073VKVH2",
+          "entryReference": "AA25073TC93W",
           "systemId": "AA",
           "narratives": [
             {
@@ -792,17 +792,17 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
               "narrative": "Auto disburse Commitment"
             }
           ],
-          "originationReference": "1013716737",
-          "transactionReference": "AAACT250730Q8P2X2L",
+          "originationReference": "1013716753",
+          "transactionReference": "AAACT250735BF4RMBW",
           "exposureDate": "20250314",
-          "transactionAmountLocalCurrency": "-228977",
+          "transactionAmountLocalCurrency": "-180946",
           "transactionCode": "861",
           "valueDate": "20250314",
-          "authoriser": "1977_INPUTTER",
+          "authoriser": "14681_INPUTTER",
           "companyId": "GB0010001",
           "eventTypeId": "ACCOUNT-DISBURSE-DUE",
-          "onlineActualBalance": "-230121.89",
-          "contractId": "1013716737",
+          "onlineActualBalance": "-181850.73",
+          "contractId": "1013716753",
           "bookingDate": "20250314",
           "allocationRuleId": "LENDMS-ACCOUNT",
           "currencyMarket": "1",
@@ -811,23 +811,23 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
         {
           "journalEntryType": "SPEC",
           "systemId": "AAAA",
-          "originationReference": "1013716737",
+          "originationReference": "1013716753",
           "positionType": "TR",
-          "transactionReference": "AAACT250730Q8P2X2L",
+          "transactionReference": "AAACT250735BF4RMBW",
           "exposureDate": "20250314",
           "departmentId": "1",
           "processingDate": "20250314",
-          "transactionAmountLocalCurrency": "228977",
+          "transactionAmountLocalCurrency": "180946",
           "transactionCode": "CNW",
           "valueDate": "20250314",
           "creditDebitIndicator": "CREDIT",
-          "authoriser": "1977_INPUTTER",
+          "authoriser": "14681_INPUTTER",
           "companyId": "GB0010001",
           "eventTypeId": "ACCOUNT-DISBURSE-DUE",
           "balanceType": "AASUSPENSE",
-          "uniqueFlag": "209660197735948.010001",
-          "customerId": "2514635932",
-          "contractId": "1013716737",
+          "uniqueFlag": "209661468146843.010001",
+          "customerId": "2514646824",
+          "contractId": "1013716753",
           "bookingDate": "20250314",
           "contractSystemId": "AC",
           "currency": "USD",
@@ -837,9 +837,9 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
       ],
       "contractInformation": [
         {
-          "arrangementId": "AA25073VKVH2",
-          "contractId": "1013716737",
-          "customerId": "2514635932",
+          "arrangementId": "AA25073TC93W",
+          "contractId": "1013716753",
+          "customerId": "2514646824",
           "currency": "USD"
         }
       ]
@@ -850,55 +850,55 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
 {
   "topic": "lending-event-topic",
   "partition": 0,
-  "offset": 3031,
-  "key": "lending|GB0010001|AAACT250730Q8P2X2K",
-  "timestamp": "2025-05-26 12:59:10",
+  "offset": 3061,
+  "key": "lending|GB0010001|AAACT250735BF4RMBV",
+  "timestamp": "2025-05-26 16:00:44",
   "payload": {
     "specversion": "1.0",
-    "id": "68af1179-d9c2-4cb7-a1d4-56e4ecdbeef3",
+    "id": "bd5c34da-fe4a-48e2-a587-225cd2ef061a",
     "source": "https://temenos.com/microservice/cloudevents/lending",
     "type": "lending.mortgage-product.disburse.transactionExecuted",
     "datacontenttype": "application/json",
     "subject": "event",
-    "time": "2025-05-26T09:59:09.617Z",
-    "businesskey": "lending|GB0010001|AAACT250730Q8P2X2K",
-    "correlationid": "68af1179-d9c2-4cb7-a1d4-56e4ecdbeef3",
+    "time": "2025-05-26T13:00:44.385Z",
+    "businesskey": "lending|GB0010001|AAACT250735BF4RMBV",
+    "correlationid": "bd5c34da-fe4a-48e2-a587-225cd2ef061a",
     "data": {
       "transactionCurrency": "USD",
-      "transactionAmount": "228977",
+      "transactionAmount": "180946",
       "baseDetails": {
         "reversalIndicator": false,
         "contractStatus": "CURRENT",
-        "transactionReference": "AAACT250730Q8P2X2L",
+        "transactionReference": "AAACT250735BF4RMBW",
         "contractCurrency": "USD",
         "eventCount": 1,
         "companyReference": "GB0010001",
         "baseEventIdentifier": "LENDING-AUTO.DISBURSE-COMMITMENT",
         "systemReference": "lending",
-        "accountId": "1013716737",
+        "accountId": "1013716753",
         "balances": [
           {
-            "timeStamp": "2025-03-14T09:59:08:750",
+            "timeStamp": "2025-03-14T13:00:43:634",
             "dateType": "VALUE",
             "balanceName": "CURACCOUNT",
-            "closingBalance": "-228977",
+            "closingBalance": "-180946",
             "openingBalance": "0"
           },
           {
-            "timeStamp": "2025-03-14T09:59:08:750",
+            "timeStamp": "2025-03-14T13:00:43:634",
             "dateType": "VALUE",
             "balanceName": "AASUSPENSE",
             "closingBalance": "0",
-            "openingBalance": "-228977"
+            "openingBalance": "-180946"
           }
         ],
         "eventName": "LENDING-AUTO.DISBURSE-COMMITMENT",
         "bookingDate": "20250314",
-        "contractReference": "AA25073VKVH2",
+        "contractReference": "AA25073TC93W",
         "effectiveDate": "20250314",
-        "activityDateTimeStamp": "2025-03-14T09:59:08:747"
+        "activityDateTimeStamp": "2025-03-14T13:00:43:632"
       },
-      "contractAmount": "228977",
+      "contractAmount": "180946",
       "repaymentDetails": [
         {
           "schedules": [
@@ -930,7 +930,7 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
               ],
               "payments": [
                 {
-                  "calculatedPaymentAmount": "3269.18"
+                  "calculatedPaymentAmount": "2799.15"
                 }
               ],
               "description": "Constant Repayment",
@@ -1011,7 +1011,7 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
                 ],
                 "payments": [
                   {
-                    "calculatedPaymentAmount": "3269.18"
+                    "calculatedPaymentAmount": "2799.15"
                   }
                 ],
                 "description": "Constant Repayment",
@@ -1068,19 +1068,19 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
 {
   "topic": "lending-event-topic",
   "partition": 0,
-  "offset": 3032,
-  "key": "lending|GB0010001|AAACT250730Q8P2X2K",
-  "timestamp": "2025-05-26 12:59:10",
+  "offset": 3062,
+  "key": "lending|GB0010001|AAACT250735BF4RMBV",
+  "timestamp": "2025-05-26 16:00:44",
   "payload": {
     "specversion": "1.0",
-    "id": "297860bc-f006-4a40-93c4-7347474a811b",
+    "id": "c043bd97-edb3-43b7-a4b4-de3bc2499a71",
     "source": "https://temenos.com/microservice/cloudevents/lending",
     "type": "financialAccounting.updateCashFlow.cashFlowUpdated",
     "datacontenttype": "application/json",
     "subject": "event",
-    "time": "2025-05-26T09:59:09.621Z",
-    "businesskey": "lending|GB0010001|AAACT250730Q8P2X2K",
-    "correlationid": "297860bc-f006-4a40-93c4-7347474a811b",
+    "time": "2025-05-26T13:00:44.386Z",
+    "businesskey": "lending|GB0010001|AAACT250735BF4RMBV",
+    "correlationid": "c043bd97-edb3-43b7-a4b4-de3bc2499a71",
     "data": {
       "accountingAction": "INP",
       "cashflowRateInformation": {
@@ -1109,12 +1109,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
       "sourceSystem": "lending",
       "cashflowInformation": [
         {
-          "cashflowAmount": "-228977",
+          "cashflowAmount": "-180946",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20250314"
         },
         {
-          "cashflowAmount": "1144.89",
+          "cashflowAmount": "904.73",
           "cashflowType": "CHARGE-NEWARRFEE",
           "cashflowDate": "20250314"
         },
@@ -1139,12 +1139,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20250314"
         },
         {
-          "cashflowAmount": "2924.12",
+          "cashflowAmount": "2526.47",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20250414"
         },
         {
-          "cashflowAmount": "345.06",
+          "cashflowAmount": "272.68",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20250414"
         },
@@ -1159,12 +1159,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20250414"
         },
         {
-          "cashflowAmount": "2939.52",
+          "cashflowAmount": "2538.95",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20250514"
         },
         {
-          "cashflowAmount": "329.66",
+          "cashflowAmount": "260.2",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20250514"
         },
@@ -1179,12 +1179,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20250514"
         },
         {
-          "cashflowAmount": "2932.96",
+          "cashflowAmount": "2534.11",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20250614"
         },
         {
-          "cashflowAmount": "336.22",
+          "cashflowAmount": "265.04",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20250614"
         },
@@ -1199,12 +1199,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20250614"
         },
         {
-          "cashflowAmount": "2948.08",
+          "cashflowAmount": "2546.35",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20250714"
         },
         {
-          "cashflowAmount": "321.1",
+          "cashflowAmount": "252.8",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20250714"
         },
@@ -1219,12 +1219,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20250714"
         },
         {
-          "cashflowAmount": "2941.82",
+          "cashflowAmount": "2541.76",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20250814"
         },
         {
-          "cashflowAmount": "327.36",
+          "cashflowAmount": "257.39",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20250814"
         },
@@ -1239,12 +1239,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20250814"
         },
         {
-          "cashflowAmount": "2946.26",
+          "cashflowAmount": "2545.59",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20250914"
         },
         {
-          "cashflowAmount": "322.92",
+          "cashflowAmount": "253.56",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20250914"
         },
@@ -1259,12 +1259,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20250914"
         },
         {
-          "cashflowAmount": "2960.97",
+          "cashflowAmount": "2557.49",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20251014"
         },
         {
-          "cashflowAmount": "308.21",
+          "cashflowAmount": "241.66",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20251014"
         },
@@ -1279,12 +1279,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20251014"
         },
         {
-          "cashflowAmount": "2955.16",
+          "cashflowAmount": "2553.28",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20251114"
         },
         {
-          "cashflowAmount": "314.02",
+          "cashflowAmount": "245.87",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20251114"
         },
@@ -1299,12 +1299,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20251114"
         },
         {
-          "cashflowAmount": "2969.6",
+          "cashflowAmount": "2564.94",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20251214"
         },
         {
-          "cashflowAmount": "299.58",
+          "cashflowAmount": "234.21",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20251214"
         },
@@ -1319,12 +1319,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20251214"
         },
         {
-          "cashflowAmount": "2964.09",
+          "cashflowAmount": "2561",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20260114"
         },
         {
-          "cashflowAmount": "305.09",
+          "cashflowAmount": "238.15",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20260114"
         },
@@ -1339,12 +1339,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20260114"
         },
         {
-          "cashflowAmount": "2968.55",
+          "cashflowAmount": "2564.86",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20260214"
         },
         {
-          "cashflowAmount": "300.63",
+          "cashflowAmount": "234.29",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20260214"
         },
@@ -1359,12 +1359,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20260214"
         },
         {
-          "cashflowAmount": "3001.69",
+          "cashflowAmount": "2591.02",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20260314"
         },
         {
-          "cashflowAmount": "267.49",
+          "cashflowAmount": "208.13",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20260314"
         },
@@ -1379,12 +1379,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20260314"
         },
         {
-          "cashflowAmount": "2977.55",
+          "cashflowAmount": "2572.63",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20260414"
         },
         {
-          "cashflowAmount": "291.63",
+          "cashflowAmount": "226.52",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20260414"
         },
@@ -1399,12 +1399,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20260414"
         },
         {
-          "cashflowAmount": "2991.3",
+          "cashflowAmount": "2583.68",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20260514"
         },
         {
-          "cashflowAmount": "277.88",
+          "cashflowAmount": "215.47",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20260514"
         },
@@ -1419,12 +1419,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20260514"
         },
         {
-          "cashflowAmount": "2986.54",
+          "cashflowAmount": "2580.4",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20260614"
         },
         {
-          "cashflowAmount": "282.64",
+          "cashflowAmount": "218.75",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20260614"
         },
@@ -1439,12 +1439,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20260614"
         },
         {
-          "cashflowAmount": "3000.02",
+          "cashflowAmount": "2591.22",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20260714"
         },
         {
-          "cashflowAmount": "269.16",
+          "cashflowAmount": "207.93",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20260714"
         },
@@ -1459,12 +1459,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20260714"
         },
         {
-          "cashflowAmount": "2995.57",
+          "cashflowAmount": "2588.19",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20260814"
         },
         {
-          "cashflowAmount": "273.61",
+          "cashflowAmount": "210.96",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20260814"
         },
@@ -1479,12 +1479,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20260814"
         },
         {
-          "cashflowAmount": "3000.08",
+          "cashflowAmount": "2592.09",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20260914"
         },
         {
-          "cashflowAmount": "269.1",
+          "cashflowAmount": "207.06",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20260914"
         },
@@ -1499,12 +1499,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20260914"
         },
         {
-          "cashflowAmount": "3013.14",
+          "cashflowAmount": "2602.55",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20261014"
         },
         {
-          "cashflowAmount": "256.04",
+          "cashflowAmount": "196.6",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20261014"
         },
@@ -1519,12 +1519,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20261014"
         },
         {
-          "cashflowAmount": "3009.14",
+          "cashflowAmount": "2599.92",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20261114"
         },
         {
-          "cashflowAmount": "260.04",
+          "cashflowAmount": "199.23",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20261114"
         },
@@ -1539,12 +1539,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20261114"
         },
         {
-          "cashflowAmount": "3021.92",
+          "cashflowAmount": "2610.14",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20261214"
         },
         {
-          "cashflowAmount": "247.26",
+          "cashflowAmount": "189.01",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20261214"
         },
@@ -1559,12 +1559,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20261214"
         },
         {
-          "cashflowAmount": "3018.23",
+          "cashflowAmount": "2607.77",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20270114"
         },
         {
-          "cashflowAmount": "250.95",
+          "cashflowAmount": "191.38",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20270114"
         },
@@ -1579,12 +1579,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20270114"
         },
         {
-          "cashflowAmount": "3022.78",
+          "cashflowAmount": "2611.7",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20270214"
         },
         {
-          "cashflowAmount": "246.4",
+          "cashflowAmount": "187.45",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20270214"
         },
@@ -1599,12 +1599,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20270214"
         },
         {
-          "cashflowAmount": "3050.74",
+          "cashflowAmount": "2633.39",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20270314"
         },
         {
-          "cashflowAmount": "218.44",
+          "cashflowAmount": "165.76",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20270314"
         },
@@ -1619,12 +1619,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20270314"
         },
         {
-          "cashflowAmount": "3031.93",
+          "cashflowAmount": "2619.6",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20270414"
         },
         {
-          "cashflowAmount": "237.25",
+          "cashflowAmount": "179.55",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20270414"
         },
@@ -1639,12 +1639,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20270414"
         },
         {
-          "cashflowAmount": "3044.01",
+          "cashflowAmount": "2629.21",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20270514"
         },
         {
-          "cashflowAmount": "225.17",
+          "cashflowAmount": "169.94",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20270514"
         },
@@ -1659,12 +1659,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20270514"
         },
         {
-          "cashflowAmount": "3041.09",
+          "cashflowAmount": "2627.51",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20270614"
         },
         {
-          "cashflowAmount": "228.09",
+          "cashflowAmount": "171.64",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20270614"
         },
@@ -1679,12 +1679,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20270614"
         },
         {
-          "cashflowAmount": "3052.88",
+          "cashflowAmount": "2636.88",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20270714"
         },
         {
-          "cashflowAmount": "216.3",
+          "cashflowAmount": "162.27",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20270714"
         },
@@ -1699,12 +1699,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20270714"
         },
         {
-          "cashflowAmount": "3050.27",
+          "cashflowAmount": "2635.45",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20270814"
         },
         {
-          "cashflowAmount": "218.91",
+          "cashflowAmount": "163.7",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20270814"
         },
@@ -1719,12 +1719,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20270814"
         },
         {
-          "cashflowAmount": "3054.87",
+          "cashflowAmount": "2639.42",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20270914"
         },
         {
-          "cashflowAmount": "214.31",
+          "cashflowAmount": "159.73",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20270914"
         },
@@ -1739,12 +1739,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20270914"
         },
         {
-          "cashflowAmount": "3066.24",
+          "cashflowAmount": "2648.42",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20271014"
         },
         {
-          "cashflowAmount": "202.94",
+          "cashflowAmount": "150.73",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20271014"
         },
@@ -1759,12 +1759,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20271014"
         },
         {
-          "cashflowAmount": "3064.09",
+          "cashflowAmount": "2647.39",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20271114"
         },
         {
-          "cashflowAmount": "205.09",
+          "cashflowAmount": "151.76",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20271114"
         },
@@ -1779,12 +1779,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20271114"
         },
         {
-          "cashflowAmount": "3075.18",
+          "cashflowAmount": "2656.14",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20271214"
         },
         {
-          "cashflowAmount": "194",
+          "cashflowAmount": "143.01",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20271214"
         },
@@ -1799,12 +1799,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20271214"
         },
         {
-          "cashflowAmount": "3073.34",
+          "cashflowAmount": "2655.38",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20280114"
         },
         {
-          "cashflowAmount": "195.84",
+          "cashflowAmount": "143.77",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20280114"
         },
@@ -1819,12 +1819,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20280114"
         },
         {
-          "cashflowAmount": "3077.97",
+          "cashflowAmount": "2659.38",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20280214"
         },
         {
-          "cashflowAmount": "191.21",
+          "cashflowAmount": "139.77",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20280214"
         },
@@ -1839,12 +1839,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20280214"
         },
         {
-          "cashflowAmount": "3094.65",
+          "cashflowAmount": "2672.15",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20280314"
         },
         {
-          "cashflowAmount": "174.53",
+          "cashflowAmount": "127",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20280314"
         },
@@ -1859,12 +1859,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20280314"
         },
         {
-          "cashflowAmount": "3087.28",
+          "cashflowAmount": "2667.41",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20280414"
         },
         {
-          "cashflowAmount": "181.9",
+          "cashflowAmount": "131.74",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20280414"
         },
@@ -1879,12 +1879,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20280414"
         },
         {
-          "cashflowAmount": "3097.65",
+          "cashflowAmount": "2675.55",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20280514"
         },
         {
-          "cashflowAmount": "171.53",
+          "cashflowAmount": "123.6",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20280514"
         },
@@ -1899,12 +1899,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20280514"
         },
         {
-          "cashflowAmount": "3096.6",
+          "cashflowAmount": "2675.47",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20280614"
         },
         {
-          "cashflowAmount": "172.58",
+          "cashflowAmount": "123.68",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20280614"
         },
@@ -1919,12 +1919,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20280614"
         },
         {
-          "cashflowAmount": "3106.68",
+          "cashflowAmount": "2683.36",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20280714"
         },
         {
-          "cashflowAmount": "162.5",
+          "cashflowAmount": "115.79",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20280714"
         },
@@ -1939,12 +1939,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20280714"
         },
         {
-          "cashflowAmount": "3105.94",
+          "cashflowAmount": "2683.54",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20280814"
         },
         {
-          "cashflowAmount": "163.24",
+          "cashflowAmount": "115.61",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20280814"
         },
@@ -1959,12 +1959,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20280814"
         },
         {
-          "cashflowAmount": "3110.62",
+          "cashflowAmount": "2687.58",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20280914"
         },
         {
-          "cashflowAmount": "158.56",
+          "cashflowAmount": "111.57",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20280914"
         },
@@ -1979,12 +1979,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20280914"
         },
         {
-          "cashflowAmount": "3120.28",
+          "cashflowAmount": "2695.1",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20281014"
         },
         {
-          "cashflowAmount": "148.9",
+          "cashflowAmount": "104.05",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20281014"
         },
@@ -1999,12 +1999,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20281014"
         },
         {
-          "cashflowAmount": "3120.01",
+          "cashflowAmount": "2695.7",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20281114"
         },
         {
-          "cashflowAmount": "149.17",
+          "cashflowAmount": "103.45",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20281114"
         },
@@ -2019,12 +2019,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20281114"
         },
         {
-          "cashflowAmount": "3129.38",
+          "cashflowAmount": "2702.96",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20281214"
         },
         {
-          "cashflowAmount": "139.8",
+          "cashflowAmount": "96.19",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20281214"
         },
@@ -2039,12 +2039,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20281214"
         },
         {
-          "cashflowAmount": "3129.43",
+          "cashflowAmount": "2703.83",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20290114"
         },
         {
-          "cashflowAmount": "139.75",
+          "cashflowAmount": "95.32",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20290114"
         },
@@ -2059,12 +2059,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20290114"
         },
         {
-          "cashflowAmount": "3134.15",
+          "cashflowAmount": "2707.91",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20290214"
         },
         {
-          "cashflowAmount": "135.03",
+          "cashflowAmount": "91.24",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20290214"
         },
@@ -2079,12 +2079,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20290214"
         },
         {
-          "cashflowAmount": "3151.48",
+          "cashflowAmount": "2720.42",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20290314"
         },
         {
-          "cashflowAmount": "117.7",
+          "cashflowAmount": "78.73",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20290314"
         },
@@ -2099,12 +2099,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20290314"
         },
         {
-          "cashflowAmount": "3143.62",
+          "cashflowAmount": "2716.09",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20290414"
         },
         {
-          "cashflowAmount": "125.56",
+          "cashflowAmount": "83.06",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20290414"
         },
@@ -2119,12 +2119,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20290414"
         },
         {
-          "cashflowAmount": "3152.25",
+          "cashflowAmount": "2722.73",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20290514"
         },
         {
-          "cashflowAmount": "116.93",
+          "cashflowAmount": "76.42",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20290514"
         },
@@ -2139,12 +2139,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20290514"
         },
         {
-          "cashflowAmount": "3153.11",
+          "cashflowAmount": "2724.28",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20290614"
         },
         {
-          "cashflowAmount": "116.07",
+          "cashflowAmount": "74.87",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20290614"
         },
@@ -2159,12 +2159,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20290614"
         },
         {
-          "cashflowAmount": "3161.45",
+          "cashflowAmount": "2730.67",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20290714"
         },
         {
-          "cashflowAmount": "107.73",
+          "cashflowAmount": "68.48",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20290714"
         },
@@ -2179,12 +2179,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20290714"
         },
         {
-          "cashflowAmount": "3162.62",
+          "cashflowAmount": "2732.5",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20290814"
         },
         {
-          "cashflowAmount": "106.56",
+          "cashflowAmount": "66.65",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20290814"
         },
@@ -2199,12 +2199,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20290814"
         },
         {
-          "cashflowAmount": "3167.39",
+          "cashflowAmount": "2736.62",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20290914"
         },
         {
-          "cashflowAmount": "101.79",
+          "cashflowAmount": "62.53",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20290914"
         },
@@ -2219,12 +2219,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20290914"
         },
         {
-          "cashflowAmount": "3175.29",
+          "cashflowAmount": "2742.63",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20291014"
         },
         {
-          "cashflowAmount": "93.89",
+          "cashflowAmount": "56.52",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20291014"
         },
@@ -2239,12 +2239,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20291014"
         },
         {
-          "cashflowAmount": "3176.95",
+          "cashflowAmount": "2744.88",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20291114"
         },
         {
-          "cashflowAmount": "92.23",
+          "cashflowAmount": "54.27",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20291114"
         },
@@ -2259,12 +2259,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20291114"
         },
         {
-          "cashflowAmount": "3184.56",
+          "cashflowAmount": "2750.63",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20291214"
         },
         {
-          "cashflowAmount": "84.62",
+          "cashflowAmount": "48.52",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20291214"
         },
@@ -2279,12 +2279,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20291214"
         },
         {
-          "cashflowAmount": "3186.53",
+          "cashflowAmount": "2753.16",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20300114"
         },
         {
-          "cashflowAmount": "82.65",
+          "cashflowAmount": "45.99",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20300114"
         },
@@ -2299,12 +2299,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20300114"
         },
         {
-          "cashflowAmount": "3191.34",
+          "cashflowAmount": "2757.31",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20300214"
         },
         {
-          "cashflowAmount": "77.84",
+          "cashflowAmount": "41.84",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20300214"
         },
@@ -2319,12 +2319,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20300214"
         },
         {
-          "cashflowAmount": "3203.21",
+          "cashflowAmount": "2765.11",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20300314"
         },
         {
-          "cashflowAmount": "65.97",
+          "cashflowAmount": "34.04",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20300314"
         },
@@ -2339,12 +2339,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20300314"
         },
         {
-          "cashflowAmount": "3200.97",
+          "cashflowAmount": "2765.63",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20300414"
         },
         {
-          "cashflowAmount": "68.21",
+          "cashflowAmount": "33.52",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20300414"
         },
@@ -2359,12 +2359,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20300414"
         },
         {
-          "cashflowAmount": "3207.84",
+          "cashflowAmount": "2770.74",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20300514"
         },
         {
-          "cashflowAmount": "61.34",
+          "cashflowAmount": "28.41",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20300514"
         },
@@ -2379,12 +2379,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20300514"
         },
         {
-          "cashflowAmount": "3210.63",
+          "cashflowAmount": "2773.97",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20300614"
         },
         {
-          "cashflowAmount": "58.55",
+          "cashflowAmount": "25.18",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20300614"
         },
@@ -2399,12 +2399,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20300614"
         },
         {
-          "cashflowAmount": "3217.2",
+          "cashflowAmount": "2778.83",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20300714"
         },
         {
-          "cashflowAmount": "51.98",
+          "cashflowAmount": "20.32",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20300714"
         },
@@ -2419,12 +2419,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20300714"
         },
         {
-          "cashflowAmount": "3220.32",
+          "cashflowAmount": "2782.34",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20300814"
         },
         {
-          "cashflowAmount": "48.86",
+          "cashflowAmount": "16.81",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20300814"
         },
@@ -2439,12 +2439,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20300814"
         },
         {
-          "cashflowAmount": "3225.17",
+          "cashflowAmount": "2786.53",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20300914"
         },
         {
-          "cashflowAmount": "44.01",
+          "cashflowAmount": "12.62",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20300914"
         },
@@ -2459,12 +2459,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20300914"
         },
         {
-          "cashflowAmount": "3231.29",
+          "cashflowAmount": "2791",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20301014"
         },
         {
-          "cashflowAmount": "37.89",
+          "cashflowAmount": "8.15",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20301014"
         },
@@ -2479,12 +2479,12 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           "cashflowDate": "20301014"
         },
         {
-          "cashflowAmount": "3234.9",
+          "cashflowAmount": "2795.09",
           "cashflowType": "PRINCIPAL-ACCOUNT",
           "cashflowDate": "20301114"
         },
         {
-          "cashflowAmount": "34.28",
+          "cashflowAmount": "4.21",
           "cashflowType": "INTEREST-PRINCIPALINT",
           "cashflowDate": "20301114"
         },
@@ -2497,129 +2497,9 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
           ],
           "cashflowType": "CHARGE-MORTGINSURANCE",
           "cashflowDate": "20301114"
-        },
-        {
-          "cashflowAmount": "3240.72",
-          "cashflowType": "PRINCIPAL-ACCOUNT",
-          "cashflowDate": "20301214"
-        },
-        {
-          "cashflowAmount": "28.46",
-          "cashflowType": "INTEREST-PRINCIPALINT",
-          "cashflowDate": "20301214"
-        },
-        {
-          "cashflowAmount": "100.00",
-          "excludeEirs": [
-            {
-              "excludeEir": "APR.INTERNAL"
-            }
-          ],
-          "cashflowType": "CHARGE-MORTGINSURANCE",
-          "cashflowDate": "20301214"
-        },
-        {
-          "cashflowAmount": "3244.66",
-          "cashflowType": "PRINCIPAL-ACCOUNT",
-          "cashflowDate": "20310114"
-        },
-        {
-          "cashflowAmount": "24.52",
-          "cashflowType": "INTEREST-PRINCIPALINT",
-          "cashflowDate": "20310114"
-        },
-        {
-          "cashflowAmount": "100.00",
-          "excludeEirs": [
-            {
-              "excludeEir": "APR.INTERNAL"
-            }
-          ],
-          "cashflowType": "CHARGE-MORTGINSURANCE",
-          "cashflowDate": "20310114"
-        },
-        {
-          "cashflowAmount": "3249.55",
-          "cashflowType": "PRINCIPAL-ACCOUNT",
-          "cashflowDate": "20310214"
-        },
-        {
-          "cashflowAmount": "19.63",
-          "cashflowType": "INTEREST-PRINCIPALINT",
-          "cashflowDate": "20310214"
-        },
-        {
-          "cashflowAmount": "100.00",
-          "excludeEirs": [
-            {
-              "excludeEir": "APR.INTERNAL"
-            }
-          ],
-          "cashflowType": "CHARGE-MORTGINSURANCE",
-          "cashflowDate": "20310214"
-        },
-        {
-          "cashflowAmount": "3255.87",
-          "cashflowType": "PRINCIPAL-ACCOUNT",
-          "cashflowDate": "20310314"
-        },
-        {
-          "cashflowAmount": "13.31",
-          "cashflowType": "INTEREST-PRINCIPALINT",
-          "cashflowDate": "20310314"
-        },
-        {
-          "cashflowAmount": "100.00",
-          "excludeEirs": [
-            {
-              "excludeEir": "APR.INTERNAL"
-            }
-          ],
-          "cashflowType": "CHARGE-MORTGINSURANCE",
-          "cashflowDate": "20310314"
-        },
-        {
-          "cashflowAmount": "3259.35",
-          "cashflowType": "PRINCIPAL-ACCOUNT",
-          "cashflowDate": "20310414"
-        },
-        {
-          "cashflowAmount": "9.83",
-          "cashflowType": "INTEREST-PRINCIPALINT",
-          "cashflowDate": "20310414"
-        },
-        {
-          "cashflowAmount": "100.00",
-          "excludeEirs": [
-            {
-              "excludeEir": "APR.INTERNAL"
-            }
-          ],
-          "cashflowType": "CHARGE-MORTGINSURANCE",
-          "cashflowDate": "20310414"
-        },
-        {
-          "cashflowAmount": "3264.36",
-          "cashflowType": "PRINCIPAL-ACCOUNT",
-          "cashflowDate": "20310514"
-        },
-        {
-          "cashflowAmount": "4.76",
-          "cashflowType": "INTEREST-PRINCIPALINT",
-          "cashflowDate": "20310514"
-        },
-        {
-          "cashflowAmount": "100.00",
-          "excludeEirs": [
-            {
-              "excludeEir": "APR.INTERNAL"
-            }
-          ],
-          "cashflowType": "CHARGE-MORTGINSURANCE",
-          "cashflowDate": "20310514"
         }
       ],
-      "contractId": "1013716737",
+      "contractId": "1013716753",
       "cashflowEventInformation": {
         "activityIds": [
           {
@@ -2634,23 +2514,23 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
 {
   "topic": "lending-event-topic",
   "partition": 0,
-  "offset": 3033,
-  "key": "lending|GB0010001|AAACT250730Q8P2X2K",
-  "timestamp": "2025-05-26 12:59:10",
+  "offset": 3063,
+  "key": "lending|GB0010001|AAACT250735BF4RMBV",
+  "timestamp": "2025-05-26 16:00:44",
   "payload": {
     "specversion": "1.0",
-    "id": "05bd0f4d-879b-4d17-b417-3a30d8681b49",
+    "id": "25618b6a-fd21-4624-8669-1b5a3727c57d",
     "source": "https://temenos.com/microservice/cloudevents/lending",
     "type": "financialAccounting.updateCashFlow.cashFlowUpdated",
     "datacontenttype": "application/json",
     "subject": "event",
-    "time": "2025-05-26T09:59:09.622Z",
-    "businesskey": "lending|GB0010001|AAACT250730Q8P2X2K",
-    "correlationid": "05bd0f4d-879b-4d17-b417-3a30d8681b49",
+    "time": "2025-05-26T13:00:44.387Z",
+    "businesskey": "lending|GB0010001|AAACT250735BF4RMBV",
+    "correlationid": "25618b6a-fd21-4624-8669-1b5a3727c57d",
     "data": {
       "accountingAction": "AUT",
       "sourceSystem": "lending",
-      "contractId": "1013716737"
+      "contractId": "1013716753"
     }
   }
 }
@@ -2658,860 +2538,806 @@ Last 5 Captured Lines/Events from Kafka Topic: lending-event-topic
 {
   "topic": "lending-event-topic",
   "partition": 0,
-  "offset": 3034,
-  "key": "lending|GB0010001|AAACT250730Q8P2X2K",
-  "timestamp": "2025-05-26 12:59:10",
+  "offset": 3064,
+  "key": "lending|GB0010001|AAACT250735BF4RMBV",
+  "timestamp": "2025-05-26 16:00:44",
   "payload": {
     "specversion": "1.0",
-    "id": "8af6fa72-f27b-4754-a955-f2c778ff7fb8",
+    "id": "2734db8d-7877-4b76-b375-84c7aab49762",
     "source": "https://temenos.com/microservice/cloudevents/lending",
     "type": "lending.mortgage-product.update.conditionUpdated",
     "datacontenttype": "application/json",
     "subject": "event",
-    "time": "2025-05-26T09:59:09.623Z",
-    "businesskey": "lending|GB0010001|AAACT250730Q8P2X2K",
-    "correlationid": "8af6fa72-f27b-4754-a955-f2c778ff7fb8",
+    "time": "2025-05-26T13:00:44.387Z",
+    "businesskey": "lending|GB0010001|AAACT250735BF4RMBV",
+    "correlationid": "2734db8d-7877-4b76-b375-84c7aab49762",
     "data": {
       "baseDetails": {
         "reversalIndicator": false,
         "contractStatus": "CURRENT",
-        "transactionReference": "AAACT250730Q8P2X5S",
+        "transactionReference": "AAACT250735BF4RMG2",
         "contractCurrency": "USD",
         "eventCount": 1,
         "companyReference": "GB0010001",
         "baseEventIdentifier": "LENDING-UPDATE.CASHFLOW-REPORTING",
         "systemReference": "lending",
-        "accountId": "1013716737",
+        "accountId": "1013716753",
         "eventName": "LENDING-UPDATE.CASHFLOW-REPORTING",
         "bookingDate": "20250314",
-        "contractReference": "AA25073VKVH2",
+        "contractReference": "AA25073TC93W",
         "effectiveDate": "20250314",
-        "activityDateTimeStamp": "2025-03-14T09:59:09:559"
+        "activityDateTimeStamp": "2025-03-14T13:00:44:319"
       }
     }
   }
 }
 --------------------------------------------------
 
-API Call: GET http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/AA25073VKVH2/status
+API Call: GET http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/AA25073TC93W/status
 Request Payload: None (GET request)
 Response Status Code: 200
 Response Body:
 {
   "header": {
     "audit": {
-      "T24_time": 53,
-      "responseParse_time": 1,
+      "T24_time": 154,
+      "responseParse_time": 2,
       "requestParse_time": 2
     },
     "page_start": 1,
-    "page_token": "202503146044735976.00,99",
+    "page_token": "202503146044746869.01,99",
     "total_size": 1,
     "page_size": 99,
     "status": "success"
   },
   "body": [
     {
-      "arrangementId": "AA25073VKVH2",
-      "accountId": "1013716737 - USD",
+      "arrangementId": "AA25073TC93W",
+      "accountId": "1013716753 - USD",
       "arrangementStartDate": "14 MAR 2025",
       "arrangementStatus": "Current",
-      "customerId": "2514635932",
+      "customerId": "2514646824",
       "productDescription": "Mortgage Product"
     }
   ]
 }
 --------------------------------------------------
 
-API Call: GET http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/AA25073VKVH2/schedules
+API Call: GET http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/AA25073TC93W/schedules
 Request Payload: None (GET request)
 Response Status Code: 200
 Response Body:
 {
   "header": {
     "audit": {
-      "T24_time": 988,
-      "responseParse_time": 4,
+      "T24_time": 751,
+      "responseParse_time": 3,
       "requestParse_time": 1
     },
     "page_start": 1,
-    "page_token": "202503144751735976.00,99",
-    "total_size": 75,
+    "page_token": "202503148652546870.00,99",
+    "total_size": 69,
     "page_size": 99,
     "status": "success"
   },
   "body": [
     {
-      "totalAmount": 1144.89,
-      "outstandingAmount": -228977,
+      "totalAmount": 904.73,
+      "outstandingAmount": -180946,
       "scheduleType": "DUE",
-      "chargeAmount": 1144.89,
+      "chargeAmount": 904.73,
       "paymentDate": "2025-03-14",
-      "principalAmount": 228977
+      "principalAmount": 180946
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -226052.88,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -178419.53,
       "scheduleType": "FUTURE",
-      "interestAmount": 345.06,
+      "interestAmount": 272.68,
       "paymentDate": "2025-04-14",
       "taxAmount": "0",
-      "principalAmount": 2924.12
+      "principalAmount": 2526.47
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -223113.36,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -175880.58,
       "scheduleType": "FUTURE",
-      "interestAmount": 329.66,
+      "interestAmount": 260.2,
       "paymentDate": "2025-05-14",
       "taxAmount": "0",
-      "principalAmount": 2939.52
+      "principalAmount": 2538.95
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -220180.4,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -173346.47,
       "scheduleType": "FUTURE",
-      "interestAmount": 336.22,
+      "interestAmount": 265.04,
       "paymentDate": "2025-06-14",
       "taxAmount": "0",
-      "principalAmount": 2932.96
+      "principalAmount": 2534.11
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -217232.32,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -170800.12,
       "scheduleType": "FUTURE",
-      "interestAmount": 321.1,
+      "interestAmount": 252.8,
       "paymentDate": "2025-07-14",
       "taxAmount": "0",
-      "principalAmount": 2948.08
+      "principalAmount": 2546.35
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -214290.5,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -168258.36,
       "scheduleType": "FUTURE",
-      "interestAmount": 327.36,
+      "interestAmount": 257.39,
       "paymentDate": "2025-08-14",
       "taxAmount": "0",
-      "principalAmount": 2941.82
+      "principalAmount": 2541.76
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -211344.24,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -165712.77,
       "scheduleType": "FUTURE",
-      "interestAmount": 322.92,
+      "interestAmount": 253.56,
       "paymentDate": "2025-09-14",
       "taxAmount": "0",
-      "principalAmount": 2946.26
+      "principalAmount": 2545.59
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -208383.27,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -163155.28,
       "scheduleType": "FUTURE",
-      "interestAmount": 308.21,
+      "interestAmount": 241.66,
       "paymentDate": "2025-10-14",
       "taxAmount": "0",
-      "principalAmount": 2960.97
+      "principalAmount": 2557.49
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -205428.11,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -160602,
       "scheduleType": "FUTURE",
-      "interestAmount": 314.02,
+      "interestAmount": 245.87,
       "paymentDate": "2025-11-14",
       "taxAmount": "0",
-      "principalAmount": 2955.16
+      "principalAmount": 2553.28
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -202458.51,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -158037.06,
       "scheduleType": "FUTURE",
-      "interestAmount": 299.58,
+      "interestAmount": 234.21,
       "paymentDate": "2025-12-14",
       "taxAmount": "0",
-      "principalAmount": 2969.6
+      "principalAmount": 2564.94
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -199494.42,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -155476.06,
       "scheduleType": "FUTURE",
-      "interestAmount": 305.09,
+      "interestAmount": 238.15,
       "paymentDate": "2026-01-14",
       "taxAmount": "0",
-      "principalAmount": 2964.09
+      "principalAmount": 2561
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -196525.87,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -152911.2,
       "scheduleType": "FUTURE",
-      "interestAmount": 300.63,
+      "interestAmount": 234.29,
       "paymentDate": "2026-02-14",
       "taxAmount": "0",
-      "principalAmount": 2968.55
+      "principalAmount": 2564.86
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -193524.18,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -150320.18,
       "scheduleType": "FUTURE",
-      "interestAmount": 267.49,
+      "interestAmount": 208.13,
       "paymentDate": "2026-03-14",
       "taxAmount": "0",
-      "principalAmount": 3001.69
+      "principalAmount": 2591.02
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -190546.63,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -147747.55,
       "scheduleType": "FUTURE",
-      "interestAmount": 291.63,
+      "interestAmount": 226.52,
       "paymentDate": "2026-04-14",
       "taxAmount": "0",
-      "principalAmount": 2977.55
+      "principalAmount": 2572.63
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -187555.33,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -145163.87,
       "scheduleType": "FUTURE",
-      "interestAmount": 277.88,
+      "interestAmount": 215.47,
       "paymentDate": "2026-05-14",
       "taxAmount": "0",
-      "principalAmount": 2991.3
+      "principalAmount": 2583.68
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -184568.79,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -142583.47,
       "scheduleType": "FUTURE",
-      "interestAmount": 282.64,
+      "interestAmount": 218.75,
       "paymentDate": "2026-06-14",
       "taxAmount": "0",
-      "principalAmount": 2986.54
+      "principalAmount": 2580.4
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -181568.77,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -139992.25,
       "scheduleType": "FUTURE",
-      "interestAmount": 269.16,
+      "interestAmount": 207.93,
       "paymentDate": "2026-07-14",
       "taxAmount": "0",
-      "principalAmount": 3000.02
+      "principalAmount": 2591.22
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -178573.2,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -137404.06,
       "scheduleType": "FUTURE",
-      "interestAmount": 273.61,
+      "interestAmount": 210.96,
       "paymentDate": "2026-08-14",
       "taxAmount": "0",
-      "principalAmount": 2995.57
+      "principalAmount": 2588.19
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -175573.12,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -134811.97,
       "scheduleType": "FUTURE",
-      "interestAmount": 269.1,
+      "interestAmount": 207.06,
       "paymentDate": "2026-09-14",
       "taxAmount": "0",
-      "principalAmount": 3000.08
+      "principalAmount": 2592.09
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -172559.98,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -132209.42,
       "scheduleType": "FUTURE",
-      "interestAmount": 256.04,
+      "interestAmount": 196.6,
       "paymentDate": "2026-10-14",
       "taxAmount": "0",
-      "principalAmount": 3013.14
+      "principalAmount": 2602.55
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -169550.84,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -129609.5,
       "scheduleType": "FUTURE",
-      "interestAmount": 260.04,
+      "interestAmount": 199.23,
       "paymentDate": "2026-11-14",
       "taxAmount": "0",
-      "principalAmount": 3009.14
+      "principalAmount": 2599.92
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -166528.92,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -126999.36,
       "scheduleType": "FUTURE",
-      "interestAmount": 247.26,
+      "interestAmount": 189.01,
       "paymentDate": "2026-12-14",
       "taxAmount": "0",
-      "principalAmount": 3021.92
+      "principalAmount": 2610.14
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -163510.69,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -124391.59,
       "scheduleType": "FUTURE",
-      "interestAmount": 250.95,
+      "interestAmount": 191.38,
       "paymentDate": "2027-01-14",
       "taxAmount": "0",
-      "principalAmount": 3018.23
+      "principalAmount": 2607.77
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -160487.91,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -121779.89,
       "scheduleType": "FUTURE",
-      "interestAmount": 246.4,
+      "interestAmount": 187.45,
       "paymentDate": "2027-02-14",
       "taxAmount": "0",
-      "principalAmount": 3022.78
+      "principalAmount": 2611.7
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -157437.17,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -119146.5,
       "scheduleType": "FUTURE",
-      "interestAmount": 218.44,
+      "interestAmount": 165.76,
       "paymentDate": "2027-03-14",
       "taxAmount": "0",
-      "principalAmount": 3050.74
+      "principalAmount": 2633.39
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -154405.24,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -116526.9,
       "scheduleType": "FUTURE",
-      "interestAmount": 237.25,
+      "interestAmount": 179.55,
       "paymentDate": "2027-04-14",
       "taxAmount": "0",
-      "principalAmount": 3031.93
+      "principalAmount": 2619.6
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -151361.23,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -113897.69,
       "scheduleType": "FUTURE",
-      "interestAmount": 225.17,
+      "interestAmount": 169.94,
       "paymentDate": "2027-05-14",
       "taxAmount": "0",
-      "principalAmount": 3044.01
+      "principalAmount": 2629.21
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -148320.14,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -111270.18,
       "scheduleType": "FUTURE",
-      "interestAmount": 228.09,
+      "interestAmount": 171.64,
       "paymentDate": "2027-06-14",
       "taxAmount": "0",
-      "principalAmount": 3041.09
+      "principalAmount": 2627.51
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -145267.26,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -108633.3,
       "scheduleType": "FUTURE",
-      "interestAmount": 216.3,
+      "interestAmount": 162.27,
       "paymentDate": "2027-07-14",
       "taxAmount": "0",
-      "principalAmount": 3052.88
+      "principalAmount": 2636.88
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -142216.99,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -105997.85,
       "scheduleType": "FUTURE",
-      "interestAmount": 218.91,
+      "interestAmount": 163.7,
       "paymentDate": "2027-08-14",
       "taxAmount": "0",
-      "principalAmount": 3050.27
+      "principalAmount": 2635.45
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -139162.12,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -103358.43,
       "scheduleType": "FUTURE",
-      "interestAmount": 214.31,
+      "interestAmount": 159.73,
       "paymentDate": "2027-09-14",
       "taxAmount": "0",
-      "principalAmount": 3054.87
+      "principalAmount": 2639.42
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -136095.88,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -100710.01,
       "scheduleType": "FUTURE",
-      "interestAmount": 202.94,
+      "interestAmount": 150.73,
       "paymentDate": "2027-10-14",
       "taxAmount": "0",
-      "principalAmount": 3066.24
+      "principalAmount": 2648.42
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -133031.79,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -98062.62,
       "scheduleType": "FUTURE",
-      "interestAmount": 205.09,
+      "interestAmount": 151.76,
       "paymentDate": "2027-11-14",
       "taxAmount": "0",
-      "principalAmount": 3064.09
+      "principalAmount": 2647.39
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -129956.61,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -95406.48,
       "scheduleType": "FUTURE",
-      "interestAmount": 194,
+      "interestAmount": 143.01,
       "paymentDate": "2027-12-14",
       "taxAmount": "0",
-      "principalAmount": 3075.18
+      "principalAmount": 2656.14
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -126883.27,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -92751.1,
       "scheduleType": "FUTURE",
-      "interestAmount": 195.84,
+      "interestAmount": 143.77,
       "paymentDate": "2028-01-14",
       "taxAmount": "0",
-      "principalAmount": 3073.34
+      "principalAmount": 2655.38
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -123805.3,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -90091.72,
       "scheduleType": "FUTURE",
-      "interestAmount": 191.21,
+      "interestAmount": 139.77,
       "paymentDate": "2028-02-14",
       "taxAmount": "0",
-      "principalAmount": 3077.97
+      "principalAmount": 2659.38
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -120710.65,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -87419.57,
       "scheduleType": "FUTURE",
-      "interestAmount": 174.53,
+      "interestAmount": 127,
       "paymentDate": "2028-03-14",
       "taxAmount": "0",
-      "principalAmount": 3094.65
+      "principalAmount": 2672.15
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -117623.37,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -84752.16,
       "scheduleType": "FUTURE",
-      "interestAmount": 181.9,
+      "interestAmount": 131.74,
       "paymentDate": "2028-04-14",
       "taxAmount": "0",
-      "principalAmount": 3087.28
+      "principalAmount": 2667.41
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -114525.72,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -82076.61,
       "scheduleType": "FUTURE",
-      "interestAmount": 171.53,
+      "interestAmount": 123.6,
       "paymentDate": "2028-05-14",
       "taxAmount": "0",
-      "principalAmount": 3097.65
+      "principalAmount": 2675.55
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -111429.12,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -79401.14,
       "scheduleType": "FUTURE",
-      "interestAmount": 172.58,
+      "interestAmount": 123.68,
       "paymentDate": "2028-06-14",
       "taxAmount": "0",
-      "principalAmount": 3096.6
+      "principalAmount": 2675.47
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -108322.44,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -76717.78,
       "scheduleType": "FUTURE",
-      "interestAmount": 162.5,
+      "interestAmount": 115.79,
       "paymentDate": "2028-07-14",
       "taxAmount": "0",
-      "principalAmount": 3106.68
+      "principalAmount": 2683.36
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -105216.5,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -74034.24,
       "scheduleType": "FUTURE",
-      "interestAmount": 163.24,
+      "interestAmount": 115.61,
       "paymentDate": "2028-08-14",
       "taxAmount": "0",
-      "principalAmount": 3105.94
+      "principalAmount": 2683.54
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -102105.88,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -71346.66,
       "scheduleType": "FUTURE",
-      "interestAmount": 158.56,
+      "interestAmount": 111.57,
       "paymentDate": "2028-09-14",
       "taxAmount": "0",
-      "principalAmount": 3110.62
+      "principalAmount": 2687.58
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -98985.6,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -68651.56,
       "scheduleType": "FUTURE",
-      "interestAmount": 148.9,
+      "interestAmount": 104.05,
       "paymentDate": "2028-10-14",
       "taxAmount": "0",
-      "principalAmount": 3120.28
+      "principalAmount": 2695.1
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -95865.59,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -65955.86,
       "scheduleType": "FUTURE",
-      "interestAmount": 149.17,
+      "interestAmount": 103.45,
       "paymentDate": "2028-11-14",
       "taxAmount": "0",
-      "principalAmount": 3120.01
+      "principalAmount": 2695.7
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -92736.21,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -63252.9,
       "scheduleType": "FUTURE",
-      "interestAmount": 139.8,
+      "interestAmount": 96.19,
       "paymentDate": "2028-12-14",
       "taxAmount": "0",
-      "principalAmount": 3129.38
+      "principalAmount": 2702.96
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -89606.78,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -60549.07,
       "scheduleType": "FUTURE",
-      "interestAmount": 139.75,
+      "interestAmount": 95.32,
       "paymentDate": "2029-01-14",
       "taxAmount": "0",
-      "principalAmount": 3129.43
+      "principalAmount": 2703.83
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -86472.63,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -57841.16,
       "scheduleType": "FUTURE",
-      "interestAmount": 135.03,
+      "interestAmount": 91.24,
       "paymentDate": "2029-02-14",
       "taxAmount": "0",
-      "principalAmount": 3134.15
+      "principalAmount": 2707.91
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -83321.15,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -55120.74,
       "scheduleType": "FUTURE",
-      "interestAmount": 117.7,
+      "interestAmount": 78.73,
       "paymentDate": "2029-03-14",
       "taxAmount": "0",
-      "principalAmount": 3151.48
+      "principalAmount": 2720.42
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -80177.53,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -52404.65,
       "scheduleType": "FUTURE",
-      "interestAmount": 125.56,
+      "interestAmount": 83.06,
       "paymentDate": "2029-04-14",
       "taxAmount": "0",
-      "principalAmount": 3143.62
+      "principalAmount": 2716.09
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -77025.28,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -49681.92,
       "scheduleType": "FUTURE",
-      "interestAmount": 116.93,
+      "interestAmount": 76.42,
       "paymentDate": "2029-05-14",
       "taxAmount": "0",
-      "principalAmount": 3152.25
+      "principalAmount": 2722.73
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -73872.17,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -46957.64,
       "scheduleType": "FUTURE",
-      "interestAmount": 116.07,
+      "interestAmount": 74.87,
       "paymentDate": "2029-06-14",
       "taxAmount": "0",
-      "principalAmount": 3153.11
+      "principalAmount": 2724.28
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -70710.72,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -44226.97,
       "scheduleType": "FUTURE",
-      "interestAmount": 107.73,
+      "interestAmount": 68.48,
       "paymentDate": "2029-07-14",
       "taxAmount": "0",
-      "principalAmount": 3161.45
+      "principalAmount": 2730.67
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -67548.1,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -41494.47,
       "scheduleType": "FUTURE",
-      "interestAmount": 106.56,
+      "interestAmount": 66.65,
       "paymentDate": "2029-08-14",
       "taxAmount": "0",
-      "principalAmount": 3162.62
+      "principalAmount": 2732.5
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -64380.71,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -38757.85,
       "scheduleType": "FUTURE",
-      "interestAmount": 101.79,
+      "interestAmount": 62.53,
       "paymentDate": "2029-09-14",
       "taxAmount": "0",
-      "principalAmount": 3167.39
+      "principalAmount": 2736.62
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -61205.42,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -36015.22,
       "scheduleType": "FUTURE",
-      "interestAmount": 93.89,
+      "interestAmount": 56.52,
       "paymentDate": "2029-10-14",
       "taxAmount": "0",
-      "principalAmount": 3175.29
+      "principalAmount": 2742.63
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -58028.47,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -33270.34,
       "scheduleType": "FUTURE",
-      "interestAmount": 92.23,
+      "interestAmount": 54.27,
       "paymentDate": "2029-11-14",
       "taxAmount": "0",
-      "principalAmount": 3176.95
+      "principalAmount": 2744.88
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -54843.91,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -30519.71,
       "scheduleType": "FUTURE",
-      "interestAmount": 84.62,
+      "interestAmount": 48.52,
       "paymentDate": "2029-12-14",
       "taxAmount": "0",
-      "principalAmount": 3184.56
+      "principalAmount": 2750.63
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -51657.38,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -27766.55,
       "scheduleType": "FUTURE",
-      "interestAmount": 82.65,
+      "interestAmount": 45.99,
       "paymentDate": "2030-01-14",
       "taxAmount": "0",
-      "principalAmount": 3186.53
+      "principalAmount": 2753.16
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -48466.04,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -25009.24,
       "scheduleType": "FUTURE",
-      "interestAmount": 77.84,
+      "interestAmount": 41.84,
       "paymentDate": "2030-02-14",
       "taxAmount": "0",
-      "principalAmount": 3191.34
+      "principalAmount": 2757.31
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -45262.83,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -22244.13,
       "scheduleType": "FUTURE",
-      "interestAmount": 65.97,
+      "interestAmount": 34.04,
       "paymentDate": "2030-03-14",
       "taxAmount": "0",
-      "principalAmount": 3203.21
+      "principalAmount": 2765.11
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -42061.86,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -19478.5,
       "scheduleType": "FUTURE",
-      "interestAmount": 68.21,
+      "interestAmount": 33.52,
       "paymentDate": "2030-04-14",
       "taxAmount": "0",
-      "principalAmount": 3200.97
+      "principalAmount": 2765.63
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -38854.02,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -16707.76,
       "scheduleType": "FUTURE",
-      "interestAmount": 61.34,
+      "interestAmount": 28.41,
       "paymentDate": "2030-05-14",
       "taxAmount": "0",
-      "principalAmount": 3207.84
+      "principalAmount": 2770.74
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -35643.39,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -13933.79,
       "scheduleType": "FUTURE",
-      "interestAmount": 58.55,
+      "interestAmount": 25.18,
       "paymentDate": "2030-06-14",
       "taxAmount": "0",
-      "principalAmount": 3210.63
+      "principalAmount": 2773.97
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -32426.19,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -11154.96,
       "scheduleType": "FUTURE",
-      "interestAmount": 51.98,
+      "interestAmount": 20.32,
       "paymentDate": "2030-07-14",
       "taxAmount": "0",
-      "principalAmount": 3217.2
+      "principalAmount": 2778.83
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -29205.87,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -8372.62,
       "scheduleType": "FUTURE",
-      "interestAmount": 48.86,
+      "interestAmount": 16.81,
       "paymentDate": "2030-08-14",
       "taxAmount": "0",
-      "principalAmount": 3220.32
+      "principalAmount": 2782.34
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -25980.7,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -5586.09,
       "scheduleType": "FUTURE",
-      "interestAmount": 44.01,
+      "interestAmount": 12.62,
       "paymentDate": "2030-09-14",
       "taxAmount": "0",
-      "principalAmount": 3225.17
+      "principalAmount": 2786.53
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -22749.41,
+      "totalAmount": 2799.15,
+      "outstandingAmount": -2795.09,
       "scheduleType": "FUTURE",
-      "interestAmount": 37.89,
+      "interestAmount": 8.15,
       "paymentDate": "2030-10-14",
       "taxAmount": "0",
-      "principalAmount": 3231.29
+      "principalAmount": 2791
     },
     {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -19514.51,
-      "scheduleType": "FUTURE",
-      "interestAmount": 34.28,
-      "paymentDate": "2030-11-14",
-      "taxAmount": "0",
-      "principalAmount": 3234.9
-    },
-    {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -16273.79,
-      "scheduleType": "FUTURE",
-      "interestAmount": 28.46,
-      "paymentDate": "2030-12-14",
-      "taxAmount": "0",
-      "principalAmount": 3240.72
-    },
-    {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -13029.13,
-      "scheduleType": "FUTURE",
-      "interestAmount": 24.52,
-      "paymentDate": "2031-01-14",
-      "taxAmount": "0",
-      "principalAmount": 3244.66
-    },
-    {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -9779.58,
-      "scheduleType": "FUTURE",
-      "interestAmount": 19.63,
-      "paymentDate": "2031-02-14",
-      "taxAmount": "0",
-      "principalAmount": 3249.55
-    },
-    {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -6523.71,
-      "scheduleType": "FUTURE",
-      "interestAmount": 13.31,
-      "paymentDate": "2031-03-14",
-      "taxAmount": "0",
-      "principalAmount": 3255.87
-    },
-    {
-      "totalAmount": 3269.18,
-      "outstandingAmount": -3264.36,
-      "scheduleType": "FUTURE",
-      "interestAmount": 9.83,
-      "paymentDate": "2031-04-14",
-      "taxAmount": "0",
-      "principalAmount": 3259.35
-    },
-    {
-      "totalAmount": 3269.12,
+      "totalAmount": 2799.3,
       "outstandingAmount": 0,
       "scheduleType": "FUTURE",
-      "interestAmount": 4.76,
-      "paymentDate": "2031-05-14",
+      "interestAmount": 4.21,
+      "paymentDate": "2030-11-14",
       "taxAmount": "0",
-      "principalAmount": 3264.36
+      "principalAmount": 2795.09
     }
   ]
 }
 --------------------------------------------------
 
-API Call: GET http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v2.0.0/holdings/accounts/1013716729/balances
+API Call: GET http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v2.0.0/holdings/accounts/1013716777/balances
 Request Payload: None (GET request)
 Response Status Code: 200
 Response Body:
 {
-  "accountReference": "1013716729",
+  "accountReference": "1013716777",
   "accountName": "Current Account",
   "productId": "CHECKING.ACCOUNT",
   "currency": "USD",
-  "ledgerBalance": 228977,
+  "ledgerBalance": 180946,
   "blockedAmount": 0,
-  "availableBalance": 228977
+  "availableBalance": 180946
 }
 --------------------------------------------------
 
 API Call: POST http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v1.0.0/order/payments/debitAccount
 Request Payload:
 {
-  "paymentTransactionReference": "DEBIT_UTILITYBIL_1748253578085_205",
-  "paymentReservationReference": "DEBIT_UTILITYBIL_1748253578085_205",
+  "paymentTransactionReference": "DEBIT_UTILITYBIL_1748264471424_304",
+  "paymentReservationReference": "DEBIT_UTILITYBIL_1748264471424_304",
   "paymentValueDate": "20250415",
-  "debitAccount": "1013716729",
+  "debitAccount": "1013716777",
   "debitCurrency": "USD",
-  "paymentAmount": "281",
+  "paymentAmount": "965",
   "paymentDescription": "Utility Bill Payment"
 }
 Response Status Code: 201
 Response Body:
 {
-  "transactionReference": "BOOK.ENTRIES.API.1.5.0-05-26-2025380353597800-1"
+  "transactionReference": "BOOK.ENTRIES.API.1.5.0-05-26-2025380354687100-1"
 }
 --------------------------------------------------
 
 API Call: POST http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v1.0.0/order/payments/creditAccount
 Request Payload:
 {
-  "paymentTransactionReference": "CREDIT_REFUNDPROC_1748253578533_723",
-  "paymentReservationReference": "CREDIT_REFUNDPROC_1748253578533_723",
+  "paymentTransactionReference": "CREDIT_INTERESTEA_1748264471971_264",
+  "paymentReservationReference": "CREDIT_INTERESTEA_1748264471971_264",
   "paymentValueDate": "20250415",
-  "creditAccount": "1013716729",
+  "creditAccount": "1013716777",
   "creditCurrency": "USD",
-  "paymentAmount": "952",
-  "paymentDescription": "Refund Processed"
-}
-Response Status Code: 201
-Response Body:
-{
-  "transactionReference": "BOOK.ENTRIES.API.1.5.0-05-26-2025435543597800-1"
-}
---------------------------------------------------
-
-API Call: POST http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v1.0.0/order/payments/creditAccount
-Request Payload:
-{
-  "paymentTransactionReference": "CREDIT_INTERESTEA_1748253579022_538",
-  "paymentReservationReference": "CREDIT_INTERESTEA_1748253579022_538",
-  "paymentValueDate": "20250415",
-  "creditAccount": "1013716729",
-  "creditCurrency": "USD",
-  "paymentAmount": "125",
+  "paymentAmount": "885",
   "paymentDescription": "Interest Earned"
 }
 Response Status Code: 201
 Response Body:
 {
-  "transactionReference": "BOOK.ENTRIES.API.1.5.0-05-26-2025381013597900-1"
+  "transactionReference": "BOOK.ENTRIES.API.1.5.0-05-26-2025435544687200-1"
 }
 --------------------------------------------------
 
-API Call: GET http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v2.0.0/holdings/accounts/1013716729/balances
+API Call: POST http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v1.0.0/order/payments/creditAccount
+Request Payload:
+{
+  "paymentTransactionReference": "CREDIT_REFUNDPROC_1748264472368_769",
+  "paymentReservationReference": "CREDIT_REFUNDPROC_1748264472368_769",
+  "paymentValueDate": "20250415",
+  "creditAccount": "1013716777",
+  "creditCurrency": "USD",
+  "paymentAmount": "719",
+  "paymentDescription": "Refund Processed"
+}
+Response Status Code: 201
+Response Body:
+{
+  "transactionReference": "BOOK.ENTRIES.API.1.5.0-05-26-2025381014687200-1"
+}
+--------------------------------------------------
+
+API Call: GET http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v2.0.0/holdings/accounts/1013716777/balances
 Request Payload: None (GET request)
 Response Status Code: 200
 Response Body:
 {
-  "accountReference": "1013716729",
+  "accountReference": "1013716777",
   "accountName": "Current Account",
   "productId": "CHECKING.ACCOUNT",
   "currency": "USD",
-  "ledgerBalance": 229773,
+  "ledgerBalance": 181585,
   "blockedAmount": 0,
-  "availableBalance": 229773
+  "availableBalance": 181585
 }
 --------------------------------------------------
 
-API Call: GET http://modulardemo.northeurope.cloudapp.azure.com/ms-holdings-api/api/v1.0.0/holdings/parties/2514635932/arrangements
+API Call: GET http://modulardemo.northeurope.cloudapp.azure.com/ms-holdings-api/api/v1.0.0/holdings/parties/2514646824/arrangements
 Request Payload: None (GET request)
 Response Status Code: 200
 Response Body:
 {
   "arrangements": [
     {
-      "arrangementId": "ARR25146O03417AW4P",
-      "extArrangementId": "GB0010001-AA25073HS2S5",
+      "arrangementId": "ARR251465MWE7VRJ4N",
+      "extArrangementId": "GB0010001-AA25073VH2L1",
       "productGroup": "Current",
       "productLine": "ACCOUNTS",
       "externalProduct": false,
@@ -3520,10 +3346,10 @@ Response Body:
       "companyReference": "GB0010001",
       "arrangementStatus": "AUTH",
       "currency": "USD",
-      "contractReference": "AA25073HS2S5",
+      "contractReference": "AA25073VH2L1",
       "roles": [
         {
-          "partyId": "2514635932",
+          "partyId": "2514646824",
           "partyRole": "OWNER",
           "alternateReferences": []
         }
@@ -3534,17 +3360,17 @@ Response Body:
       "alternateReferences": [
         {
           "alternateType": "T24.IBAN",
-          "alternateId": "GB0010001-GB83DEMO6016131013716729"
+          "alternateId": "GB0010001-GB48DEMO6016131013716777"
         },
         {
           "alternateType": "ACCOUNT",
-          "alternateId": "GB0010001-1013716729"
+          "alternateId": "GB0010001-1013716777"
         }
       ]
     },
     {
-      "arrangementId": "ARR25146ZA363G2PA0",
-      "extArrangementId": "GB0010001-AA25073VKVH2",
+      "arrangementId": "ARR25146LTA96MSNAH",
+      "extArrangementId": "GB0010001-AA25073TC93W",
       "productGroup": "MORTGAGE.PRODUCT",
       "productLine": "LENDING",
       "externalProduct": false,
@@ -3554,11 +3380,11 @@ Response Body:
       "companyReference": "GB0010001",
       "arrangementStatus": "CURRENT",
       "currency": "USD",
-      "contractReference": "AA25073VKVH2",
+      "contractReference": "AA25073TC93W",
       "productDescription": "Mortgage Product",
       "roles": [
         {
-          "partyId": "2514635932",
+          "partyId": "2514646824",
           "partyRole": "OWNER",
           "alternateReferences": []
         }
@@ -3569,7 +3395,7 @@ Response Body:
       "alternateReferences": [
         {
           "alternateType": "ACCOUNT",
-          "alternateId": "GB0010001-1013716737"
+          "alternateId": "GB0010001-1013716753"
         }
       ]
     }
@@ -3577,7 +3403,7 @@ Response Body:
 }
 --------------------------------------------------
 
-API Call: GET http://modulardemo.northeurope.cloudapp.azure.com/ms-holdings-api/api/v3.0.0/holdings/accounts/GB0010001-1013716729/balances
+API Call: GET http://modulardemo.northeurope.cloudapp.azure.com/ms-holdings-api/api/v3.0.0/holdings/accounts/GB0010001-1013716777/balances
 Request Payload: None (GET request)
 Response Status Code: 200
 Response Body:
@@ -3586,19 +3412,19 @@ Response Body:
     {
       "companyReference": "GB0010001",
       "systemReference": "deposits",
-      "contractReference": "AA25073HS2S5",
-      "accountId": "GB0010001-1013716729",
+      "contractReference": "AA25073VH2L1",
+      "accountId": "GB0010001-1013716777",
       "currentBusinessDate": "2025-04-15",
       "openingDate": "2025-03-14",
-      "availableBalance": 229773,
-      "workingBalance": 229773,
-      "onlineActualBalance": 229773,
+      "availableBalance": 181585,
+      "workingBalance": 181585,
+      "onlineActualBalance": 181585,
       "currencyId": "USD",
-      "customerId": "2514635932",
+      "customerId": "2514646824",
       "productName": "AC",
       "portfolioId": "",
       "externalIndicator": false,
-      "processingTime": "Mon May 26 09:59:39 GMT 2025",
+      "processingTime": "Mon May 26 13:01:12 GMT 2025",
       "legalEntityId": "GB0010001",
       "extensionData": {}
     }
@@ -3606,7 +3432,7 @@ Response Body:
 }
 --------------------------------------------------
 
-API Call: GET http://modulardemo.northeurope.cloudapp.azure.com/ms-holdings-api/api/v3.0.0/holdings/accounts/GB0010001-1013716729/transactions
+API Call: GET http://modulardemo.northeurope.cloudapp.azure.com/ms-holdings-api/api/v3.0.0/holdings/accounts/GB0010001-1013716777/transactions
 Request Payload: None (GET request)
 Response Status Code: 200
 Response Body:
@@ -3615,147 +3441,97 @@ Response Body:
     {
       "companyReference": "GB0010001",
       "systemReference": "deposits",
-      "contractReference": "AA25073HS2S5",
-      "id": "209663810135979.020001",
-      "accountId": "GB0010001-1013716729",
+      "contractReference": "AA25073VH2L1",
+      "id": "209663810146872.020001",
+      "accountId": "GB0010001-1013716777",
       "bookingDate": "2025-03-14",
       "processingDate": "2025-05-26",
-      "customerId": "2514635932",
+      "customerId": "2514646824",
       "accountOfficerId": 2620,
       "categorisactionId": 258,
       "categorisactionIdDescription": "System Generated",
-      "amountInAccountCurrency": 125,
-      "transactionAmount": 125,
+      "amountInAccountCurrency": 719,
+      "transactionAmount": 719,
       "currency": "USD",
-      "externalReference": "BOOK381013597900",
-      "customerReference": "BOOK.ENTRIES.API.1.5.0-05-26-2025381013597900-1",
+      "externalReference": "BOOK381014687200",
+      "customerReference": "BOOK.ENTRIES.API.1.5.0-05-26-2025381014687200-1",
       "transactionReference": "CREDIT",
       "paymentIndicator": "Credit",
       "externalIndicator": false,
-      "processingTime": "Mon May 26 09:59:39 GMT 2025",
+      "processingTime": "Mon May 26 13:01:12 GMT 2025",
       "legalEntityId": "GB0010001",
       "extensionData": {}
     },
     {
       "companyReference": "GB0010001",
       "systemReference": "deposits",
-      "contractReference": "AA25073HS2S5",
-      "id": "209664355435978.020001",
-      "accountId": "GB0010001-1013716729",
+      "contractReference": "AA25073VH2L1",
+      "id": "209664355446872.020001",
+      "accountId": "GB0010001-1013716777",
       "bookingDate": "2025-03-14",
       "processingDate": "2025-05-26",
-      "customerId": "2514635932",
+      "customerId": "2514646824",
       "accountOfficerId": 2620,
       "categorisactionId": 258,
       "categorisactionIdDescription": "System Generated",
-      "amountInAccountCurrency": 952,
-      "transactionAmount": 952,
+      "amountInAccountCurrency": 885,
+      "transactionAmount": 885,
       "currency": "USD",
-      "externalReference": "BOOK435543597800",
-      "customerReference": "BOOK.ENTRIES.API.1.5.0-05-26-2025435543597800-1",
+      "externalReference": "BOOK435544687200",
+      "customerReference": "BOOK.ENTRIES.API.1.5.0-05-26-2025435544687200-1",
       "transactionReference": "CREDIT",
       "paymentIndicator": "Credit",
       "externalIndicator": false,
-      "processingTime": "Mon May 26 09:59:39 GMT 2025",
+      "processingTime": "Mon May 26 13:01:12 GMT 2025",
       "legalEntityId": "GB0010001",
       "extensionData": {}
     },
     {
       "companyReference": "GB0010001",
       "systemReference": "deposits",
-      "contractReference": "AA25073HS2S5",
-      "id": "209663803535978.020001",
-      "accountId": "GB0010001-1013716729",
+      "contractReference": "AA25073VH2L1",
+      "id": "209663803546871.020001",
+      "accountId": "GB0010001-1013716777",
       "bookingDate": "2025-03-14",
       "processingDate": "2025-05-26",
-      "customerId": "2514635932",
+      "customerId": "2514646824",
       "accountOfficerId": 2620,
       "categorisactionId": 213,
       "categorisactionIdDescription": "System Generated",
-      "amountInAccountCurrency": -281,
-      "transactionAmount": -281,
+      "amountInAccountCurrency": -965,
+      "transactionAmount": -965,
       "currency": "USD",
-      "externalReference": "BOOK380353597800",
-      "customerReference": "BOOK.ENTRIES.API.1.5.0-05-26-2025380353597800-1",
+      "externalReference": "BOOK380354687100",
+      "customerReference": "BOOK.ENTRIES.API.1.5.0-05-26-2025380354687100-1",
       "transactionReference": "DEBIT",
       "paymentIndicator": "Debit",
       "externalIndicator": false,
-      "processingTime": "Mon May 26 09:59:38 GMT 2025",
+      "processingTime": "Mon May 26 13:01:11 GMT 2025",
       "legalEntityId": "GB0010001",
       "extensionData": {}
     },
     {
       "companyReference": "GB0010001",
       "systemReference": "deposits",
-      "contractReference": "AA25073HS2S5",
-      "id": "209663803535945.020001",
-      "accountId": "GB0010001-1013716729",
+      "contractReference": "AA25073VH2L1",
+      "id": "209664355446839.020001",
+      "accountId": "GB0010001-1013716777",
       "valueDate": "2025-03-14",
       "bookingDate": "2025-03-14",
       "processingDate": "2025-05-26",
-      "customerId": "2514635932",
+      "customerId": "2514646824",
       "accountOfficerId": 2620,
       "categorisactionId": 258,
       "categorisactionIdDescription": "System Generated",
-      "amountInAccountCurrency": 228977,
-      "transactionAmount": 228977,
+      "amountInAccountCurrency": 180946,
+      "transactionAmount": 180946,
       "currency": "USD",
-      "externalReference": "BOOK380353594500",
-      "customerReference": "BOOK.ENTRIES.API.1.2.0-05-26-2025380353594500-1",
-      "transactionReference": "BOOK.ENTRIES.API.1.2.0-05-26-2025380353594500-1",
+      "externalReference": "BOOK435544683900",
+      "customerReference": "BOOK.ENTRIES.API.1.2.0-05-26-2025435544683900-1",
+      "transactionReference": "BOOK.ENTRIES.API.1.2.0-05-26-2025435544683900-1",
       "paymentIndicator": "Credit",
       "externalIndicator": false,
-      "processingTime": "Mon May 26 09:59:06 GMT 2025",
-      "legalEntityId": "GB0010001",
-      "extensionData": {}
-    },
-    {
-      "companyReference": "GB0010001",
-      "systemReference": "lending",
-      "contractReference": "AA25073TWDCR",
-      "id": "209660197734510.010001",
-      "accountId": "GB0010001-1013716729",
-      "valueDate": "2025-03-14",
-      "bookingDate": "2025-03-14",
-      "processingDate": "2025-05-26",
-      "customerId": "2513533518",
-      "categorisactionId": 861,
-      "categorisactionIdDescription": "System Generated",
-      "amountInAccountCurrency": -150000,
-      "transactionAmount": -150000,
-      "currency": "USD",
-      "externalReference": "AA25073TWDCR",
-      "customerReference": "1013716729",
-      "transactionReference": "AAACT250730Q8NY2BN",
-      "narrative": "Account",
-      "paymentIndicator": "Debit",
-      "externalIndicator": false,
-      "processingTime": "Mon May 26 09:35:12 GMT 2025",
-      "legalEntityId": "GB0010001",
-      "extensionData": {}
-    },
-    {
-      "companyReference": "GB0010001",
-      "systemReference": "lending",
-      "contractReference": "AA25073TWDCR",
-      "id": "209660197734502.060001",
-      "accountId": "GB0010001-1013716729",
-      "valueDate": "2025-03-14",
-      "bookingDate": "2025-03-14",
-      "processingDate": "2025-05-26",
-      "customerId": "2513533518",
-      "categorisactionId": 832,
-      "categorisactionIdDescription": "System Generated",
-      "amountInAccountCurrency": -750,
-      "transactionAmount": -750,
-      "currency": "USD",
-      "externalReference": "AA25073TWDCR",
-      "customerReference": "1013716729",
-      "transactionReference": "AAACT250730Q8NY1QD",
-      "narrative": "New Arrangement Fee",
-      "paymentIndicator": "Debit",
-      "externalIndicator": false,
-      "processingTime": "Mon May 26 09:35:05 GMT 2025",
+      "processingTime": "Mon May 26 13:00:40 GMT 2025",
       "legalEntityId": "GB0010001",
       "extensionData": {}
     }
@@ -3763,32 +3539,32 @@ Response Body:
 }
 --------------------------------------------------
 
-API Call: GET http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v7.0.0/holdings/customers/2514635932/arrangements
+API Call: GET http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v7.0.0/holdings/customers/2514646824/arrangements
 Request Payload: None (GET request)
 Response Status Code: 200
 Response Body:
 {
   "header": {
     "audit": {
-      "T24_time": 60,
+      "T24_time": 45,
       "responseParse_time": 2,
-      "requestParse_time": 2
+      "requestParse_time": 1
     },
     "page_start": 1,
-    "page_token": "202503143450035980.00,99",
+    "page_token": "202503144751746874.00,99",
     "total_size": 1,
     "page_size": 99,
     "status": "success"
   },
   "body": [
     {
-      "customerId": "2514635932",
+      "customerId": "2514646824",
       "productLines": [
         {
           "productLine": "Lending",
           "productGroupIds": [
             {
-              "arrangementId": "AA25073VKVH2",
+              "arrangementId": "AA25073TC93W",
               "productGroupId": "Mortgage Product",
               "customerRole": "OWNER"
             }

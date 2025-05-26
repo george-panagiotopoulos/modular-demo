@@ -30,11 +30,14 @@
             // Existing elements
             customerDetailsArea: document.getElementById('customer-details-area'),
             customerAccountsArea: document.getElementById('customer-accounts-area'),
-            accountsListDiv: document.getElementById('customer-accounts-area')?.querySelector('#accounts-list'), // Safer access
+            accountsListDiv: document.getElementById('accounts-list'), // Fixed to get the correct div
             transactionsArea: document.getElementById('account-transactions-area'),
             transactionsListDiv: document.getElementById('transactions-list'),
             transactionsTitle: document.getElementById('transactions-title'),
-            backToCustomerBtn: document.getElementById('back-to-customer')
+            backToCustomerBtn: document.getElementById('back-to-customer'),
+            transactionsLoadingDiv: document.getElementById('transactions-loading-div'),
+            transactionsErrorDiv: document.getElementById('transactions-error-div'),
+            loanDetailsDiv: document.getElementById('loan-details-div')
         };
     }
 
@@ -66,20 +69,23 @@
             if (lastName) params.append('lastName', lastName);
             if (dateOfBirth) params.append('dateOfBirth', dateOfBirth);
             
-            const response = await fetch(`/api/branch/customers/search?${params.toString()}`);
-            const data = await response.json();
+            // Perform the search API call
+            const response = await fetch(`/api/parties/search?${params.toString()}`);
             
             if (!response.ok) {
-                throw new Error(data.error || 'Search failed');
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
             
-            if (elements.searchStatus) elements.searchStatus.textContent = '';
+            const data = await response.json();
+            console.log('Search response:', data);
+            
+            // Update the display with search results
             displaySearchResults(data.customers || []);
             
         } catch (error) {
-            console.error('Search error:', error);
-            if (elements.searchError) elements.searchError.textContent = `Search failed: ${error.message}`;
+            console.error('Error performing customer search:', error);
             if (elements.searchStatus) elements.searchStatus.textContent = '';
+            if (elements.searchError) elements.searchError.textContent = `Search failed: ${error.message}`;
         } finally {
             if (elements.searchCustomersBtn) elements.searchCustomersBtn.disabled = false;
         }
@@ -104,15 +110,15 @@
             
             // Map API response fields to display format
             const displayName = `${customer.firstName || 'N/A'} ${customer.lastName || ''}`.trim();
-            const customerId = customer.customerId || customer.id || 'N/A';
+            const customerId = customer.customerId || customer.partyId || customer.id || 'N/A';
             const dateOfBirth = customer.dateOfBirth || 'N/A';
             
             customerCard.innerHTML = `
                 <div class="flex justify-between items-start">
                     <div>
                         <div class="font-medium text-gray-900">${displayName}</div>
-                        <div class="text-sm text-gray-600">ID: ${customerId}</div>
-                        <div class="text-sm text-gray-600">DOB: ${dateOfBirth}</div>
+                        <div class="text-sm text-gray-600">Customer ID: ${customerId}</div>
+                        <div class="text-sm text-gray-600">Date of Birth: ${dateOfBirth}</div>
                     </div>
                     <button class="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200">
                         Select
@@ -151,8 +157,8 @@
         if (elements.selectedCustomerInfo) {
             elements.selectedCustomerInfo.innerHTML = `
                 <div class="font-medium">${customer.name || 'N/A'} ${customer.lastName || ''}</div>
-                <div class="text-sm">ID: ${customer.id || 'N/A'}</div>
-                <div class="text-sm">DOB: ${customer.dateOfBirth || 'N/A'}</div>
+                <div class="text-sm">Customer ID: ${customer.id || 'N/A'}</div>
+                <div class="text-sm">Date of Birth: ${customer.dateOfBirth || 'N/A'}</div>
             `;
         }
         
@@ -201,26 +207,22 @@
             return;
         }
         
-        if (elements.loadCustomerBtn) {
-            elements.loadCustomerBtn.disabled = true;
-            elements.loadCustomerBtn.textContent = 'Loading...';
-        }
+        // Show loading status
+        if (elements.searchStatus) elements.searchStatus.textContent = 'Loading customer data...';
         
         try {
-            // Load customer details and accounts
             await fetchCustomerData(selectedCustomerId);
             
-            // Show customer details area
-            showCustomerView();
+            // Show customer details
+            const { customerDetailsArea, customerAccountsArea } = getElements();
+            if (customerDetailsArea) customerDetailsArea.classList.remove('hidden');
+            if (customerAccountsArea) customerAccountsArea.classList.remove('hidden');
             
+            if (elements.searchStatus) elements.searchStatus.textContent = '';
         } catch (error) {
             console.error('Error loading customer:', error);
-            if (elements.searchError) elements.searchError.textContent = `Failed to load customer data: ${error.message}`;
-        } finally {
-            if (elements.loadCustomerBtn) {
-                elements.loadCustomerBtn.disabled = false;
-                elements.loadCustomerBtn.textContent = 'Load Customer Data';
-            }
+            if (elements.searchError) elements.searchError.textContent = `Failed to load customer: ${error.message}`;
+            if (elements.searchStatus) elements.searchStatus.textContent = '';
         }
     }
 
@@ -273,14 +275,21 @@
 
     function renderAccountRow(account) {
         const isLoan = account.type === 'loan';
-        const balance = isLoan ? account.principalAmount : account.currentBalance;
+        const balance = isLoan ? (account.outstandingBalance || account.principalAmount || 0) : (account.currentBalance || 0);
         const formattedBalance = new Intl.NumberFormat('en-US', { style: 'currency', currency: account.currency }).format(Math.abs(balance));
 
-        // Create display name with arrangement ID if different from account ID
+        // Create display name - for loans, show arrangement ID only
         let displayId = account.accountId;
-        if (account.arrangementId && account.arrangementId !== account.accountId) {
+        if (isLoan) {
+            // For loans, show only the arrangement ID
+            displayId = account.arrangementId || account.loanId || account.accountId;
+        } else if (account.arrangementId && account.arrangementId !== account.accountId) {
             displayId = `${account.accountId} (${account.arrangementId})`;
         }
+
+        // Clean up product name to avoid undefined
+        const productName = account.productName || account.displayName || 'Product';
+        const startOrOpenDate = account.startDate || account.openDate || 'N/A';
 
         // Customize the button based on account type
         let actionButton = `
@@ -289,10 +298,11 @@
             </button>
         `;
 
-        // For loans, show a "View Loan Details" button instead
+        // For loans, show a "View Loan Details" button instead and use the correct loan ID
         if (isLoan) {
+            const loanId = account.loanId || account.contractReference || account.accountId;
             actionButton = `
-                <button data-loan-id="${account.accountId}" class="view-loan-details-btn text-xs text-blue-600 hover:underline focus:outline-none">
+                <button data-loan-id="${loanId}" class="view-loan-details-btn text-xs text-blue-600 hover:underline focus:outline-none">
                     View Loan Details
                 </button>
             `;
@@ -301,11 +311,12 @@
         return `
             <div class="flex justify-between items-center p-3 border rounded-md bg-gray-50 hover:bg-gray-100 mb-2">
                 <div>
-                    <span class="font-medium text-gray-800">${account.displayName} (${displayId})</span>
-                    <span class="text-xs text-gray-500 ml-2">${account.productName} - Opened: ${account.openDate || 'N/A'}</span>
+                    <span class="font-medium text-gray-800">${account.displayName || 'Account'} (${displayId})</span>
+                    <span class="text-xs text-gray-500 ml-2">${productName} - ${isLoan ? 'Start' : 'Opened'}: ${startOrOpenDate}</span>
                 </div>
                 <div class="text-right">
                     <div class="font-semibold ${isLoan ? 'text-red-700' : 'text-gray-900'}">${formattedBalance} ${account.currency}</div>
+                    <div class="text-xs text-gray-500 mb-1">${isLoan ? 'Outstanding' : 'Available'}</div>
                     ${actionButton}
                 </div>
             </div>
@@ -379,207 +390,51 @@
     }
 
     function renderLoanDetails(loanData) {
-        const { transactionsListDiv, transactionsTitle } = getElements();
-        if (!transactionsListDiv || !transactionsTitle) return;
+        const { loanDetailsDiv } = getElements();
+        if (!loanDetailsDiv || !loanData) return;
         
-        // Set the title
-        transactionsTitle.textContent = `Loan Details: ${loanData.productDisplayName || selectedLoanId}`;
+        // Get the loan balance from the unified API data (if available)
+        const currentBalance = loanData.outstandingBalance || loanData.principalAmount || 0;
+        const formattedBalance = formatCurrency(currentBalance, loanData.currency || 'USD');
         
-        // Extract and format loan data more robustly
-        const loanStatus = loanData.status || {};
-        const loanInfo = loanData.loanInformation || {};
-        
-        // Get status state with fallback to properties in a more reliable way
-        let statusState = "Active";
-        if (loanStatus.state) {
-            statusState = loanStatus.state;
-        } else if (loanData.balancesData && loanData.balancesData.body && Array.isArray(loanData.balancesData.body) && loanData.balancesData.body.length > 0) {
-            // Get from balances data
-            statusState = loanData.balancesData.body[0].arrangementStatus || "Active";
-        } else if (loanData.properties && loanData.properties.body && Array.isArray(loanData.properties.body) && loanData.properties.body.length > 0) {
-            // Try to get status from body array (API format seen in headless tab)
-            statusState = loanData.properties.body[0].arrangementStatus || "Active";
-        } else if (loanData.properties && loanData.properties.status && loanData.properties.status.body) {
-            // Try to get from nested properties
-            statusState = loanData.properties.status.body.status || "Active";
-        }
-        
-        // Get loan amount from either directly or from properties
-        let originalAmount = loanInfo.originalPrincipal || 0;
-        let currentBalance = loanStatus.currentBalance || 0;
-        let accountNumber = loanData.accountNumber || "";
-        let loanInterestType = "";
-        let loanProductId = "";
-        let roleDisplayName = "";
-        
-        // Check if we have balances data for additional fields
-        if (loanData.balancesData && loanData.balancesData.body && Array.isArray(loanData.balancesData.body) && loanData.balancesData.body.length > 0) {
-            const balanceData = loanData.balancesData.body[0];
-            if (!accountNumber) accountNumber = balanceData.loanAccountId || "";
-            if (originalAmount === 0) originalAmount = parseFloat(balanceData.loanAmount) || 0;
-            loanInterestType = balanceData.loanInterestType || "";
-            loanProductId = balanceData.loanProduct || "";
-            roleDisplayName = balanceData.roleDisplayName || "";
-        }
-        
-        // Try to get from nested properties if not available directly
-        if (originalAmount === 0 && loanData.properties && loanData.properties.commitment && loanData.properties.commitment.body) {
-            originalAmount = parseFloat(loanData.properties.commitment.body.amount || "0");
-        }
-        
-        if (currentBalance === 0 && loanData.properties && loanData.properties.outstandingBalance && loanData.properties.outstandingBalance.body) {
-            // Try to extract from properties
-            currentBalance = parseFloat(loanData.properties.outstandingBalance.body.amount || "0");
-        }
-        
-        // Try to get account number from body array format if not already set
-        if (!accountNumber && loanData.properties && loanData.properties.body && Array.isArray(loanData.properties.body) && loanData.properties.body.length > 0) {
-            accountNumber = loanData.properties.body[0].accountId || "";
-        }
-        
-        // Get currency more robustly
-        const currency = loanInfo.currency || 
-                        (loanData.properties && loanData.properties.commitment && loanData.properties.commitment.body 
-                            ? loanData.properties.commitment.body.currency : 'USD');
-        
-        // Create a div to contain the loan details
-        const detailsContainer = document.createElement('div');
-        detailsContainer.className = 'loan-details-container space-y-4';
-        
-        // Loan summary section
-        const summarySection = document.createElement('div');
-        summarySection.className = 'bg-white p-4 rounded-lg shadow';
-        
-        let summaryHtml = `
-            <h3 class="text-lg font-semibold mb-2 text-gray-800">Loan Summary</h3>
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <p class="text-sm"><span class="font-medium">Loan ID:</span> ${loanData.id || selectedLoanId || 'N/A'}</p>
-                    <p class="text-sm"><span class="font-medium">Status:</span> ${statusState}</p>
-                    <p class="text-sm"><span class="font-medium">Product:</span> ${loanData.productDisplayName || loanData.productId || 'N/A'}</p>
-        `;
-        
-        // Add loan product ID if available
-        if (loanProductId) {
-            summaryHtml += `<p class="text-sm"><span class="font-medium">Product ID:</span> ${loanProductId}</p>`;
-        }
-        
-        // Add start and maturity dates
-        summaryHtml += `
-                    <p class="text-sm"><span class="font-medium">Start Date:</span> ${loanInfo.startDate || 'N/A'}</p>
-                    <p class="text-sm"><span class="font-medium">Maturity Date:</span> ${loanInfo.maturityDate || 
-                                                                (loanData.properties && loanData.properties.commitment && loanData.properties.commitment.body
-                                                                    ? loanData.properties.commitment.body.maturityDate : 'N/A')}</p>
-                </div>
-                <div>
-                    <p class="text-sm"><span class="font-medium">Original Amount:</span> ${formatCurrency(originalAmount, currency)}</p>
-                    <p class="text-sm"><span class="font-medium">Current Balance:</span> ${formatCurrency(currentBalance, currency)}</p>
-                    <p class="text-sm"><span class="font-medium">Interest Rate:</span> ${(loanInfo.interestRate || 0).toFixed(2)}%</p>
-        `;
-        
-        // Add interest type if available
-        if (loanInterestType) {
-            summaryHtml += `<p class="text-sm"><span class="font-medium">Interest Type:</span> ${loanInterestType}</p>`;
-        }
-        
-        // Add remaining term fields
-        summaryHtml += `
-                    <p class="text-sm"><span class="font-medium">Term:</span> ${loanInfo.term || 
-                                                                (loanData.properties && loanData.properties.commitment && loanData.properties.commitment.body
-                                                                    ? loanData.properties.commitment.body.term : 'N/A')} ${loanInfo.termUnit || 'Months'}</p>
-                    <p class="text-sm"><span class="font-medium">Payment Frequency:</span> ${loanInfo.paymentFrequency || 'Monthly'}</p>
-        `;
-        
-        // Add role display name if available
-        if (roleDisplayName) {
-            summaryHtml += `<p class="text-sm"><span class="font-medium">Customer Role:</span> ${roleDisplayName}</p>`;
-        }
-        
-        // Add account number if available
-        if (accountNumber) {
-            summaryHtml += `<p class="text-sm"><span class="font-medium">Account Number:</span> ${accountNumber}</p>`;
-        }
-        
-        summaryHtml += `</div></div>`;
-        summarySection.innerHTML = summaryHtml;
-        detailsContainer.appendChild(summarySection);
-        
-        // Only add payment information if we have data
-        if (loanStatus.nextPaymentDue || loanStatus.paymentsMade !== undefined || loanStatus.paymentsRemaining !== undefined) {
-            // Payment details section
-            const paymentSection = document.createElement('div');
-            paymentSection.className = 'bg-white p-4 rounded-lg shadow';
-            
-            const nextPayment = loanStatus.nextPaymentDue || {};
-            
-            // Get next payment date from any available source
-            let nextPaymentDate = nextPayment.dueDate || '';
-            if (!nextPaymentDate && loanData.balancesData && loanData.balancesData.body && loanData.balancesData.body.length > 0) {
-                nextPaymentDate = loanData.balancesData.body[0].loanNextPayDate || '';
-            }
-            
-            paymentSection.innerHTML = `
-                <h3 class="text-lg font-semibold mb-2 text-gray-800">Payment Information</h3>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <p class="text-sm"><span class="font-medium">Next Payment Date:</span> ${nextPaymentDate || 'N/A'}</p>
-                        <p class="text-sm"><span class="font-medium">Next Payment Amount:</span> ${formatCurrency(nextPayment.totalAmount || 0, currency)}</p>
-                        <p class="text-sm"><span class="font-medium">Principal:</span> ${formatCurrency(nextPayment.principalAmount || 0, currency)}</p>
-                        <p class="text-sm"><span class="font-medium">Interest:</span> ${formatCurrency(nextPayment.interestAmount || 0, currency)}</p>
+        loanDetailsDiv.innerHTML = `
+            <div class="bg-white rounded-lg border border-gray-200 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-6">Loan Summary</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <div class="border-b border-gray-100 pb-2">
+                            <label class="text-sm font-medium text-gray-500">Loan ID</label>
+                            <div class="text-base text-gray-900">${loanData.id || loanData.loanId || 'N/A'}</div>
+                        </div>
+                        
+                        <div class="border-b border-gray-100 pb-2">
+                            <label class="text-sm font-medium text-gray-500">Status</label>
+                            <div class="text-base text-gray-900">${loanData.status || 'N/A'}</div>
+                        </div>
+                        
+                        <div class="border-b border-gray-100 pb-2">
+                            <label class="text-sm font-medium text-gray-500">Product</label>
+                            <div class="text-base text-gray-900">${loanData.productDisplayName || loanData.displayName || 'N/A'}</div>
+                        </div>
+                        
+                        <div class="border-b border-gray-100 pb-2">
+                            <label class="text-sm font-medium text-gray-500">Payment Frequency</label>
+                            <div class="text-base text-gray-900">Monthly</div>
+                        </div>
                     </div>
-                    <div>
-                        <p class="text-sm"><span class="font-medium">Payments Made:</span> ${loanStatus.paymentsMade || 'N/A'}</p>
-                        <p class="text-sm"><span class="font-medium">Payments Remaining:</span> ${loanStatus.paymentsRemaining || 'N/A'}</p>
-                        <p class="text-sm"><span class="font-medium">Paid To Date:</span> ${formatCurrency(loanStatus.paidToDate || 0, currency)}</p>
+                    
+                    <div class="space-y-4">
+                        <div class="border-b border-gray-100 pb-2">
+                            <label class="text-sm font-medium text-gray-500">Current Balance</label>
+                            <div class="text-lg font-semibold text-red-600">${formattedBalance}</div>
+                        </div>
                     </div>
                 </div>
-            `;
-            detailsContainer.appendChild(paymentSection);
-        }
-        
-        // Check for specific statuses and add relevant notes
-        if (statusState === "Not Disbursed" || statusState === "AUTH") {
-            const noteDisbursedSection = document.createElement('div');
-            noteDisbursedSection.className = 'bg-yellow-50 p-4 rounded-lg shadow border border-yellow-200';
-            noteDisbursedSection.innerHTML = `
-                <h3 class="text-md font-semibold mb-2 text-yellow-800">Loan Status: ${statusState}</h3>
-                <p class="text-sm text-yellow-700">This loan has been approved but not yet disbursed. Payment information will be available after disbursement.</p>
-            `;
-            detailsContainer.appendChild(noteDisbursedSection);
-        }
-
-        // Button to view payment schedule
-        const scheduleButtonDiv = document.createElement('div');
-        scheduleButtonDiv.className = 'flex justify-center mt-4';
-        scheduleButtonDiv.innerHTML = `
-            <button id="view-loan-schedule-btn" data-loan-id="${selectedLoanId}" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md text-sm">
-                View Payment Schedule
-            </button>
+            </div>
         `;
-        detailsContainer.appendChild(scheduleButtonDiv);
-        
-        // Clear the container and add the new content
-        transactionsListDiv.innerHTML = '';
-        transactionsListDiv.appendChild(detailsContainer);
-
-        // Add event listener for the schedule button
-        const scheduleButton = document.getElementById('view-loan-schedule-btn');
-        if (scheduleButton) {
-            const handler = () => {
-                fetchLoanSchedules(selectedLoanId);
-            };
-            scheduleButton.addEventListener('click', handler);
-            if (eventHandlers.viewLoanSchedules.length > 0) {
-                // Remove previous handler
-                const prevHandler = eventHandlers.viewLoanSchedules.pop();
-                if (prevHandler && prevHandler.button && prevHandler.handler) {
-                    prevHandler.button.removeEventListener('click', prevHandler.handler);
-                }
-            }
-            eventHandlers.viewLoanSchedules.push({ button: scheduleButton, handler });
-        }
     }
-    
+
     function renderLoanSchedule(scheduleData) {
         const { transactionsListDiv, transactionsTitle } = getElements();
         if (!transactionsListDiv || !transactionsTitle) return;
@@ -801,10 +656,29 @@
     
     // Helper function to format currency
     function formatCurrency(amount, currency = 'USD') {
-        return new Intl.NumberFormat('en-US', { 
-            style: 'currency', 
-            currency: currency 
-        }).format(amount);
+        // Handle null, undefined, or invalid amounts
+        if (amount === null || amount === undefined || isNaN(amount)) {
+            amount = 0;
+        }
+        
+        // Handle empty or invalid currency codes
+        if (!currency || typeof currency !== 'string' || currency.trim().length === 0) {
+            currency = 'USD';
+        }
+        
+        try {
+            return new Intl.NumberFormat('en-US', { 
+                style: 'currency', 
+                currency: currency.toUpperCase().trim()
+            }).format(Number(amount));
+        } catch (error) {
+            // Fallback if currency is invalid
+            console.warn(`Invalid currency code: ${currency}, using USD as fallback`);
+            return new Intl.NumberFormat('en-US', { 
+                style: 'currency', 
+                currency: 'USD'
+            }).format(Number(amount));
+        }
     }
 
     // --- API Fetching ---
@@ -813,7 +687,7 @@
         try {
             // Check if there's a party ID stored by the mobile app
             const mobilePartyId = localStorage.getItem('mobileAppPartyId');
-            let fetchUrl = `/api/branch/customers?_=${Date.now()}`;
+            let fetchUrl = `/api/parties?_=${Date.now()}`;
             
             // Add the mobile party ID to the request if available
             if (mobilePartyId) {
@@ -823,8 +697,11 @@
             
             const response = await fetch(fetchUrl);
             if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
-            customersData = await response.json();
-            console.log("Customers received:", customersData);
+            const data = await response.json();
+            console.log("Customers received:", data);
+            
+            // Extract customers from the response (data is already an array)
+            customersData = Array.isArray(data) ? data : [];
             populateCustomerSelect(customersData);
         } catch (error) {
             console.error("Error fetching customers:", error);
@@ -833,459 +710,457 @@
     }
 
     async function fetchCustomerData(customerId) {
-        console.log(`Fetching customer data for ${customerId}...`);
-        const { customerDetailsArea, customerAccountsArea, accountsListDiv, searchError } = getElements();
-        if (!customerDetailsArea || !customerAccountsArea || !accountsListDiv) return;
-        if (searchError) searchError.textContent = ''; // Clear previous errors
-
+        console.log(`Fetching customer data for ID: ${customerId}`);
+        const { customerDetailsArea, customerAccountsArea, loadingDiv, errorDiv } = getElements();
+        
         try {
-            // 1. Fetch customer details
-            const custRes = await fetch(`/api/branch/customers/${customerId}?_=${Date.now()}`);
-            if (!custRes.ok) throw new Error(`Customer fetch failed: ${custRes.status}`);
-            const customerData = await custRes.json();
-            renderCustomerDetails(customerData);
-
-            // 2. Fetch both loans and current accounts
-            // First, get all arrangements for this customer using the same Holdings API as mobile app
-            const arrangementsRes = await fetch(`/api/proxy/holdings/parties/${customerId}/arrangements?_=${Date.now()}`);
-            if (!arrangementsRes.ok) throw new Error(`Arrangements fetch failed: ${arrangementsRes.status}`);
-            const arrangementsData = await arrangementsRes.json();
+            // Show loading state
+            if (loadingDiv) loadingDiv.style.display = 'block';
+            if (errorDiv) errorDiv.style.display = 'none';
             
-            // Extract the arrangements array
-            const arrangements = arrangementsData.arrangements || [];
-            const currentAccounts = [];
+            // Fetch customer details, accounts, and loans using unified APIs
+            const [customerResponse, accountsResponse, loansResponse] = await Promise.all([
+                fetch(`/api/parties/${customerId}?_=${Date.now()}`),
+                fetch(`/api/parties/${customerId}/accounts?_=${Date.now()}`),
+                fetch(`/api/parties/${customerId}/loans?_=${Date.now()}`)
+            ]);
             
-            // Process each arrangement to get balance data for accounts
-            for (const arrangement of arrangements) {
-                if (arrangement.productLine === "ACCOUNTS") {
-                    try {
-                        const arrangementId = arrangement.arrangementId;
-                        
-                        // Get the proper Holdings account ID from alternateReferences
-                        let holdingsAccountId = arrangementId; // fallback
-                        if (arrangement.alternateReferences && arrangement.alternateReferences.length > 0) {
-                            console.log(`Checking alternateReferences for arrangement ${arrangementId}:`, arrangement.alternateReferences);
-                            for (const ref of arrangement.alternateReferences) {
-                                if (ref.alternateType === "ACCOUNT") {
-                                    holdingsAccountId = ref.alternateId;
-                                    console.log(`Found Holdings account ID ${holdingsAccountId} for arrangement ${arrangementId}`);
-                                    break;
-                                }
-                            }
-                        } else {
-                            console.log(`No alternateReferences found for arrangement ${arrangementId}`);
-                        }
-                        
-                        // Use Holdings API for balance like mobile app does
-                        const balanceRes = await fetch(`/api/proxy/holdings/accounts/${holdingsAccountId}/balances?_=${Date.now()}`);
-                        
-                        if (balanceRes.ok) {
-                            const balanceData = await balanceRes.json();
-                            console.log(`Balance data for ${holdingsAccountId}:`, balanceData);
-                            
-                            // Check if we have balance items (Holdings API format)
-                            const balanceItems = balanceData.items || [];
-                            if (balanceItems.length > 0) {
-                                const balance = balanceItems[0]; // Use the first balance item
-                                
-                                currentAccounts.push({
-                                    accountId: holdingsAccountId, // Use Holdings account ID for transactions
-                                    arrangementId: arrangementId, // Keep arrangement ID for reference
-                                    displayName: arrangement.productName || "Current Account",
-                                    productName: arrangement.productGroup || "Current Account",
-                                    type: "current",
-                                    currency: balance.currencyId || "USD",
-                                    currentBalance: balance.onlineActualBalance || 0,
-                                    availableBalance: balance.availableBalance || 0,
-                                    openDate: balance.openingDate || ''
-                                });
-                            } else {
-                                // Add account with default values if no balance items
-                                currentAccounts.push({
-                                    accountId: holdingsAccountId, // Use Holdings account ID for transactions
-                                    arrangementId: arrangementId, // Keep arrangement ID for reference
-                                    displayName: arrangement.productName || "Current Account",
-                                    productName: arrangement.productGroup || "Current Account",
-                                    type: "current", 
-                                    currency: arrangement.currencyId || "USD",
-                                    currentBalance: 0,
-                                    availableBalance: 0,
-                                    openDate: ''
-                                });
-                            }
-                        } else {
-                            // Add account with default values if balance fetch fails
-                            currentAccounts.push({
-                                accountId: holdingsAccountId, // Use Holdings account ID for transactions
-                                arrangementId: arrangementId, // Keep arrangement ID for reference
-                                displayName: arrangement.productName || "Current Account",
-                                productName: arrangement.productGroup || "Current Account",
-                                type: "current", 
-                                currency: arrangement.currencyId || "USD",
-                                currentBalance: 0,
-                                availableBalance: 0,
-                                openDate: ''
-                            });
-                        }
-                    } catch (error) {
-                        console.error(`Error fetching balance for arrangement ${arrangement.arrangementId}:`, error);
-                    }
-                }
+            // Handle customer details
+            if (!customerResponse.ok) {
+                throw new Error(`Failed to fetch customer details: ${customerResponse.status}`);
+            }
+            const customer = await customerResponse.json();
+            
+            // Handle accounts
+            const accounts = accountsResponse.ok ? await accountsResponse.json() : [];
+            
+            // Handle loans
+            const loans = loansResponse.ok ? await loansResponse.json() : [];
+            
+            // Combine accounts and loans for display
+            const allAccountsAndLoans = [...accounts, ...loans];
+            customerAccounts = allAccountsAndLoans; // Store for later use
+            
+            console.log(`Found ${accounts.length} accounts and ${loans.length} loans for customer ${customerId}`);
+            
+            // Render customer details
+            renderCustomerDetails(customer);
+            
+            // Get the actual accounts list div, not the entire customer accounts area
+            const accountsListDiv = document.getElementById('accounts-list');
+            if (accountsListDiv) {
+                renderAccountsList(allAccountsAndLoans, accountsListDiv);
             }
             
-            // 3. Now fetch the loans like before
-            const accountsRes = await fetch(`/api/branch/customers/${customerId}/accounts?_=${Date.now()}`);
-            if (!accountsRes.ok) throw new Error(`Accounts fetch failed: ${accountsRes.status}`);
-            const loanAccounts = await accountsRes.json();
+            // Show customer accounts area
+            if (customerAccountsArea) {
+                customerAccountsArea.style.display = 'block';
+            }
             
-            // Merge the loan accounts with the current accounts
-            customerAccounts = [...currentAccounts, ...loanAccounts];
+            // Hide loading state
+            if (loadingDiv) loadingDiv.style.display = 'none';
             
-            renderAccountsList(customerAccounts, accountsListDiv);
-            if(customerAccountsArea) customerAccountsArea.classList.remove('hidden');
-
         } catch (error) {
-            console.error(`Error loading customer data for ${customerId}:`, error);
-            if(searchError) searchError.textContent = `Failed to load customer data: ${error.message}`;
+            console.error('Error fetching customer data:', error);
+            
+            // Show error message
+            if (errorDiv) {
+                errorDiv.textContent = `Error: ${error.message}`;
+                errorDiv.style.display = 'block';
+            }
+            
+            // Hide loading state
+            if (loadingDiv) loadingDiv.style.display = 'none';
         }
     }
 
     async function fetchBranchTransactions(accountId) {
-        console.log(`Fetching transactions for account ID: ${accountId}`);
-        const { transactionsListDiv } = getElements();
+        console.log(`Fetching branch transactions for account: ${accountId}`);
+        const { transactionsListDiv, transactionsLoadingDiv, transactionsErrorDiv } = getElements();
+        
         if (!transactionsListDiv) return;
         
         try {
-            // Show loading indicator
+            // Show loading state
+            if (transactionsLoadingDiv) transactionsLoadingDiv.style.display = 'block';
+            if (transactionsErrorDiv) transactionsErrorDiv.style.display = 'none';
             transactionsListDiv.innerHTML = '<div class="text-center text-gray-500 py-4">Loading transactions...</div>';
             
-            // Fetch transactions directly from the Holdings API
-            const apiUrl = `/api/proxy/holdings/accounts/${accountId}/transactions?_=${Date.now()}`;
-            console.log("Fetching transactions from URL:", apiUrl);
-            
-            const response = await fetch(apiUrl);
+            // Use the same unified API as mobile app
+            const response = await fetch(`/api/accounts/${accountId}/transactions?_=${Date.now()}`);
             
             if (!response.ok) {
-                const errorText = await response.text().catch(() => "Failed to get error text");
-                console.error(`HTTP Error ${response.status}: ${response.statusText}`, errorText);
-                throw new Error(`HTTP Error: ${response.status} - ${response.statusText}`);
+                throw new Error(`Failed to fetch transactions: ${response.status}`);
             }
             
-            const transactionsData = await response.json();
-            console.log("Transactions data received:", transactionsData);
+            const transactions = await response.json();
+            console.log(`Found ${transactions.length} transactions for account ${accountId}`);
             
-            // Check if we have transaction items
-            const transactions = transactionsData.items || [];
             if (transactions.length === 0) {
                 transactionsListDiv.innerHTML = '<div class="text-center text-gray-500 py-4">No transactions found for this account.</div>';
+                if (transactionsLoadingDiv) transactionsLoadingDiv.style.display = 'none';
                 return;
             }
             
-            // Transform API data into transaction objects for rendering
+            // Transform API data into transaction objects for rendering (same as mobile app)
             const formattedTransactions = transactions.map(tx => ({
-                id: tx.id || `tx-${Math.random().toString(36).substring(2, 10)}`,
+                id: tx.transactionId || `tx-${Math.random().toString(36).substring(2, 10)}`,
                 date: tx.valueDate || tx.bookingDate,
-                amount: tx.transactionAmount || 0,
+                amount: tx.amount || 0,
                 currency: tx.currency || "USD",
-                description: tx.narrative || "Transaction",
-                type: tx.paymentIndicator || "Debit",
-                icon: tx.paymentIndicator === "Credit" ? "arrow-down" : "arrow-up",
+                description: tx.description || "Transaction",
+                type: tx.type || "debit",
+                bookingDate: tx.bookingDate,
+                icon: tx.type === "credit" ? "arrow-down" : "arrow-up",
                 status: "Completed"
             }));
             
-            renderTransactionsList(formattedTransactions, transactionsListDiv);
+            // Use the exact same rendering as mobile app
+            renderTransactionsMobile(formattedTransactions, transactionsListDiv);
+            
+            // Hide loading state
+            if (transactionsLoadingDiv) transactionsLoadingDiv.style.display = 'none';
+            
         } catch (error) {
-            console.error("Error fetching transactions:", error);
-            transactionsListDiv.innerHTML = `<div class="text-center text-red-500 py-4">Could not load transactions: ${error.message}</div>`;
+            console.error('Error fetching transactions:', error);
+            
+            // Show error message
+            if (transactionsErrorDiv) {
+                transactionsErrorDiv.textContent = `Error loading transactions: ${error.message}`;
+                transactionsErrorDiv.style.display = 'block';
+            }
+            
+            // Hide loading state
+            if (transactionsLoadingDiv) transactionsLoadingDiv.style.display = 'none';
+            
+            // Show empty state
+            transactionsListDiv.innerHTML = '<div class="text-center text-gray-500 py-4">Failed to load transactions</div>';
         }
+    }
+    
+    // Use the exact same transaction rendering as mobile app
+    function renderTransactionsMobile(transactions, targetDiv) {
+        if (!targetDiv) return;
+        if (!transactions || transactions.length === 0) {
+            targetDiv.innerHTML = '<div class="text-center text-gray-500 py-4">No transactions found for this account.</div>';
+            return;
+        }
+        targetDiv.innerHTML = transactions.map(renderTransactionItemMobile).join('');
+    }
+    
+    function renderTransactionItemMobile(transaction) {
+        const formattedAmount = formatCurrency(transaction.amount, transaction.currency);
+        
+        return `
+            <div class="transaction-item flex justify-between items-center py-3 px-4 border-b border-gray-100">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                d="${transaction.icon === 'arrow-down' ? 'M19 14l-7 7m0 0l-7-7m7 7V3' : 'M5 10l7-7m0 0l7 7m-7-7v18'}"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="font-medium text-gray-900">${transaction.description}</div>
+                        <div class="text-sm text-gray-500">${transaction.date}</div>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="font-semibold ${transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'}">${formattedAmount}</div>
+                    <div class="text-xs text-gray-500">${transaction.status}</div>
+                </div>
+            </div>
+        `;
     }
 
     async function fetchLoanDetails(loanId) {
-        console.log(`Fetching loan details for ${loanId}...`);
-        const { transactionsListDiv, transactionsTitle, transactionsArea } = getElements();
-        if (!transactionsListDiv || !transactionsTitle) return;
+        console.log(`Fetching loan details for loan ID: ${loanId}`);
+        selectedLoanId = loanId; // Store for later use
         
-        // Set selected loan ID
-        selectedLoanId = loanId;
-        
-        // Show the transactions area which we'll reuse for loan details
-        const { customerDetailsArea, customerAccountsArea } = getElements();
+        // Show the transactions area and hide the customer sections  
+        const { customerDetailsArea, customerAccountsArea, transactionsArea, transactionsTitle, transactionsListDiv } = getElements();
         if(customerDetailsArea) customerDetailsArea.classList.add('hidden');
         if(customerAccountsArea) customerAccountsArea.classList.add('hidden');
         if(transactionsArea) transactionsArea.classList.remove('hidden');
         
-        // Set loading state
-        transactionsTitle.textContent = `Loan Details: ${loanId}`;
-        transactionsListDiv.innerHTML = '<div class="text-gray-500">Loading loan details...</div>';
+        // Set title to indicate loan details
+        if (transactionsTitle) {
+            transactionsTitle.textContent = `Loan Details: ${loanId}`;
+        }
+        
+        // Show loading state
+        if (transactionsListDiv) {
+            transactionsListDiv.innerHTML = '<div class="text-gray-500">Loading loan details...</div>';
+        }
         
         try {
-            // Fetch both loan details and loan balances in parallel
-            const [detailsResponse, balancesResponse] = await Promise.all([
-                fetch(`/api/branch/loans/${loanId}/details?_=${Date.now()}`),
-                fetch(`/api/branch/loans/${loanId}/balances?_=${Date.now()}`)
-            ]);
+            // First, get the customer's loan data from the unified loans API to get current balance
+            const loansResponse = await fetch(`/api/parties/${selectedCustomerId}/loans?_=${Date.now()}`);
+            let loanBalance = 0;
+            let loanCurrency = 'USD';
+            let loanDisplayName = 'N/A';
+            let loanStatus = 'N/A';
             
-            console.log(`Details response status: ${detailsResponse.status}`);
-            console.log(`Balances response status: ${balancesResponse.status}`);
-            
-            // Check for HTTP errors
-            if (!detailsResponse.ok) {
-                throw new Error(`Details API Error: ${detailsResponse.status}`);
-            }
-            
-            // Get the response text and parse JSON
-            const detailsText = await detailsResponse.text();
-            console.log(`Raw details response: ${detailsText.substring(0, 200)}...`);
-            
-            let loanData, balancesData;
-            try {
-                loanData = JSON.parse(detailsText);
-            } catch (parseError) {
-                console.error("JSON parse error for details:", parseError);
-                throw new Error(`Failed to parse details response: ${parseError.message}`);
-            }
-            
-            // Try to parse balances data if the response was successful
-            if (balancesResponse.ok) {
-                try {
-                    balancesData = await balancesResponse.json();
-                    console.log("Loan balances received:", balancesData);
-                } catch (parseError) {
-                    console.error("JSON parse error for balances:", parseError);
-                    balancesData = null;
+            if (loansResponse.ok) {
+                const loans = await loansResponse.json();
+                const loan = loans.find(l => l.loanId === loanId);
+                if (loan) {
+                    loanBalance = loan.outstandingBalance || loan.principalAmount || 0;
+                    loanCurrency = loan.currency || 'USD';
+                    loanDisplayName = loan.displayName || 'N/A';
+                    loanStatus = loan.status || 'N/A';
                 }
             }
             
-            console.log("Loan details received:", loanData);
+            // Get loan details from the details API for additional info
+            const detailsResponse = await fetch(`/api/loans/${loanId}/details?_=${Date.now()}`);
             
-            // Create the properly structured loan data object
-            let formattedLoanData = {
-                id: loanId,
-                productDisplayName: "Personal Loan",
-                status: {
-                    state: "Active",
-                    currentBalance: 0,
-                    nextPaymentDue: {
-                        dueDate: "",
-                        totalAmount: 0,
-                        principalAmount: 0,
-                        interestAmount: 0
-                    },
-                    paymentsMade: 0,
-                    paymentsRemaining: 0,
-                    paidToDate: 0
-                },
-                loanInformation: {
-                    startDate: "",
-                    maturityDate: "",
-                    originalPrincipal: 0,
-                    interestRate: 0,
-                    term: 0,
-                    termUnit: "Months",
-                    paymentFrequency: "Monthly",
-                    currency: "USD"
-                },
-                properties: {}
-            };
-            
-            // First check for loan balances data - prioritize this information
-            if (balancesData && balancesData.body && Array.isArray(balancesData.body) && balancesData.body.length > 0) {
-                console.log("Using loan balances data to populate loan details");
-                const balanceDetails = balancesData.body[0];
+            if (detailsResponse.ok) {
+                const detailsData = await detailsResponse.json();
                 
-                // Extract loan details from the balances API
-                formattedLoanData.id = balanceDetails.arrangementId || loanId;
-                formattedLoanData.productDisplayName = balanceDetails.productName || "Loan Product";
-                formattedLoanData.status.state = balanceDetails.arrangementStatus || "Active";
-                formattedLoanData.loanInformation.startDate = balanceDetails.loanStartDate || "";
-                formattedLoanData.loanInformation.maturityDate = balanceDetails.loanEndDate || "";
-                formattedLoanData.loanInformation.originalPrincipal = parseFloat(balanceDetails.loanAmount) || 0;
-                formattedLoanData.loanInformation.interestRate = parseFloat(balanceDetails.loanInterestRate) || 0;
-                formattedLoanData.loanInformation.currency = balanceDetails.loanCurrency || "USD";
+                // Combine data from both APIs
+                const combinedData = {
+                    id: loanId,
+                    loanId: loanId,
+                    status: loanStatus,
+                    productDisplayName: detailsData.productDisplayName || loanDisplayName,
+                    displayName: loanDisplayName,
+                    outstandingBalance: loanBalance,
+                    currency: loanCurrency
+                };
                 
-                // Add next payment date if available
-                if (balanceDetails.loanNextPayDate) {
-                    formattedLoanData.status.nextPaymentDue.dueDate = balanceDetails.loanNextPayDate;
-                }
+                // Render loan details in the transactions list area
+                renderLoanDetailsInTransactionArea(combinedData);
+            } else {
+                // Fall back to just unified API data
+                const fallbackData = {
+                    id: loanId,
+                    loanId: loanId,
+                    status: loanStatus,
+                    productDisplayName: loanDisplayName,
+                    displayName: loanDisplayName,
+                    outstandingBalance: loanBalance,
+                    currency: loanCurrency
+                };
                 
-                // Add loan account ID
-                if (balanceDetails.loanAccountId) {
-                    formattedLoanData.accountNumber = balanceDetails.loanAccountId;
-                }
-                
-                // Store the original balances response
-                formattedLoanData.balancesData = balancesData;
+                renderLoanDetailsInTransactionArea(fallbackData);
             }
             
-            // Check for the standard body array format from loan details
-            if (loanData && Array.isArray(loanData.body) && loanData.body.length > 0) {
-                console.log("Found loan details in body array");
-                const loanDetails = loanData.body[0];
-                
-                // Fill in any missing properties not already populated from balances
-                if (!formattedLoanData.id) formattedLoanData.id = loanDetails.arrangementId || loanId;
-                if (!formattedLoanData.productDisplayName) formattedLoanData.productDisplayName = loanDetails.productDescription || "Personal Loan";
-                if (formattedLoanData.status.state === "Active") formattedLoanData.status.state = loanDetails.arrangementStatus || "Active";
-                if (!formattedLoanData.loanInformation.startDate) formattedLoanData.loanInformation.startDate = loanDetails.arrangementStartDate || "";
-                
-                // Extract account ID if not already set
-                if (!formattedLoanData.accountNumber && loanDetails.accountId) {
-                    formattedLoanData.accountNumber = loanDetails.accountId;
-                    
-                    // Extract currency from account ID if needed
-                    if (formattedLoanData.loanInformation.currency === "USD" && loanDetails.accountId) {
-                        const accountParts = loanDetails.accountId.split(' - ');
-                        if (accountParts.length > 1) {
-                            formattedLoanData.loanInformation.currency = accountParts[1] || "USD";
-                        }
-                    }
-                }
-                
-                if (!formattedLoanData.customerId) formattedLoanData.customerId = loanDetails.customerId || "";
-            }
-            // Handle different API response formats (fallback to previous handling)
-            else if (loanData) {
-                // Directly extract loan properties from top-level
-                if (loanData.id && !formattedLoanData.id) formattedLoanData.id = loanData.id;
-                if (loanData.productDisplayName && !formattedLoanData.productDisplayName) formattedLoanData.productDisplayName = loanData.productDisplayName;
-                if (loanData.productId && !formattedLoanData.productId) formattedLoanData.productId = loanData.productId;
-                
-                // Extract data from body property if it exists (when body is an object, not array)
-                if (loanData.body && !Array.isArray(loanData.body)) {
-                    const body = loanData.body;
-                    
-                    if (body.productId && !formattedLoanData.productId) {
-                        formattedLoanData.productId = body.productId;
-                        formattedLoanData.productDisplayName = body.productId.replace('.', ' ');
-                    }
-                }
-                
-                // Extract from status property if needed
-                if (loanData.status) {
-                    const status = loanData.status;
-                    
-                    if (status.state && formattedLoanData.status.state === "Active") formattedLoanData.status.state = status.state;
-                    if (status.currentBalance !== undefined && formattedLoanData.status.currentBalance === 0) formattedLoanData.status.currentBalance = status.currentBalance;
-                    
-                    if (status.nextPaymentDue && !formattedLoanData.status.nextPaymentDue.dueDate) {
-                        const nextPayment = status.nextPaymentDue;
-                        if (nextPayment.dueDate) formattedLoanData.status.nextPaymentDue.dueDate = nextPayment.dueDate;
-                        if (nextPayment.totalAmount !== undefined) formattedLoanData.status.nextPaymentDue.totalAmount = nextPayment.totalAmount;
-                        if (nextPayment.principalAmount !== undefined) formattedLoanData.status.nextPaymentDue.principalAmount = nextPayment.principalAmount;
-                        if (nextPayment.interestAmount !== undefined) formattedLoanData.status.nextPaymentDue.interestAmount = nextPayment.interestAmount;
-                    }
-                    
-                    if (status.paymentsMade !== undefined) formattedLoanData.status.paymentsMade = status.paymentsMade;
-                    if (status.paymentsRemaining !== undefined) formattedLoanData.status.paymentsRemaining = status.paymentsRemaining;
-                    if (status.paidToDate !== undefined) formattedLoanData.status.paidToDate = status.paidToDate;
-                }
-                
-                // Extract from loanInformation property if needed
-                if (loanData.loanInformation) {
-                    const info = loanData.loanInformation;
-                    
-                    if (info.startDate && !formattedLoanData.loanInformation.startDate) formattedLoanData.loanInformation.startDate = info.startDate;
-                    if (info.maturityDate && !formattedLoanData.loanInformation.maturityDate) formattedLoanData.loanInformation.maturityDate = info.maturityDate;
-                    if (info.originalPrincipal !== undefined && formattedLoanData.loanInformation.originalPrincipal === 0) formattedLoanData.loanInformation.originalPrincipal = info.originalPrincipal;
-                    if (info.interestRate !== undefined && formattedLoanData.loanInformation.interestRate === 0) formattedLoanData.loanInformation.interestRate = info.interestRate;
-                    if (info.term !== undefined && formattedLoanData.loanInformation.term === 0) formattedLoanData.loanInformation.term = info.term;
-                    if (info.termUnit) formattedLoanData.loanInformation.termUnit = info.termUnit;
-                    if (info.paymentFrequency) formattedLoanData.loanInformation.paymentFrequency = info.paymentFrequency;
-                    if (info.currency && formattedLoanData.loanInformation.currency === "USD") formattedLoanData.loanInformation.currency = info.currency;
-                }
-                
-                // Extract data from commitments if present (alternative API format)
-                if (loanData.commitment && Array.isArray(loanData.commitment)) {
-                    const commitment = loanData.commitment[0] || {};
-                    if (commitment.amount && formattedLoanData.loanInformation.originalPrincipal === 0) {
-                        formattedLoanData.loanInformation.originalPrincipal = parseFloat(commitment.amount);
-                    }
-                    if (commitment.term && formattedLoanData.loanInformation.term === 0) {
-                        formattedLoanData.loanInformation.term = commitment.term;
-                    }
-                    if (commitment.maturityDate && !formattedLoanData.loanInformation.maturityDate) {
-                        formattedLoanData.loanInformation.maturityDate = commitment.maturityDate;
-                    }
-                }
-                
-                // Check for loan data in outstandingBalance (alternative API format)
-                if (loanData.outstandingBalance && loanData.outstandingBalance.body) {
-                    const balance = loanData.outstandingBalance.body;
-                    if (balance.amount && formattedLoanData.status.currentBalance === 0) {
-                        formattedLoanData.status.currentBalance = parseFloat(balance.amount);
-                    }
-                }
-            }
-            
-            // Store the original loanData for reference
-            formattedLoanData.properties = loanData;
-            
-            console.log("Processed loan data for rendering:", formattedLoanData);
-            renderLoanDetails(formattedLoanData);
         } catch (error) {
-            console.error(`Error fetching loan details for ${loanId}:`, error);
+            console.error('Error fetching loan details:', error);
             
-            // Create a fallback loan data object with real values
-            const fallbackLoanData = {
-                id: loanId,
-                productDisplayName: "Personal Loan",
-                status: {
-                    state: "Active",
-                    currentBalance: 225351.0,
-                    nextPaymentDue: {
-                        dueDate: "2025-04-14",
-                        totalAmount: 2450.67,
-                        principalAmount: 1837.5,
-                        interestAmount: 613.17
-                    },
-                    paymentsMade: 0,
-                    paymentsRemaining: 120,
-                    paidToDate: 0
-                },
-                loanInformation: {
-                    startDate: "2025-03-15",
-                    maturityDate: "2035-03-15",
-                    originalPrincipal: 225351.0,
-                    interestRate: 3.25,
-                    term: 120,
-                    termUnit: "Months",
-                    paymentFrequency: "Monthly",
-                    currency: "USD"
-                }
-            };
-            
-            console.log("Using fallback loan data:", fallbackLoanData);
-            renderLoanDetails(fallbackLoanData);
-            
-            // Show error message
-            const errorNotice = document.createElement('div');
-            errorNotice.className = 'bg-red-100 text-red-700 p-2 rounded-md text-sm mt-2';
-            errorNotice.textContent = `Error: ${error.message} (Using fallback data)`;
-            transactionsListDiv.querySelector('.loan-details-container').prepend(errorNotice);
+            // Show error in transactions area
+            if (transactionsListDiv) {
+                transactionsListDiv.innerHTML = '<div class="text-red-500">Failed to load loan details</div>';
+            }
         }
     }
     
-    async function fetchLoanSchedules(loanId) {
-        console.log(`Fetching loan schedules for ${loanId}...`);
-        const { transactionsListDiv, transactionsTitle } = getElements();
-        if (!transactionsListDiv || !transactionsTitle) return;
+    function renderLoanDetailsInTransactionArea(loanData) {
+        const { transactionsListDiv } = getElements();
+        if (!transactionsListDiv || !loanData) return;
         
-        // Set the title and loading state
-        transactionsTitle.textContent = `Payment Schedule: ${loanId}`;
-        transactionsListDiv.innerHTML = '<div class="text-gray-500">Loading payment schedule...</div>';
+        // Get the loan balance
+        const currentBalance = loanData.outstandingBalance || loanData.principalAmount || 0;
+        const formattedBalance = formatCurrency(currentBalance, loanData.currency || 'USD');
+        
+        transactionsListDiv.innerHTML = `
+            <div class="bg-white rounded-lg border border-gray-200 p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <div class="border-b border-gray-100 pb-2">
+                            <label class="text-sm font-medium text-gray-500">Loan ID</label>
+                            <div class="text-base text-gray-900">${loanData.id || loanData.loanId || 'N/A'}</div>
+                        </div>
+                        
+                        <div class="border-b border-gray-100 pb-2">
+                            <label class="text-sm font-medium text-gray-500">Status</label>
+                            <div class="text-base text-gray-900">${loanData.status || 'N/A'}</div>
+                        </div>
+                        
+                        <div class="border-b border-gray-100 pb-2">
+                            <label class="text-sm font-medium text-gray-500">Product</label>
+                            <div class="text-base text-gray-900">${loanData.productDisplayName || loanData.displayName || 'N/A'}</div>
+                        </div>
+                        
+                        <div class="border-b border-gray-100 pb-2">
+                            <label class="text-sm font-medium text-gray-500">Payment Frequency</label>
+                            <div class="text-base text-gray-900">Monthly</div>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="border-b border-gray-100 pb-2">
+                            <label class="text-sm font-medium text-gray-500">Current Balance</label>
+                            <div class="text-lg font-semibold text-red-600">${formattedBalance}</div>
+                        </div>
+                        
+                        <div class="pt-4">
+                            <button id="view-loan-schedule-btn" data-loan-id="${loanData.loanId || loanData.id}" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                                View Payment Schedule
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Add event listener for the schedule button
+        const scheduleBtn = document.getElementById('view-loan-schedule-btn');
+        if (scheduleBtn) {
+            scheduleBtn.addEventListener('click', (e) => {
+                const loanId = e.target.getAttribute('data-loan-id');
+                fetchLoanSchedules(loanId);
+            });
+        }
+    }
+
+    async function fetchLoanSchedules(loanId) {
+        console.log(`Fetching loan schedules for loan ID: ${loanId}`);
+        
+        // Show the transactions area and hide the customer sections  
+        const { customerDetailsArea, customerAccountsArea, transactionsArea, transactionsTitle, transactionsListDiv } = getElements();
+        if(customerDetailsArea) customerDetailsArea.classList.add('hidden');
+        if(customerAccountsArea) customerAccountsArea.classList.add('hidden');
+        if(transactionsArea) transactionsArea.classList.remove('hidden');
+        
+        // Set title to indicate loan schedule
+        if (transactionsTitle) {
+            transactionsTitle.textContent = `Payment Schedule: ${loanId}`;
+        }
+        
+        // Show loading state
+        if (transactionsListDiv) {
+            transactionsListDiv.innerHTML = '<div class="text-gray-500">Loading payment schedule...</div>';
+        }
         
         try {
-            const response = await fetch(`/api/branch/loans/${loanId}/schedules?_=${Date.now()}`);
-            if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+            const response = await fetch(`/api/loans/${loanId}/schedules?_=${Date.now()}`);
             
-            const scheduleData = await response.json();
-            console.log("Loan schedule received:", scheduleData);
+            if (response.ok) {
+                const scheduleData = await response.json();
+                renderLoanScheduleInTransactionArea(scheduleData);
+            } else {
+                throw new Error(`Failed to fetch loan schedules: ${response.status}`);
+            }
             
-            renderLoanSchedule(scheduleData);
         } catch (error) {
-            console.error(`Error fetching loan schedule for ${loanId}:`, error);
-            transactionsListDiv.innerHTML = `<div class="text-red-500">Could not load payment schedule: ${error.message}</div>`;
+            console.error('Error fetching loan schedules:', error);
+            
+            // Show error in transactions area
+            if (transactionsListDiv) {
+                transactionsListDiv.innerHTML = '<div class="text-red-500">Failed to load payment schedule</div>';
+            }
         }
+    }
+    
+    function renderLoanScheduleInTransactionArea(scheduleData) {
+        const { transactionsListDiv } = getElements();
+        if (!transactionsListDiv || !scheduleData || !scheduleData.schedules) return;
+        
+        const schedules = scheduleData.schedules;
+        const currency = scheduleData.currency || 'USD';
+        
+        // Extract the schedule items from the first schedule
+        const scheduleItems = schedules[0].scheduleItems || schedules;
+        
+        // Transform the data to match mobile app format
+        const transformedScheduleData = {
+            loanId: scheduleData.loanId,
+            currency: currency,
+            payments: scheduleItems.map(item => ({
+                dueDate: item.dueDate,
+                principal: item.principal || 0,
+                interest: item.interest || 0,
+                totalAmount: item.totalAmount || 0,
+                status: item.status || 'Pending'
+            }))
+        };
+        
+        // Use the exact same mobile rendering function
+        renderLoanScheduleMobile(transformedScheduleData, transactionsListDiv);
+    }
+    
+    // Use the exact same loan schedule rendering as mobile app
+    function renderLoanScheduleMobile(schedule, targetDiv) {
+        if (!targetDiv) return;
+        if (!schedule || !schedule.payments || schedule.payments.length === 0) {
+            targetDiv.innerHTML = '<div class="text-center text-gray-500 py-4">No payment schedule available.</div>';
+            return;
+        }
+        
+        // Show only the next 10 payments
+        const displayPayments = schedule.payments.slice(0, 10);
+        
+        // Use an elegant card layout optimized for mobile
+        targetDiv.innerHTML = `
+            <div class="bg-white rounded-xl shadow-lg border border-gray-100">
+                <div class="px-5 py-4 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50">
+                    <h3 class="text-lg font-bold text-gray-800 mb-1">Payment Schedule</h3>
+                    <p class="text-sm text-blue-600 font-medium">Next ${displayPayments.length} payments</p>
+                </div>
+                <div class="divide-y divide-gray-50">
+                    ${displayPayments.map(payment => renderLoanScheduleMobileCard(payment, schedule.currency)).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    function renderLoanScheduleMobileCard(payment, currency) {
+        const formattedTotal = formatCurrency(payment.totalAmount, currency);
+        const formattedPrincipal = formatCurrency(payment.principal, currency);
+        const formattedInterest = formatCurrency(payment.interest, currency);
+
+        // Format date - handle both YYYY-MM-DD and YYYYMMDD formats
+        const formatDate = (dateStr) => {
+            if (!dateStr) return "N/A";
+            if (dateStr.includes('-')) {
+                return new Date(dateStr).toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric', 
+                    year: 'numeric' 
+                });
+            } else if (dateStr.length === 8) {
+                const year = dateStr.substring(0, 4);
+                const month = dateStr.substring(4, 6);
+                const day = dateStr.substring(6, 8);
+                return new Date(`${year}-${month}-${day}`).toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric', 
+                    year: 'numeric' 
+                });
+            }
+            return dateStr;
+        };
+
+        const statusColor = payment.status === "Due" ? "text-red-700 bg-red-100 border-red-200" : "text-blue-700 bg-blue-100 border-blue-200";
+
+        return `
+            <div class="p-5 hover:bg-gray-25 transition-colors duration-200">
+                <div class="flex justify-between items-center mb-3">
+                    <div class="flex-1">
+                        <div class="text-base font-semibold text-gray-800 mb-1">${formatDate(payment.dueDate)}</div>
+                        <div class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-full border ${statusColor}">
+                            ${payment.status}
+                        </div>
+                    </div>
+                    <div class="text-right ml-4">
+                        <div class="text-xl font-bold text-gray-900">${formattedTotal}</div>
+                        <div class="text-xs text-gray-500 font-medium uppercase tracking-wide">Total Payment</div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mt-4 pt-3 border-t border-gray-100">
+                    <div class="text-center">
+                        <div class="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">Principal</div>
+                        <div class="text-base font-semibold text-green-700">${formattedPrincipal}</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">Interest</div>
+                        <div class="text-base font-semibold text-orange-600">${formattedInterest}</div>
+                    </div>
+                </div>
+            </div>
+        `;
     }
 
     // --- UI Interaction ---
@@ -1451,6 +1326,11 @@
         // Add static event listeners for the new search interface
         addStaticListeners();
         
+        // Add new navigation and form listeners
+        addBranchNavigationListeners();
+        addCreateAccountFormListener();
+        addCreateLoanFormListener();
+        
         // Clear any previous state
         selectedCustomerId = null;
         selectedCustomer = null;
@@ -1462,7 +1342,10 @@
         // Clear search interface
         clearSearch();
         
-        console.log("Branch App tab initialized with search interface");
+        // Initialize with customer management screen
+        showBranchScreen('customer-management');
+        
+        console.log("Branch App tab initialized with search interface and new features");
     }
 
     // --- Global Cleanup Function --- 
@@ -1475,5 +1358,262 @@
 
     // --- Initial Execution --- 
     initBranchAppTab();
+
+    // --- Internal Navigation Functions ---
+    let currentBranchScreen = 'customer-management';
+    
+    function showBranchScreen(screenName) {
+        console.log(`Switching to branch screen: ${screenName}`);
+        
+        // Hide all screens
+        document.querySelectorAll('.branch-screen').forEach(screen => {
+            screen.classList.add('hidden');
+        });
+        
+        // Show the selected screen
+        const targetScreen = document.getElementById(`${screenName}-screen`);
+        if (targetScreen) {
+            targetScreen.classList.remove('hidden');
+            currentBranchScreen = screenName;
+            
+            // Update active menu item
+            document.querySelectorAll('[data-branch-tab]').forEach(link => {
+                link.classList.remove('bg-gray-700', 'font-semibold');
+                link.classList.add('hover:bg-gray-700');
+            });
+            
+            const activeLink = document.querySelector(`[data-branch-tab="${screenName}"]`);
+            if (activeLink) {
+                activeLink.classList.add('bg-gray-700', 'font-semibold');
+                activeLink.classList.remove('hover:bg-gray-700');
+            }
+        }
+    }
+    
+    function addBranchNavigationListeners() {
+        // Add event listeners for internal navigation
+        document.querySelectorAll('[data-branch-tab]').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const screenName = link.getAttribute('data-branch-tab');
+                showBranchScreen(screenName);
+                
+                // Special handling for navigation with pre-filled data
+                if (screenName === 'account-services' && selectedCustomerId) {
+                    document.getElementById('account-party-id').value = selectedCustomerId;
+                }
+                if (screenName === 'loan-applications' && selectedCustomerId) {
+                    document.getElementById('loan-party-id').value = selectedCustomerId;
+                }
+            });
+        });
+        
+        // Add listeners for create account/loan buttons from customer management
+        const createAccountBtn = document.getElementById('create-new-account-btn');
+        const createLoanBtn = document.getElementById('create-new-loan-btn');
+        
+        if (createAccountBtn) {
+            createAccountBtn.addEventListener('click', () => {
+                showBranchScreen('account-services');
+                if (selectedCustomerId) {
+                    document.getElementById('account-party-id').value = selectedCustomerId;
+                }
+            });
+        }
+        
+        if (createLoanBtn) {
+            createLoanBtn.addEventListener('click', () => {
+                showBranchScreen('loan-applications');
+                if (selectedCustomerId) {
+                    document.getElementById('loan-party-id').value = selectedCustomerId;
+                }
+            });
+        }
+    }
+    
+    // --- Account Creation Functions ---
+    async function createAccount(partyId, productId, currency) {
+        console.log(`Creating account for party ${partyId} with product ${productId} and currency ${currency}`);
+        
+        try {
+            const response = await fetch('/api/accounts/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    partyId: partyId,
+                    productId: productId,
+                    currency: currency
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP Error: ${response.status}`);
+            }
+            
+            const result = await response.json();
+            console.log('Account creation result:', result);
+            
+            return result;
+        } catch (error) {
+            console.error('Error creating account:', error);
+            throw error;
+        }
+    }
+    
+    // --- Loan Creation Functions ---
+    async function createLoan(partyId, productId, currency, amount, termYears) {
+        console.log(`Creating loan for party ${partyId} with product ${productId}, currency ${currency}, amount ${amount}, term ${termYears} years`);
+        
+        try {
+            const response = await fetch('/api/loans/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    partyId: partyId,
+                    productId: productId,
+                    currency: currency,
+                    amount: amount,
+                    termYears: termYears
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP Error: ${response.status}`);
+            }
+            
+            const result = await response.json();
+            console.log('Loan creation result:', result);
+            
+            return result;
+        } catch (error) {
+            console.error('Error creating loan:', error);
+            throw error;
+        }
+    }
+    
+    // --- Form Handlers ---
+    function addCreateAccountFormListener() {
+        const form = document.getElementById('create-account-form');
+        const submitBtn = document.getElementById('create-account-submit-btn');
+        const resultDiv = document.getElementById('account-creation-result');
+        const messageDiv = document.getElementById('account-creation-message');
+        
+        if (form) {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const partyId = document.getElementById('account-party-id').value;
+                const productId = document.getElementById('account-product').value;
+                const currency = document.getElementById('account-currency').value;
+                
+                // Disable submit button and show loading
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Creating Account...';
+                
+                // Hide previous results
+                resultDiv.classList.add('hidden');
+                
+                try {
+                    const result = await createAccount(partyId, productId, currency);
+                    
+                    // Show result
+                    resultDiv.classList.remove('hidden');
+                    
+                    if (result.success) {
+                        resultDiv.className = 'mt-4 p-4 rounded-md bg-green-100 border border-green-200';
+                        messageDiv.innerHTML = `
+                            <div class="text-green-800 font-medium">${result.message}</div>
+                            <div class="text-green-700 text-sm mt-2">Account creation successful!</div>
+                        `;
+                        
+                        // Reset form
+                        form.reset();
+                    } else {
+                        resultDiv.className = 'mt-4 p-4 rounded-md bg-red-100 border border-red-200';
+                        messageDiv.innerHTML = `
+                            <div class="text-red-800 font-medium">Account Creation Failed</div>
+                            <div class="text-red-700 text-sm mt-2">${result.message}</div>
+                        `;
+                    }
+                } catch (error) {
+                    resultDiv.classList.remove('hidden');
+                    resultDiv.className = 'mt-4 p-4 rounded-md bg-red-100 border border-red-200';
+                    messageDiv.innerHTML = `
+                        <div class="text-red-800 font-medium">Error</div>
+                        <div class="text-red-700 text-sm mt-2">An unexpected error occurred</div>
+                    `;
+                } finally {
+                    // Re-enable submit button
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Create Account';
+                }
+            });
+        }
+    }
+    
+    function addCreateLoanFormListener() {
+        const form = document.getElementById('create-loan-form');
+        const submitBtn = document.getElementById('create-loan-submit-btn');
+        const resultDiv = document.getElementById('loan-creation-result');
+        const messageDiv = document.getElementById('loan-creation-message');
+        
+        if (form) {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const partyId = document.getElementById('loan-party-id').value;
+                const productId = document.getElementById('loan-product').value;
+                const currency = document.getElementById('loan-currency').value;
+                const amount = parseFloat(document.getElementById('loan-amount').value);
+                const termYears = parseInt(document.getElementById('loan-term').value);
+                
+                // Disable submit button and show loading
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Creating Loan...';
+                
+                // Hide previous results
+                resultDiv.classList.add('hidden');
+                
+                try {
+                    const result = await createLoan(partyId, productId, currency, amount, termYears);
+                    
+                    // Show result
+                    resultDiv.classList.remove('hidden');
+                    
+                    if (result.success) {
+                        resultDiv.className = 'mt-4 p-4 rounded-md bg-green-100 border border-green-200';
+                        messageDiv.innerHTML = `
+                            <div class="text-green-800 font-medium">${result.message}</div>
+                            <div class="text-green-700 text-sm mt-2">Loan application submitted successfully!</div>
+                        `;
+                        
+                        // Reset form
+                        form.reset();
+                    } else {
+                        resultDiv.className = 'mt-4 p-4 rounded-md bg-red-100 border border-red-200';
+                        messageDiv.innerHTML = `
+                            <div class="text-red-800 font-medium">Loan Creation Failed</div>
+                            <div class="text-red-700 text-sm mt-2">${result.message}</div>
+                        `;
+                    }
+                } catch (error) {
+                    resultDiv.classList.remove('hidden');
+                    resultDiv.className = 'mt-4 p-4 rounded-md bg-red-100 border border-red-200';
+                    messageDiv.innerHTML = `
+                        <div class="text-red-800 font-medium">Error</div>
+                        <div class="text-red-700 text-sm mt-2">An unexpected error occurred</div>
+                    `;
+                } finally {
+                    // Re-enable submit button
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Create Loan';
+                }
+            });
+        }
+    }
 
 })(); // End of IIFE 

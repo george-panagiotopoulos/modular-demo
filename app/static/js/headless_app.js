@@ -45,6 +45,16 @@
                 "quotationReference": "QUOT246813"
             }
         },
+        branchCreateAccount: {
+            label: "Branch - Create Account",
+            template: "/api/accounts/create",
+            defaultMethod: "POST",
+            samplePayload: {
+                "partyId": "YOUR_PARTY_ID",
+                "productId": "CHECKING.ACCOUNT",
+                "currency": "USD"
+            }
+        },
         getAccountBalance: {
             label: "Get Account Balance", 
             template: "http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v2.0.0/holdings/accounts/{accountReference}/balances",
@@ -126,6 +136,18 @@
                         }
                     ]
                 }
+            }
+        },
+        branchCreateLoan: {
+            label: "Branch - Create Loan",
+            template: "/api/loans/create",
+            defaultMethod: "POST",
+            samplePayload: {
+                "partyId": "YOUR_PARTY_ID",
+                "productId": "GS.FIXED.LOAN",
+                "currency": "USD",
+                "amount": 50000,
+                "termYears": 5
             }
         },
         disburseLoan: {
