@@ -1,0 +1,47 @@
+/* Headless v3 specific styles */
+
+.headless-v2-container {
+    /* Ensure proper positioning */
+    position: relative;
+    z-index: 1;
+}
+
+/* Ensure buttons are clickable */
+button {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    position: relative;
+    z-index: 10;
+}
+
+/* Specific button styles for connect buttons */
+#eventstore-connect,
+#adapter-connect,
+#holdings-connect {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    z-index: 20;
+    position: relative;
+}
+
+/* Hover effects to confirm buttons are interactive */
+#eventstore-connect:hover,
+#adapter-connect:hover,
+#holdings-connect:hover {
+    opacity: 0.9;
+    transform: scale(1.02);
+    transition: all 0.2s ease;
+}
+
+/* Ensure no overlays are blocking clicks */
+.headless-v2-container * {
+    pointer-events: auto;
+}
+
+/* Event containers should be scrollable */
+#eventstore-events,
+#adapter-events,
+#holdings-events {
+    overflow-y: auto;
+    max-height: 500px;
+} 

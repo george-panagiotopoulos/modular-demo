@@ -12,15 +12,28 @@
     <header>
         <h1>Modular Banking Demo User Agent</h1>
         <div class="text-sm font-bold text-teal-600 mt-1">All rights reserved @ Temenos 2025</div>
-        <nav>
-            <ul>
-                <li><a href="#mobile-app" data-tab="mobile" class="tab-link active">Mobile App</a></li>
-                <li><a href="#branch-app" data-tab="branch" class="tab-link">Branch App</a></li>
-                <li><a href="#headless" data-tab="headless" class="tab-link">API view</a></li>
-                <li><a href="#headless-v2" data-tab="headless-v2" class="tab-link">Headless demo #1</a></li>
-                <li><a href="#architecture" data-tab="architecture" class="tab-link">Architecture</a></li>
-                <li><a href="#assistant" data-tab="assistant" class="tab-link">Assistant</a></li>
-            </ul>
+        <nav class="flex space-x-8" aria-label="Tabs">
+            <a href="#" onclick="loadTab('mobile')" class="tab-link border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm">
+                Mobile App
+            </a>
+            <a href="#" onclick="loadTab('branch')" class="tab-link border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm">
+                Branch App
+            </a>
+            <a href="#" onclick="loadTab('headless')" class="tab-link border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm">
+                API view
+            </a>
+            <a href="#" onclick="loadTab('headless-v2')" class="tab-link border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm">
+                Headless demo #1
+            </a>
+            <a href="#" onclick="loadTab('headless-v3')" class="tab-link border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm">
+                Headless demo #2
+            </a>
+            <a href="#" onclick="loadTab('architecture')" class="tab-link border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm">
+                Architecture
+            </a>
+            <a href="#" onclick="loadTab('assistant')" class="tab-link border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm">
+                Assistant
+            </a>
         </nav>
     </header>
 

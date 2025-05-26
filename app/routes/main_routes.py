@@ -33,7 +33,10 @@ LOAN_BALANCES_API_URI_TEMPLATE = "http://lendings-sandbox.northeurope.cloudapp.a
 KAFKA_TOPICS = {
     'party': 'ms-party-outbox',
     'deposits': 'deposits-event-topic', 
-    'lending': 'lending-event-topic'
+    'lending': 'lending-event-topic',
+    'eventstore': 'ms-eventstore-inbox-topic',
+    'adapter': 'ms-adapterservice-event-topic',
+    'holdings': 'ms-holdings-event-topic'
 }
 
 # Load environment variables
@@ -124,6 +127,11 @@ def tab_headless():
 def tab_headless_v2():
     """Renders the headless v2 tab HTML fragment with architecture focus."""
     return render_template('headless_v2.html')
+
+@main_bp.route('/tab/headless-v3')
+def tab_headless_v3():
+    """Renders the headless v3 tab HTML fragment with Event Store, Adapter, and Holdings focus."""
+    return render_template('headless_v3.html')
 
 @main_bp.route('/tab/architecture')
 def tab_architecture():

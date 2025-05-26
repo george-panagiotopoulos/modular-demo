@@ -1,18 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const tabLinks = document.querySelectorAll('nav ul li a.tab-link');
     const tabContentArea = document.getElementById('tab-content-area');
     let currentTab = null;
     let currentTabCSS = null;
     let currentTabJS = null;
-
-    // --- Simple Event Bus ---
-    // REMOVED - Switched to history fetch model
-    // const eventBus = new EventTarget();
-    // function publishEvent(eventName, detail) { ... }
-    // function subscribeToEvent(eventName, handler) { ... }
-    // window.publishAppEvent = publishEvent;
-    // window.subscribeToEvent = subscribeToEvent;
-    // -----------------------
 
     // Function to load tab content and assets
     async function loadTab(tabName) {
@@ -32,26 +22,20 @@ document.addEventListener('DOMContentLoaded', () => {
         // *** Call cleanup function before removing JS ***
         if (typeof window.cleanupCurrentTab === 'function') {
             try {
-                // Pass the unsubscribe function if needed, or manage globally
                 window.cleanupCurrentTab();
                 console.log(`Executed cleanup for tab: ${currentTab}`);
             } catch (e) {
                 console.error(`Error during cleanup for tab ${currentTab}:`, e);
             }
              // Remove the cleanup function itself from global scope
-             // Use delete or set to undefined based on how it was defined
              try { delete window.cleanupCurrentTab; } catch (e) { window.cleanupCurrentTab = undefined; }
         }
 
         if (currentTabJS) {
-            // Potentially call a cleanup function from the old script if needed
-            // e.g., if (window.cleanupMyTab) window.cleanupMyTab();
             currentTabJS.remove();
             currentTabJS = null;
             console.log(`Removed JS for tab: ${currentTab}`);
         }
-        // Clear any potential global variables or interval timers set by the previous script
-        // (This requires careful design in the tab-specific JS)
 
         currentTab = tabName;
 
@@ -95,9 +79,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }, 500);
             }
 
-            // Optionally, call an init function if defined by the tab's script
-            // Pass the publisher function to the init function if needed
-            // e.g., if (window.initCurrentTab) window.initCurrentTab(publishEvent);
+            // Update active tab styling
+            updateActiveTab(tabName);
 
         } catch (error) {
             console.error('Error loading tab content:', error);
@@ -105,24 +88,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Event Listeners for Tab Links
-    tabLinks.forEach(link => {
-        link.addEventListener('click', (event) => {
-            event.preventDefault();
-            const tabName = link.getAttribute('data-tab');
-
-            // Update active class on links
-            tabLinks.forEach(l => l.classList.remove('active'));
-            link.classList.add('active');
-
-            // Load the selected tab
-            loadTab(tabName);
+    // Function to update active tab styling
+    function updateActiveTab(activeTabName) {
+        const tabLinks = document.querySelectorAll('nav a.tab-link');
+        tabLinks.forEach(link => {
+            link.classList.remove('border-indigo-500', 'text-indigo-600');
+            link.classList.add('border-transparent', 'text-gray-500');
         });
-    });
-
-    // Load the initial active tab (e.g., the first one)
-    const initialTab = document.querySelector('nav ul li a.tab-link.active');
-    if (initialTab) {
-        loadTab(initialTab.getAttribute('data-tab'));
+        
+        // Find and activate the current tab
+        tabLinks.forEach(link => {
+            const onclick = link.getAttribute('onclick');
+            if (onclick && onclick.includes(`'${activeTabName}'`)) {
+                link.classList.remove('border-transparent', 'text-gray-500');
+                link.classList.add('border-indigo-500', 'text-indigo-600');
+            }
+        });
     }
+
+    // Make loadTab function globally available for onclick handlers
+    window.loadTab = loadTab;
+
+    // Load the initial tab (mobile by default)
+    loadTab('mobile');
 }); 

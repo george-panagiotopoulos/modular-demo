@@ -1,0 +1,83 @@
+<!-- Headless v3 Demo #2 Tab Content -->
+<div class="headless-v2-container flex flex-col h-full p-4 gap-4 bg-gray-50">
+    <!-- Disclaimer for Headless demo -->
+    <div class="text-xs text-red-600 text-center mb-2">
+        This headless demo is for demonstration purposes only and is not part of the Temenos product.
+    </div>
+    
+    <div class="flex justify-between items-center mb-2">
+        <h2 class="text-xl font-bold text-teal-800">Headless Demo #2</h2>
+    </div>
+    
+    <!-- Three-column layout for architecture-based event views -->
+    <div class="flex flex-row space-x-4 h-full">
+        <!-- Event Store Column (R24) -->
+        <div class="flex-1 flex flex-col bg-white border border-teal-300 rounded-lg shadow overflow-hidden">
+            <div class="bg-teal-700 text-white p-2 font-semibold">
+                Event Store (R24)
+            </div>
+            <!-- Events Section Only -->
+            <div class="p-3 flex flex-col h-full overflow-y-auto">
+                <div class="flex justify-between items-center mb-2">
+                    <h4 class="text-sm font-semibold text-teal-800">Events:</h4>
+                    <button id="eventstore-connect" onclick="window.connectToEventStore && window.connectToEventStore(); console.log('EventStore button clicked via onclick');" class="px-2 py-0.5 bg-teal-600 text-white rounded text-xs hover:bg-teal-700 cursor-pointer">Connect</button>
+                </div>
+                <div id="eventstore-events" class="h-full min-h-[400px] overflow-y-auto bg-gray-50 p-2 rounded border border-gray-200 text-xs font-mono resize-y">
+                    <div class="text-sm text-gray-500">Click "Connect" to start streaming Event Store events...</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Adapter Column (R24) -->
+        <div class="flex-1 flex flex-col bg-white border border-teal-300 rounded-lg shadow overflow-hidden">
+            <div class="bg-teal-700 text-white p-2 font-semibold">
+                Adapter (R24)
+            </div>
+            <!-- Events Section Only -->
+            <div class="p-3 flex flex-col h-full overflow-y-auto">
+                <div class="flex justify-between items-center mb-2">
+                    <h4 class="text-sm font-semibold text-teal-800">Events:</h4>
+                    <button id="adapter-connect" onclick="window.connectToAdapter && window.connectToAdapter(); console.log('Adapter button clicked via onclick');" class="px-2 py-0.5 bg-teal-600 text-white rounded text-xs hover:bg-teal-700 cursor-pointer">Connect</button>
+                </div>
+                <div id="adapter-events" class="h-full min-h-[400px] overflow-y-auto bg-gray-50 p-2 rounded border border-gray-200 text-xs font-mono resize-y">
+                    <div class="text-sm text-gray-500">Click "Connect" to start streaming Adapter events...</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Holdings Column (R25) -->
+        <div class="flex-1 flex flex-col bg-white border border-teal-300 rounded-lg shadow overflow-hidden">
+            <div class="bg-teal-700 text-white p-2 font-semibold">
+                Holdings (R25)
+            </div>
+            <!-- Events Section Only -->
+            <div class="p-3 flex flex-col h-full overflow-y-auto">
+                <div class="flex justify-between items-center mb-2">
+                    <h4 class="text-sm font-semibold text-teal-800">Events:</h4>
+                    <button id="holdings-connect" onclick="window.connectToHoldings && window.connectToHoldings(); console.log('Holdings button clicked via onclick');" class="px-2 py-0.5 bg-teal-600 text-white rounded text-xs hover:bg-teal-700 cursor-pointer">Connect</button>
+                </div>
+                <div id="holdings-events" class="h-full min-h-[400px] overflow-y-auto bg-gray-50 p-2 rounded border border-gray-200 text-xs font-mono resize-y">
+                    <div class="text-sm text-gray-500">Click "Connect" to start streaming Holdings events...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Include the headless v3 JavaScript -->
+<script>
+    console.log('Headless v3 template loaded, about to load JS file...');
+</script>
+<script src="{{ url_for('static', filename='js/headless_v3_app.js') }}"></script>
+<script>
+    console.log('Headless v3 JS file loaded');
+    // Fallback test
+    setTimeout(() => {
+        const btn = document.getElementById('eventstore-connect');
+        if (btn) {
+            console.log('EventStore button found in fallback test');
+        } else {
+            console.error('EventStore button NOT found in fallback test');
+        }
+    }, 200);
+</script> 
