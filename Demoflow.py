@@ -7,6 +7,7 @@ import time
 import os
 from dotenv import load_dotenv
 from confluent_kafka import Consumer, KafkaException, TopicPartition
+import uuid
 
 # Load environment variables from .env file
 load_dotenv()
@@ -569,8 +570,11 @@ def disburse_loan(loan_id, original_amount):
 
 def generate_current_account_payload(party_id):
     """Generates a payload for creating a current account."""
-    # Format today's date as YYYYMMDD
-    today_str = "20250314"
+    # Format today's date as YYYYMMDD dynamically
+    today_str = datetime.today().strftime("%Y%m%d")
+    
+    # Generate unique quotation reference
+    quotation_ref = f"QUOT{uuid.uuid4().hex[:6].upper()}"
     
     return {
         "parties": [
@@ -584,7 +588,7 @@ def generate_current_account_payload(party_id):
         "productId": "CHECKING.ACCOUNT",
         "currency": "USD",
         "branchCode": "01123",
-        "quotationReference": "QUOT246813"
+        "quotationReference": quotation_ref
     }
 
 def create_current_account(party_id):

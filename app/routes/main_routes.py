@@ -5,10 +5,14 @@ import datetime
 import uuid
 import requests
 import json
+import time
+import subprocess
+import shlex
 from collections import deque
 from confluent_kafka import Consumer, KafkaException, TopicPartition
-import time
 from dotenv import load_dotenv
+import urllib3
+import ssl
 
 # Store last 10 API calls for headless tab
 api_calls_history = deque(maxlen=10)
@@ -51,8 +55,10 @@ def track_api_call(uri, method, params=None, payload=None, response=None, error=
     if payload:
         api_call["payload"] = payload
     
-    # If no response is provided and error is None, try to make the actual API call
+    # Only make an actual API call if NO response and NO error are provided
+    # This prevents duplicate calls when we already have the response
     if response is None and error is None and (uri.startswith('http://') or uri.startswith('https://')):
+        print(f"track_api_call: Making actual API call to {uri}")
         try:
             headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
             
@@ -78,11 +84,13 @@ def track_api_call(uri, method, params=None, payload=None, response=None, error=
             api_call["error"] = {"message": str(e), "status": 500}
             api_call["status"] = 500
     
-    # Use provided response/error if available
-    elif response:
+    # Use provided response/error if available (this is the normal case for create_account)
+    elif response is not None:
+        print(f"track_api_call: Using provided response for {uri}")
         api_call["response"] = response
         api_call["status"] = 200
-    elif error:
+    elif error is not None:
+        print(f"track_api_call: Using provided error for {uri}")
         api_call["error"] = error
         api_call["status"] = error.get("status", 500)
     
@@ -146,6 +154,49 @@ def track_headless_api_call():
     payload = data.get('payload')
     response = data.get('response')
     domain = data.get('domain')
+    
+    # Add detailed logging for loan creation
+    if 'loans' in uri and method == 'POST':
+        print("=" * 80)
+        print("🏦 LOAN CREATION BUTTON CLICKED - PAYLOAD DEBUG")
+        print("=" * 80)
+        print(f"URI: {uri}")
+        print(f"Method: {method}")
+        print(f"Domain: {domain}")
+        print("")
+        print("📋 COMPLETE LOAN PAYLOAD:")
+        print(json.dumps(payload, indent=2))
+        
+        # Check settlement structure specifically
+        if payload and 'body' in payload and 'settlement' in payload['body']:
+            print("")
+            print("💰 SETTLEMENT STRUCTURE (where the money goes):")
+            settlement = payload['body']['settlement']
+            print(json.dumps(settlement, indent=2))
+            
+            # Count account references
+            account_refs = []
+            for s in settlement:
+                if 'payout' in s:
+                    for payout in s['payout']:
+                        if 'property' in payout:
+                            for prop in payout['property']:
+                                if 'payoutAccount' in prop:
+                                    account_refs.append(prop['payoutAccount'])
+                
+                if 'assocSettlement' in s:
+                    for assoc in s['assocSettlement']:
+                        if 'reference' in assoc:
+                            for ref in assoc['reference']:
+                                if 'payinAccount' in ref:
+                                    account_refs.append(ref['payinAccount'])
+            
+            print(f"")
+            print(f"🎯 ACCOUNT REFERENCES FOUND ({len(account_refs)} total):")
+            for i, acc_ref in enumerate(account_refs, 1):
+                print(f"  {i}. {acc_ref}")
+        
+        print("=" * 80)
     
     # Use the existing track_api_call function to record it
     api_call = track_api_call(uri, method, payload=payload, response=response)
@@ -268,17 +319,62 @@ def get_loan_schedules(loan_id):
 
 @main_bp.route('/api/accounts/create', methods=['POST'])
 def create_account():
-    """Creates a new current account via API call."""
-    data = request.get_json()
+    """Create a new account"""
+    try:
+        data = request.get_json()
+        party_id = data.get('partyId')
+        
+        if not party_id:
+            return jsonify({
+                'success': False,
+                'error': 'partyId is required'
+            }), 400
+        
+        # Use external script to guarantee Kafka event generation
+        result = create_account_with_external_script(party_id)
+        
+        # Track the API call for headless tab
+        track_api_call(
+            uri='/api/accounts/create',
+            method='POST',
+            payload=data,
+            response=result
+        )
+        
+        if result['success']:
+            return jsonify({
+                'success': True,
+                'accountReference': result['accountReference'],
+                'message': f'Account created successfully for party {party_id}',
+                'status': 200,
+                'method': result['method']
+            }), 200
+        else:
+            return jsonify({
+                'success': False,
+                'error': result['error'],
+                'status': 500,
+                'method': result['method']
+            }), 500
+            
+    except Exception as e:
+        error_msg = f"Account creation failed: {str(e)}"
+        print(f"ERROR: {error_msg}")
+        return jsonify({
+            'success': False,
+            'error': error_msg,
+            'status': 500
+        }), 500
+
+def create_account_with_curl(party_id):
+    """Create account using shell curl execution to guarantee Kafka event generation"""
+    print("=== ACCOUNT CREATION DEBUG (SHELL CURL) ===")
     
-    party_id = data.get('partyId')
-    product_id = data.get('productId', 'CHECKING.ACCOUNT')
-    currency = data.get('currency', 'USD')
-    
-    if not party_id:
-        return jsonify({"error": "Party ID is required"}), 400
-    
+    # Today's date dynamically
     today_str = datetime.datetime.now().strftime("%Y%m%d")
+    
+    # Generate unique quotation reference
+    quotation_ref = f"QUOT{uuid.uuid4().hex[:6].upper()}"
     
     payload = {
         "parties": [
@@ -289,49 +385,128 @@ def create_account():
         ],
         "accountName": "current",
         "openingDate": today_str,
-        "productId": product_id,
-        "currency": currency,
+        "productId": "CHECKING.ACCOUNT",
+        "currency": "USD",
         "branchCode": "01123",
-        "quotationReference": f"QUOT{uuid.uuid4().hex[:6].upper()}"
+        "quotationReference": quotation_ref
     }
     
-    uri = CURRENT_ACCOUNT_API_URI
-    track_api_call(uri, "POST", payload=payload)
+    print(f"URI: {CURRENT_ACCOUNT_API_URI}")
+    print(f"Payload: {json.dumps(payload, indent=2)}")
+    
+    # Convert payload to JSON string for curl
+    payload_json = json.dumps(payload)
+    
+    # Create a temporary script file to execute curl via shell
+    script_content = f'''#!/bin/bash
+curl -X POST "{CURRENT_ACCOUNT_API_URI}" \\
+  -H "Content-Type: application/json" \\
+  -H "User-Agent: curl/8.7.1" \\
+  -H "Accept: */*" \\
+  -H "Host: deposits-sandbox.northeurope.cloudapp.azure.com" \\
+  -d '{payload_json}' \\
+  --silent --show-error --fail-with-body
+'''
+    
+    script_path = f"/tmp/curl_account_{uuid.uuid4().hex[:8]}.sh"
     
     try:
-        response = requests.post(uri, json=payload, headers={'Content-Type': 'application/json'})
+        # Write the script file
+        with open(script_path, 'w') as f:
+            f.write(script_content)
         
-        response_data = {}
-        try:
-            response_data = response.json()
-        except json.JSONDecodeError:
-            response_data = {"error": "Failed to decode JSON response", "content": response.text}
+        # Make it executable
+        os.chmod(script_path, 0o755)
         
-        if response.status_code >= 200 and response.status_code < 300:
-            return jsonify({
-                "success": True,
-                "message": f"Current account created successfully for party {party_id}",
-                "data": response_data,
-                "status": response.status_code
-            })
+        print(f"Executing shell script: {script_path}")
+        
+        # Execute via shell
+        start_time = time.time()
+        result = subprocess.run(
+            ['/bin/bash', script_path],
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        end_time = time.time()
+        
+        print(f"Shell exit code: {result.returncode}")
+        print(f"Response time: {end_time - start_time:.3f} seconds")
+        print(f"Stdout: {result.stdout}")
+        print(f"Stderr: {result.stderr}")
+        
+        if result.returncode == 0:
+            # Success - parse the JSON response
+            try:
+                response_data = json.loads(result.stdout)
+                print(f"Response data: {response_data}")
+                print("=== ACCOUNT CREATION SUCCESS (SHELL CURL) ===")
+                
+                return {
+                    'success': True,
+                    'accountReference': response_data.get('accountReference'),
+                    'payload': payload,
+                    'method': 'shell_curl',
+                    'response_time': end_time - start_time
+                }
+            except json.JSONDecodeError as e:
+                print(f"Failed to parse JSON response: {e}")
+                print(f"Raw response: {result.stdout}")
+                return {
+                    'success': False,
+                    'error': f'Invalid JSON response: {result.stdout}',
+                    'method': 'shell_curl'
+                }
         else:
-            return jsonify({
-                "success": False,
-                "message": f"Failed to create current account for party {party_id}",
-                "error": response_data,
-                "status": response.status_code
-            }), response.status_code
+            # Error - curl failed
+            error_msg = f"Shell curl failed with exit code {result.returncode}"
+            if result.stderr:
+                error_msg += f": {result.stderr}"
+            if result.stdout:
+                error_msg += f" (Response: {result.stdout})"
             
-    except requests.exceptions.RequestException as e:
-        return jsonify({
-            "success": False,
-            "message": f"Error during API call to create current account: {str(e)}",
-            "error": str(e)
-        }), 500
+            print(f"=== ACCOUNT CREATION FAILED (SHELL CURL) ===")
+            print(f"Error: {error_msg}")
+            
+            return {
+                'success': False,
+                'error': error_msg,
+                'method': 'shell_curl',
+                'exit_code': result.returncode
+            }
+            
+    except subprocess.TimeoutExpired:
+        print("=== SHELL CURL TIMEOUT ===")
+        return {
+            'success': False,
+            'error': 'Shell curl command timed out after 30 seconds',
+            'method': 'shell_curl'
+        }
+    except Exception as e:
+        print(f"=== SHELL CURL EXCEPTION ===")
+        print(f"Exception: {str(e)}")
+        return {
+            'success': False,
+            'error': f'Shell curl execution failed: {str(e)}',
+            'method': 'shell_curl'
+        }
+    finally:
+        # Clean up the temporary script file
+        try:
+            if os.path.exists(script_path):
+                os.remove(script_path)
+        except:
+            pass
+
+def create_account_with_urllib3(party_id):
+    """DEPRECATED: Create account using urllib3 - DOES NOT generate Kafka events"""
+    # Keep this function for reference, but mark as deprecated
+    print("WARNING: urllib3 method does not generate Kafka events. Use create_account_with_curl instead.")
+    return None
 
 @main_bp.route('/api/loans/create', methods=['POST'])
 def create_loan():
-    """Creates a new loan via API call."""
+    """Creates a new loan via API call - CURL-BASED VERSION (GUARANTEES KAFKA EVENTS)"""
     data = request.get_json()
     
     party_id = data.get('partyId')
@@ -339,7 +514,7 @@ def create_loan():
     currency = data.get('currency', 'USD')
     amount = data.get('amount')
     term_years = data.get('termYears')
-    account_reference = data.get('accountReference', '123456')
+    disburse_account = data.get('disburseAccount')
     
     if not party_id:
         return jsonify({"error": "Party ID is required"}), 400
@@ -347,8 +522,46 @@ def create_loan():
         return jsonify({"error": "Amount is required"}), 400
     if not term_years:
         return jsonify({"error": "Term in years is required"}), 400
+    if not disburse_account:
+        return jsonify({"error": "Disbursement account is required"}), 400
     
+    # Use curl to guarantee Kafka event generation
+    loan_response = create_loan_with_curl(party_id, amount, term_years, disburse_account, product_id, currency)
+    
+    if loan_response and loan_response.get('success'):
+        # Track the API call for the headless tab
+        track_api_call(
+            uri=LOAN_API_BASE_URI,
+            method="POST", 
+            payload=loan_response.get('payload'),
+            response=loan_response.get('response_data')
+        )
+        
+        return jsonify({
+            "success": True,
+            "message": f"Loan created successfully for party {party_id} with disbursement to account {disburse_account} (with Kafka events)",
+            "data": loan_response.get('response_data'),
+            "status": 200,
+            "method": "curl"
+        })
+    else:
+        error_msg = loan_response.get('error', 'Unknown error') if loan_response else 'Failed to create loan'
+        return jsonify({
+            "success": False,
+            "message": f"Failed to create loan for party {party_id}: {error_msg}",
+            "error": error_msg,
+            "status": 500
+        }), 500
+
+def create_loan_with_curl(party_id, amount, term_years, disburse_account, product_id='MORTGAGE.PRODUCT', currency='USD'):
+    """Create loan using shell curl execution to guarantee Kafka event generation"""
+    print("=== LOAN CREATION DEBUG (SHELL CURL) ===")
+    
+    # Format term properly (e.g., "5Y" for 5 years)
     term = f"{term_years}Y"
+    
+    # Format the account reference into the 3-part key format
+    account_reference = f"DDAComposable|GB0010001|{disburse_account}"
     
     payload = {
         "header": {},
@@ -360,48 +573,216 @@ def create_loan():
             "commitment": [{"amount": str(amount), "term": term}],
             "schedule": [{"payment": [{}, {"paymentFrequency": "e0Y e1M e0W e0D e0F"}]}],
             "settlement": [{
-                "payout": [{"payoutSettlement": "YES", "property": [{"payoutAccount": f"DDAComposable|GB0010001|{account_reference}"}]}],
+                "payout": [{"payoutSettlement": "YES", "property": [{"payoutAccount": account_reference}]}],
                 "assocSettlement": [
-                    {"payinSettlement": "YES", "reference": [{"payinAccount": f"DDAComposable|GB0010001|{account_reference}"}]},
-                    {"payinSettlement": "YES", "reference": [{"payinAccount": f"DDAComposable|GB0010001|{account_reference}"}]},
+                    {"payinSettlement": "YES", "reference": [{"payinAccount": account_reference}]},
+                    {"payinSettlement": "YES", "reference": [{"payinAccount": account_reference}]},
                 ]
             }]
         }
     }
     
-    uri = LOAN_API_BASE_URI
-    track_api_call(uri, "POST", payload=payload)
+    print(f"URI: {LOAN_API_BASE_URI}")
+    print(f"Payload: {json.dumps(payload, indent=2)}")
+    
+    # Convert payload to JSON string for curl
+    payload_json = json.dumps(payload)
+    
+    # Create a temporary script file to execute curl via shell
+    script_content = f'''#!/bin/bash
+curl -X POST "{LOAN_API_BASE_URI}" \\
+  -H "Content-Type: application/json" \\
+  -H "User-Agent: curl/8.7.1" \\
+  -H "Accept: */*" \\
+  -H "Host: lendings-sandbox.northeurope.cloudapp.azure.com" \\
+  -d '{payload_json}' \\
+  --silent --show-error --fail-with-body
+'''
+    
+    script_path = f"/tmp/curl_loan_{uuid.uuid4().hex[:8]}.sh"
     
     try:
-        response = requests.post(uri, json=payload, headers={'Content-Type': 'application/json'})
+        # Write the script file
+        with open(script_path, 'w') as f:
+            f.write(script_content)
         
-        response_data = {}
-        try:
-            response_data = response.json()
-        except json.JSONDecodeError:
-            response_data = {"error": "Failed to decode JSON response", "content": response.text}
+        # Make it executable
+        os.chmod(script_path, 0o755)
         
-        if response.status_code >= 200 and response.status_code < 300:
-            return jsonify({
-                "success": True,
-                "message": f"Loan created successfully for party {party_id}",
-                "data": response_data,
-                "status": response.status_code
-            })
+        print(f"Executing shell script: {script_path}")
+        
+        # Execute via shell
+        start_time = time.time()
+        result = subprocess.run(
+            ['/bin/bash', script_path],
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        end_time = time.time()
+        
+        print(f"Shell exit code: {result.returncode}")
+        print(f"Response time: {end_time - start_time:.3f} seconds")
+        print(f"Stdout: {result.stdout}")
+        print(f"Stderr: {result.stderr}")
+        
+        if result.returncode == 0:
+            # Success - parse the JSON response
+            try:
+                response_data = json.loads(result.stdout)
+                print(f"Response data: {response_data}")
+                print("=== LOAN CREATION SUCCESS (SHELL CURL) ===")
+                
+                return {
+                    'success': True,
+                    'response_data': response_data,
+                    'payload': payload,
+                    'method': 'shell_curl',
+                    'response_time': end_time - start_time
+                }
+            except json.JSONDecodeError as e:
+                print(f"Failed to parse JSON response: {e}")
+                print(f"Raw response: {result.stdout}")
+                return {
+                    'success': False,
+                    'error': f'Invalid JSON response: {result.stdout}',
+                    'method': 'shell_curl'
+                }
         else:
-            return jsonify({
-                "success": False,
-                "message": f"Failed to create loan for party {party_id}",
-                "error": response_data,
-                "status": response.status_code
-            }), response.status_code
+            # Error - curl failed
+            error_msg = f"Shell curl failed with exit code {result.returncode}"
+            if result.stderr:
+                error_msg += f": {result.stderr}"
+            if result.stdout:
+                error_msg += f" (Response: {result.stdout})"
             
-    except requests.exceptions.RequestException as e:
-        return jsonify({
-            "success": False,
-            "message": f"Error during API call to create loan: {str(e)}",
-            "error": str(e)
-        }), 500
+            print(f"=== LOAN CREATION FAILED (SHELL CURL) ===")
+            print(f"Error: {error_msg}")
+            
+            return {
+                'success': False,
+                'error': error_msg,
+                'method': 'shell_curl',
+                'exit_code': result.returncode
+            }
+            
+    except subprocess.TimeoutExpired:
+        print("=== SHELL CURL TIMEOUT ===")
+        return {
+            'success': False,
+            'error': 'Shell curl command timed out after 30 seconds',
+            'method': 'shell_curl'
+        }
+    except Exception as e:
+        print(f"=== SHELL CURL EXCEPTION ===")
+        print(f"Exception: {str(e)}")
+        return {
+            'success': False,
+            'error': f'Shell curl execution failed: {str(e)}',
+            'method': 'shell_curl'
+        }
+    finally:
+        # Clean up the temporary script file
+        try:
+            if os.path.exists(script_path):
+                os.remove(script_path)
+        except:
+            pass
+
+def create_account_with_external_script(party_id):
+    """Create account using external shell script to guarantee Kafka event generation"""
+    print("=== ACCOUNT CREATION DEBUG (EXTERNAL SCRIPT WITH SHELL=TRUE) ===")
+    
+    # Generate unique quotation reference
+    quotation_ref = f"QUOT{uuid.uuid4().hex[:6].upper()}"
+    
+    script_path = os.path.join(os.getcwd(), 'create_account_external.sh')
+    
+    print(f"Using external script: {script_path}")
+    print(f"Party ID: {party_id}")
+    print(f"Quotation Reference: {quotation_ref}")
+    
+    try:
+        # Execute the external script with shell=True to guarantee Kafka events
+        start_time = time.time()
+        
+        # Construct the shell command
+        shell_command = f"{script_path} {party_id} {quotation_ref}"
+        
+        print(f"Executing shell command: {shell_command}")
+        
+        result = subprocess.run(
+            shell_command,
+            shell=True,
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        end_time = time.time()
+        
+        print(f"Script exit code: {result.returncode}")
+        print(f"Response time: {end_time - start_time:.3f} seconds")
+        print(f"Stdout: {result.stdout}")
+        print(f"Stderr: {result.stderr}")
+        
+        if result.returncode == 0:
+            # Success - parse the JSON response
+            try:
+                response_data = json.loads(result.stdout)
+                print(f"Response data: {response_data}")
+                print("=== ACCOUNT CREATION SUCCESS (EXTERNAL SCRIPT WITH SHELL=TRUE) ===")
+                
+                return {
+                    'success': True,
+                    'accountReference': response_data.get('accountReference'),
+                    'payload': {
+                        'partyId': party_id,
+                        'quotationReference': quotation_ref
+                    },
+                    'method': 'external_script_shell',
+                    'response_time': end_time - start_time
+                }
+            except json.JSONDecodeError as e:
+                print(f"Failed to parse JSON response: {e}")
+                print(f"Raw response: {result.stdout}")
+                return {
+                    'success': False,
+                    'error': f'Invalid JSON response: {result.stdout}',
+                    'method': 'external_script_shell'
+                }
+        else:
+            # Error - script failed
+            error_msg = f"External script failed with exit code {result.returncode}"
+            if result.stderr:
+                error_msg += f": {result.stderr}"
+            if result.stdout:
+                error_msg += f" (Response: {result.stdout})"
+            
+            print(f"=== ACCOUNT CREATION FAILED (EXTERNAL SCRIPT WITH SHELL=TRUE) ===")
+            print(f"Error: {error_msg}")
+            
+            return {
+                'success': False,
+                'error': error_msg,
+                'method': 'external_script_shell',
+                'exit_code': result.returncode
+            }
+            
+    except subprocess.TimeoutExpired:
+        print("=== EXTERNAL SCRIPT TIMEOUT ===")
+        return {
+            'success': False,
+            'error': 'External script timed out after 30 seconds',
+            'method': 'external_script_shell'
+        }
+    except Exception as e:
+        print(f"=== EXTERNAL SCRIPT EXCEPTION ===")
+        print(f"Exception: {str(e)}")
+        return {
+            'success': False,
+            'error': f'External script execution failed: {str(e)}',
+            'method': 'external_script_shell'
+        }
 
 # --- UNIFIED API ENDPOINTS THAT FRONTEND EXPECTS ---
 
@@ -420,6 +801,31 @@ def get_party_details(party_id):
             
             track_api_call(api_url, "GET", response=party_data)
             
+            # Extract nationality from nationalities array
+            nationality = ""
+            if party_data.get('nationalities') and len(party_data['nationalities']) > 0:
+                nationality = party_data['nationalities'][0].get('nationality', '')
+            
+            # Extract contact information from contactReferences
+            primary_email = ""
+            mobile_phone = ""
+            home_phone = ""
+            
+            for contact in party_data.get('contactReferences', []):
+                contact_type = contact.get('contactType', '').upper()
+                contact_value = contact.get('contactValue', '')
+                contact_subtype = contact.get('contactSubType', '').upper()
+                
+                if contact_type == 'EMAIL' and not primary_email:
+                    primary_email = contact_value
+                elif contact_type == 'PHONE':
+                    if contact_subtype == 'MOBILE' and not mobile_phone:
+                        mobile_phone = contact_value
+                    elif contact_subtype == 'HOME' and not home_phone:
+                        home_phone = contact_value
+                    elif not mobile_phone and not home_phone:  # Fallback if no subtype specified
+                        mobile_phone = contact_value
+            
             customer = {
                 "customerId": party_data.get('partyId', party_id),
                 "firstName": party_data.get('firstName', ''),
@@ -427,6 +833,10 @@ def get_party_details(party_id):
                 "dateOfBirth": party_data.get('dateOfBirth', ''),
                 "cityOfBirth": party_data.get('cityOfBirth', ''),
                 "middleName": party_data.get('middleName', ''),
+                "nationality": nationality,
+                "primaryEmail": primary_email,
+                "mobilePhone": mobile_phone,
+                "homePhone": home_phone,
                 "status": "Active"
             }
             

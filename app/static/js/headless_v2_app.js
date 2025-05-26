@@ -77,30 +77,28 @@
             },
             debitAccount: {
                 label: "Debit Account",
-                template: "http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v1.0.0/order/payments/debitAccount",
+                template: "http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v2.0.0/holdings/accounts/transactions",
                 defaultMethod: "POST",
                 samplePayload: {
-                    "paymentTransactionReference": "DEBIT_UTILBILL_1716422512345_789",
-                    "paymentReservationReference": "DEBIT_UTILBILL_1716422512345_789",
-                    "paymentValueDate": "20250415",
-                    "debitAccount": "1013715398",
-                    "debitCurrency": "USD",
-                    "paymentAmount": "75",
-                    "paymentDescription": "Utility Bill Payment"
+                    "accountId": "DDAComposable|GB0010001|YOUR_ACCOUNT_NUMBER",
+                    "amount": "100.00",
+                    "currency": "USD",
+                    "transactionType": "DEBIT",
+                    "paymentValueDate": "20250314",
+                    "description": "Test debit transaction"
                 }
             },
             creditAccount: {
                 label: "Credit Account",
-                template: "http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v1.0.0/order/payments/creditAccount",
+                template: "http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v2.0.0/holdings/accounts/transactions",
                 defaultMethod: "POST",
                 samplePayload: {
-                    "paymentTransactionReference": "CREDIT_SALARYDEPOSIT_1716422523456_123",
-                    "paymentReservationReference": "CREDIT_SALARYDEPOSIT_1716422523456_123",
-                    "paymentValueDate": "20250415",
-                    "creditAccount": "1013715398",
-                    "creditCurrency": "USD",
-                    "paymentAmount": "2500",
-                    "paymentDescription": "Salary Deposit"
+                    "accountId": "DDAComposable|GB0010001|YOUR_ACCOUNT_NUMBER",
+                    "amount": "100.00",
+                    "currency": "USD",
+                    "transactionType": "CREDIT",
+                    "paymentValueDate": "20250314",
+                    "description": "Test credit transaction"
                 }
             }
         },
@@ -108,25 +106,28 @@
         // Lending APIs
         lending: {
             createLoan: {
-                label: "Create & Disburse Loan",
-                template: "http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/consumerLoans",
+                label: "Create Loan",
+                template: "http://loans-sandbox.northeurope.cloudapp.azure.com/irf-TBC-loans-container/api/v2.0.0/arrangements/loans",
                 defaultMethod: "POST",
                 samplePayload: {
-                    "header": {},
-                    "body": {
-                        "partyIds": [{"partyId": "2513533518", "partyRole": "OWNER"}],
-                        "productId": "MORTGAGE.PRODUCT",
-                        "currency": "USD",
-                        "arrangementEffectiveDate": "",
-                        "commitment": [{"amount": "150000", "term": "10Y"}],
-                        "schedule": [{"payment": [{}, {"paymentFrequency": "e0Y e1M e0W e0D e0F"}]}],
-                        "settlement": [{
-                            "payout": [{"payoutSettlement": "YES", "property": [{"payoutAccount": "DDAComposable|GB0010001|1013715398"}]}],
-                            "assocSettlement": [
-                                {"payinSettlement": "YES", "reference": [{"payinAccount": "DDAComposable|GB0010001|1013715398"}]},
-                                {"payinSettlement": "YES", "reference": [{"payinAccount": "DDAComposable|GB0010001|1013715398"}]}
-                            ]
-                        }]
+                    "partyIds": [
+                        {
+                            "partyId": "YOUR_PARTY_ID",
+                            "partyRole": "BORROWER"
+                        }
+                    ],
+                    "productId": "PERSONAL.LOAN",
+                    "currency": "USD",
+                    "commitment": {
+                        "amount": "10000.00",
+                        "termYears": "5"
+                    },
+                    "arrangementEffectiveDate": "20250314",
+                    "schedule": {
+                        "paymentFrequency": "MONTHLY"
+                    },
+                    "settlement": {
+                        "disburseAccount": "DDAComposable|GB0010001|YOUR_ACCOUNT_NUMBER"
                     }
                 }
             },

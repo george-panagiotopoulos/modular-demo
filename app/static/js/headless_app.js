@@ -38,7 +38,7 @@
                     }
                 ],
                 "accountName": "current",
-                "openingDate": "20250517",
+                "openingDate": "20250314",
                 "productId": "CHECKING.ACCOUNT",
                 "currency": "USD",
                 "branchCode": "01123",
@@ -151,18 +151,15 @@
             }
         },
         disburseLoan: {
-            label: "Disburse Loan", 
-            template: "http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/{loanId}/disbursements",
-            placeholders: { 
-                loanId: "AA250735Y2GS" 
-            },
-            defaultMethod: "PUT",
+            label: "Disburse Loan",
+            template: "http://loans-sandbox.northeurope.cloudapp.azure.com/irf-TBC-loans-container/api/v2.0.0/arrangements/loans/disbursements",
+            defaultMethod: "POST",
             samplePayload: {
-                "body": {
-                    "currencyId": "USD",
-                    "effectiveDate": "20250517",
-                    "transactionAmount": 210710
-                }
+                "arrangementId": "YOUR_LOAN_ID",
+                "amount": "1000.00",
+                "currency": "USD",
+                "effectiveDate": "20250314",
+                "debitAccount": "DDAComposable|GB0010001|YOUR_ACCOUNT_NUMBER"
             }
         },
         arrangements: { 

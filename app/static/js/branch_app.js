@@ -9,6 +9,7 @@
     let customerAccounts = [];
     let staticListenersAdded = false; // Track if static listeners are added
     let selectedLoanId = null; // Track the selected loan ID
+    let currentBranchScreen = 'customer-management'; // Current active screen
 
     // --- DOM Elements ---
     function getElements() {
@@ -164,6 +165,12 @@
         
         if (elements.selectedCustomerArea) elements.selectedCustomerArea.classList.remove('hidden');
         
+        // Show action buttons immediately when customer is selected
+        const actionButtonsDiv = document.getElementById('customer-action-buttons');
+        if (actionButtonsDiv) {
+            actionButtonsDiv.classList.remove('hidden');
+        }
+        
         // Hide search results to focus on selected customer
         if (elements.searchResultsArea) elements.searchResultsArea.classList.add('hidden');
         
@@ -186,6 +193,13 @@
         
         // Hide selected customer
         if (elements.selectedCustomerArea) elements.selectedCustomerArea.classList.add('hidden');
+        
+        // Hide action buttons when no customer is selected
+        const actionButtonsDiv = document.getElementById('customer-action-buttons');
+        if (actionButtonsDiv) {
+            actionButtonsDiv.classList.add('hidden');
+        }
+        
         selectedCustomer = null;
         selectedCustomerId = null;
         
@@ -200,29 +214,26 @@
     }
 
     async function loadSelectedCustomer() {
-        const elements = getElements();
-        
-        if (!selectedCustomerId) {
-            if (elements.searchError) elements.searchError.textContent = 'No customer selected.';
+        if (!selectedCustomer) {
+            console.error('No customer selected');
             return;
         }
         
-        // Show loading status
-        if (elements.searchStatus) elements.searchStatus.textContent = 'Loading customer data...';
-        
         try {
-            await fetchCustomerData(selectedCustomerId);
+            const customerId = selectedCustomer.id;
+            console.log(`Loading customer data for ID: ${customerId}`);
             
-            // Show customer details
-            const { customerDetailsArea, customerAccountsArea } = getElements();
-            if (customerDetailsArea) customerDetailsArea.classList.remove('hidden');
-            if (customerAccountsArea) customerAccountsArea.classList.remove('hidden');
+            // Let fetchCustomerData handle everything - it doesn't return data, it renders directly
+            await fetchCustomerData(customerId);
             
-            if (elements.searchStatus) elements.searchStatus.textContent = '';
         } catch (error) {
-            console.error('Error loading customer:', error);
-            if (elements.searchError) elements.searchError.textContent = `Failed to load customer: ${error.message}`;
-            if (elements.searchStatus) elements.searchStatus.textContent = '';
+            console.error('Error loading customer data:', error);
+            
+            const elements = getElements();
+            if (elements.customerDetailsArea) {
+                elements.customerDetailsArea.innerHTML = '<h2 class="col-span-full text-xl font-semibold text-gray-700 border-b pb-2 mb-4">Customer Details</h2><div class="col-span-full text-red-600">Failed to load customer details</div>';
+                elements.customerDetailsArea.classList.remove('hidden');
+            }
         }
     }
 
@@ -711,12 +722,23 @@
 
     async function fetchCustomerData(customerId) {
         console.log(`Fetching customer data for ID: ${customerId}`);
-        const { customerDetailsArea, customerAccountsArea, loadingDiv, errorDiv } = getElements();
+        const { customerDetailsArea, customerAccountsArea } = getElements();
         
         try {
-            // Show loading state
-            if (loadingDiv) loadingDiv.style.display = 'block';
-            if (errorDiv) errorDiv.style.display = 'none';
+            // Show loading state in customer details area
+            if (customerDetailsArea) {
+                customerDetailsArea.innerHTML = '<h2 class="col-span-full text-xl font-semibold text-gray-700 border-b pb-2 mb-4">Customer Details</h2><div class="text-gray-500">Loading customer details...</div>';
+                customerDetailsArea.classList.remove('hidden');
+            }
+            
+            // Show loading state in accounts area
+            if (customerAccountsArea) {
+                const accountsListDiv = document.getElementById('accounts-list');
+                if (accountsListDiv) {
+                    accountsListDiv.innerHTML = '<div class="text-gray-500">Loading accounts...</div>';
+                }
+                customerAccountsArea.classList.remove('hidden');
+            }
             
             // Fetch customer details, accounts, and loans using unified APIs
             const [customerResponse, accountsResponse, loansResponse] = await Promise.all([
@@ -752,25 +774,28 @@
                 renderAccountsList(allAccountsAndLoans, accountsListDiv);
             }
             
-            // Show customer accounts area
-            if (customerAccountsArea) {
-                customerAccountsArea.style.display = 'block';
+            // Show action buttons after loading customer data
+            const actionButtonsDiv = document.getElementById('customer-action-buttons');
+            if (actionButtonsDiv && customerAccounts.length > 0) {
+                actionButtonsDiv.classList.remove('hidden');
             }
-            
-            // Hide loading state
-            if (loadingDiv) loadingDiv.style.display = 'none';
             
         } catch (error) {
             console.error('Error fetching customer data:', error);
             
-            // Show error message
-            if (errorDiv) {
-                errorDiv.textContent = `Error: ${error.message}`;
-                errorDiv.style.display = 'block';
+            // Show error message in customer details area
+            if (customerDetailsArea) {
+                customerDetailsArea.innerHTML = `
+                    <h2 class="col-span-full text-xl font-semibold text-gray-700 border-b pb-2 mb-4">Customer Details</h2>
+                    <div class="col-span-full text-red-600">Error: ${error.message}</div>
+                `;
             }
             
-            // Hide loading state
-            if (loadingDiv) loadingDiv.style.display = 'none';
+            // Show error in accounts area
+            const accountsListDiv = document.getElementById('accounts-list');
+            if (accountsListDiv) {
+                accountsListDiv.innerHTML = '<div class="text-red-600">Failed to load customer accounts</div>';
+            }
         }
     }
 
@@ -1318,12 +1343,14 @@
     }
 
     function initBranchAppTab() {
-        console.log("Initializing Branch App tab...");
+        console.log("Initializing Branch App Tab with search interface...");
+        console.log("Current selectedCustomerId on init:", selectedCustomerId);
+        console.log("Current selectedCustomer on init:", selectedCustomer);
         
-        // Remove any existing listeners first
+        // Clean up existing listeners first
         removeAllListeners();
         
-        // Add static event listeners for the new search interface
+        // Add static event listeners 
         addStaticListeners();
         
         // Add new navigation and form listeners
@@ -1331,21 +1358,29 @@
         addCreateAccountFormListener();
         addCreateLoanFormListener();
         
-        // Clear any previous state
-        selectedCustomerId = null;
-        selectedCustomer = null;
-        customerAccounts = [];
-        
-        // Hide all detail areas initially
-        hideCustomerDetails();
-        
-        // Clear search interface
-        clearSearch();
+        // Only clear state if we don't have a selected customer
+        // This preserves customer selection when navigating between tabs
+        if (!selectedCustomer && !selectedCustomerId) {
+            console.log("No customer selected, clearing state");
+            selectedCustomerId = null;
+            selectedCustomer = null;
+            customerAccounts = [];
+            
+            // Hide all detail areas initially
+            hideCustomerDetails();
+            
+            // Clear search interface
+            clearSearch();
+        } else {
+            console.log("Customer already selected, preserving state");
+        }
         
         // Initialize with customer management screen
         showBranchScreen('customer-management');
         
         console.log("Branch App tab initialized with search interface and new features");
+        console.log("Final selectedCustomerId:", selectedCustomerId);
+        console.log("Final selectedCustomer:", selectedCustomer);
     }
 
     // --- Global Cleanup Function --- 
@@ -1360,8 +1395,6 @@
     initBranchAppTab();
 
     // --- Internal Navigation Functions ---
-    let currentBranchScreen = 'customer-management';
-    
     function showBranchScreen(screenName) {
         console.log(`Switching to branch screen: ${screenName}`);
         
@@ -1404,6 +1437,7 @@
                 }
                 if (screenName === 'loan-applications' && selectedCustomerId) {
                     document.getElementById('loan-party-id').value = selectedCustomerId;
+                    populateDisburseAccountDropdown();
                 }
             });
         });
@@ -1414,20 +1448,120 @@
         
         if (createAccountBtn) {
             createAccountBtn.addEventListener('click', () => {
+                console.log('Create New Account button clicked');
+                console.log('Selected Customer ID:', selectedCustomerId);
+                console.log('Selected Customer:', selectedCustomer);
+                
                 showBranchScreen('account-services');
-                if (selectedCustomerId) {
-                    document.getElementById('account-party-id').value = selectedCustomerId;
-                }
+                
+                // Use setTimeout to ensure DOM is updated after screen switch
+                setTimeout(() => {
+                    const partyIdField = document.getElementById('account-party-id');
+                    if (partyIdField && selectedCustomerId) {
+                        partyIdField.value = selectedCustomerId;
+                        console.log('Auto-populated account party ID:', selectedCustomerId);
+                    } else {
+                        console.log('Failed to auto-populate account party ID:', {
+                            fieldExists: !!partyIdField,
+                            customerIdAvailable: !!selectedCustomerId
+                        });
+                    }
+                }, 100);
             });
         }
         
         if (createLoanBtn) {
             createLoanBtn.addEventListener('click', () => {
+                console.log('Create New Loan button clicked');
+                console.log('Selected Customer ID:', selectedCustomerId);
+                console.log('Selected Customer:', selectedCustomer);
+                
                 showBranchScreen('loan-applications');
-                if (selectedCustomerId) {
-                    document.getElementById('loan-party-id').value = selectedCustomerId;
-                }
+                
+                // Use setTimeout to ensure DOM is updated after screen switch
+                setTimeout(() => {
+                    const partyIdField = document.getElementById('loan-party-id');
+                    if (partyIdField && selectedCustomerId) {
+                        partyIdField.value = selectedCustomerId;
+                        console.log('Auto-populated loan party ID:', selectedCustomerId);
+                        populateDisburseAccountDropdown();
+                    } else {
+                        console.log('Failed to auto-populate loan party ID:', {
+                            fieldExists: !!partyIdField,
+                            customerIdAvailable: !!selectedCustomerId
+                        });
+                    }
+                }, 100);
             });
+        }
+    }
+    
+    function populateDisburseAccountDropdown() {
+        const dropdown = document.getElementById('loan-disburse-account');
+        if (!dropdown) return;
+        
+        // Clear existing options except the first placeholder
+        dropdown.innerHTML = '<option value="">Select disbursement account...</option>';
+        
+        // Filter customer accounts to only show valid current accounts
+        if (customerAccounts && customerAccounts.length > 0) {
+            // Filter to only include:
+            // 1. Accounts that are NOT loans (exclude type === 'loan')
+            // 2. Accounts that have valid account numbers/IDs
+            // 3. Accounts that are current/checking accounts
+            const validCurrentAccounts = customerAccounts.filter(account => {
+                // Exclude loans
+                if (account.type === 'loan') return false;
+                
+                // Must have a valid account number or ID
+                const accountId = account.accountNumber || account.accountId || account.id;
+                if (!accountId || accountId === 'undefined' || accountId === 'null') return false;
+                
+                // Only include current/checking accounts (exclude savings, etc. if needed)
+                // Check product ID or name to identify current accounts
+                const productId = account.productId || account.productName || account.displayName || '';
+                const isCurrentAccount = 
+                    productId.includes('CURRENT') || 
+                    productId.includes('CHECKING') || 
+                    productId.includes('DDA') ||
+                    productId.includes('Current') ||
+                    productId.includes('Checking') ||
+                    // If we can't determine type, include it (to be safe)
+                    (!account.type || account.type === 'account');
+                
+                return isCurrentAccount;
+            });
+            
+            if (validCurrentAccounts.length > 0) {
+                validCurrentAccounts.forEach(account => {
+                    const option = document.createElement('option');
+                    
+                    // Use the account number for the value (this will be used in the 3-part key)
+                    const accountId = account.accountNumber || account.accountId || account.id;
+                    option.value = accountId;
+                    
+                    // Create clean display text with fallbacks for undefined values
+                    const productName = account.productDisplayName || account.productName || account.productId || 'Current Account';
+                    const displayText = `${accountId} - ${productName}`;
+                    option.textContent = displayText;
+                    
+                    dropdown.appendChild(option);
+                });
+            } else {
+                // If no valid current accounts found
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'No current accounts found for this customer';
+                option.disabled = true;
+                dropdown.appendChild(option);
+            }
+        } else {
+            // If no accounts at all
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'No accounts found for this customer';
+            option.disabled = true;
+            dropdown.appendChild(option);
         }
     }
     
@@ -1436,15 +1570,34 @@
         console.log(`Creating account for party ${partyId} with product ${productId} and currency ${currency}`);
         
         try {
-            const response = await fetch('/api/accounts/create', {
+            // Use exactly the same payload structure as headless_v2 tab that generates events
+            // Fixed values that are known to work (from headless_v2 samplePayload)
+            const payload = {
+                "parties": [
+                    {
+                        "partyId": partyId,
+                        "partyRole": "OWNER"
+                    }
+                ],
+                "accountName": "current",
+                "openingDate": "20250314",  // Fixed date that works
+                "productId": "CHECKING.ACCOUNT",
+                "currency": "USD",
+                "branchCode": "01123",
+                "quotationReference": "QUOT246813"  // Fixed quotation ref that works
+            };
+            
+            // Use exactly the same API call as headless_v2 tab
+            const response = await fetch('/api/headless/track', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    partyId: partyId,
-                    productId: productId,
-                    currency: currency
+                    uri: 'http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v2.0.0/holdings/accounts/currentAccounts',
+                    method: 'POST',
+                    payload: payload,
+                    domain: 'deposits' // Track which domain the call came from
                 })
             });
             
@@ -1453,9 +1606,24 @@
             }
             
             const result = await response.json();
-            console.log('Account creation result:', result);
+            console.log('Account creation result via headless track:', result);
             
-            return result;
+            // Extract the account reference from the tracked API call response (same as headless_v2)
+            let accountReference = null;
+            if (result.api_call && result.api_call.response && result.api_call.response.accountReference) {
+                accountReference = result.api_call.response.accountReference;
+            }
+            
+            // Return in the format expected by the UI
+            return {
+                success: true,
+                accountReference: accountReference,
+                message: `Account ${accountReference} created successfully for party ${partyId}`,
+                status: 200,
+                method: 'headless_track_fixed_payload',
+                raw_result: result
+            };
+            
         } catch (error) {
             console.error('Error creating account:', error);
             throw error;
@@ -1463,22 +1631,104 @@
     }
     
     // --- Loan Creation Functions ---
-    async function createLoan(partyId, productId, currency, amount, termYears) {
-        console.log(`Creating loan for party ${partyId} with product ${productId}, currency ${currency}, amount ${amount}, term ${termYears} years`);
+    async function createLoan(partyId, productId, currency, amount, termYears, disburseAccount) {
+        console.log(`Creating loan for party ${partyId} with product ${productId}, currency ${currency}, amount ${amount}, term ${termYears} years, disburse to ${disburseAccount}`);
         
         try {
-            const response = await fetch('/api/loans/create', {
+            // Use exactly the same headless track approach as account creation
+            // Extract just the account number from the disburseAccount (e.g., "GB0010001-1013717563" -> "1013717563")
+            const accountNumber = disburseAccount.includes('-') ? disburseAccount.split('-')[1] : disburseAccount;
+            const accountReference = `DDAComposable|GB0010001|${accountNumber}`;
+            
+            console.log("=== LOAN CREATION PAYLOAD DEBUG ===");
+            console.log("Disbursement Account Full:", disburseAccount);
+            console.log("Extracted Account Number:", accountNumber);
+            console.log("Formatted Account Reference:", accountReference);
+            
+            // Use exactly the payload structure specified by the user
+            const payload = {
+                "header": {},
+                "body": {
+                    "partyIds": [
+                        {
+                            "partyId": partyId,
+                            "partyRole": "OWNER"
+                        }
+                    ],
+                    "productId": productId,
+                    "currency": currency,
+                    "arrangementEffectiveDate": "",  // Empty as specified by user
+                    "commitment": [
+                        {
+                            "amount": amount.toString(),
+                            "term": `${termYears}Y`
+                        }
+                    ],
+                    "schedule": [
+                        {
+                            "payment": [
+                                {},
+                                {
+                                    "paymentFrequency": "e0Y e1M e0W e0D e0F"
+                                }
+                            ]
+                        }
+                    ],
+                    "settlement": [
+                        {
+                            "payout": [
+                                {
+                                    "payoutSettlement": "YES",
+                                    "property": [
+                                        {
+                                            "payoutAccount": accountReference
+                                        }
+                                    ]
+                                }
+                            ],
+                            "assocSettlement": [
+                                {
+                                    "payinSettlement": "YES",
+                                    "reference": [
+                                        {
+                                            "payinAccount": accountReference
+                                        }
+                                    ]
+                                },
+                                {
+                                    "payinSettlement": "YES",
+                                    "reference": [
+                                        {
+                                            "payinAccount": accountReference
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            };
+            
+            console.log("=== COMPLETE LOAN PAYLOAD ===");
+            console.log(JSON.stringify(payload, null, 2));
+            
+            const fullRequestBody = {
+                uri: 'http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/consumerLoans',
+                method: 'POST',
+                payload: payload,
+                domain: 'lending' // Track which domain the call came from
+            };
+            
+            console.log("=== COMPLETE REQUEST BODY TO /api/headless/track ===");
+            console.log(JSON.stringify(fullRequestBody, null, 2));
+            
+            // Use exactly the same headless track endpoint as account creation
+            const response = await fetch('/api/headless/track', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    partyId: partyId,
-                    productId: productId,
-                    currency: currency,
-                    amount: amount,
-                    termYears: termYears
-                })
+                body: JSON.stringify(fullRequestBody)
             });
             
             if (!response.ok) {
@@ -1486,10 +1736,29 @@
             }
             
             const result = await response.json();
-            console.log('Loan creation result:', result);
+            console.log('=== LOAN CREATION RESPONSE ===');
+            console.log(JSON.stringify(result, null, 2));
             
-            return result;
+            // Extract the loan ID from the tracked API call response
+            let loanId = null;
+            if (result.api_call && result.api_call.response) {
+                const apiResponse = result.api_call.response;
+                loanId = apiResponse.arrangementId || apiResponse.loanId || apiResponse.id;
+                console.log("Extracted Loan ID:", loanId);
+            }
+            
+            // Return in the format expected by the UI
+            return {
+                success: true,
+                loanId: loanId,
+                message: `Loan ${loanId} created successfully for party ${partyId}`,
+                status: 200,
+                method: 'headless_track_fixed_account_ref',
+                raw_result: result
+            };
+            
         } catch (error) {
+            console.error('=== LOAN CREATION ERROR ===');
             console.error('Error creating loan:', error);
             throw error;
         }
@@ -1570,6 +1839,7 @@
                 const currency = document.getElementById('loan-currency').value;
                 const amount = parseFloat(document.getElementById('loan-amount').value);
                 const termYears = parseInt(document.getElementById('loan-term').value);
+                const disburseAccount = document.getElementById('loan-disburse-account').value;
                 
                 // Disable submit button and show loading
                 submitBtn.disabled = true;
@@ -1579,7 +1849,7 @@
                 resultDiv.classList.add('hidden');
                 
                 try {
-                    const result = await createLoan(partyId, productId, currency, amount, termYears);
+                    const result = await createLoan(partyId, productId, currency, amount, termYears, disburseAccount);
                     
                     // Show result
                     resultDiv.classList.remove('hidden');
@@ -1593,6 +1863,8 @@
                         
                         // Reset form
                         form.reset();
+                        // Clear the disbursement dropdown since form.reset() might not clear it
+                        document.getElementById('loan-disburse-account').innerHTML = '<option value="">Select disbursement account...</option>';
                     } else {
                         resultDiv.className = 'mt-4 p-4 rounded-md bg-red-100 border border-red-200';
                         messageDiv.innerHTML = `
