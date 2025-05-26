@@ -5,17 +5,15 @@
     // State
     let accountsData = [];
     let loansData = [];
-    const knownGoodPartyId = "2514044333"; // Party ID known to work from curl tests
     let partyId = localStorage.getItem('mobileAppPartyId');
     
-    // If localStorage had a value, check if it's the problematic one or if it's null/empty
-    // If it is problematic, or no PartyId in local storage, use the known good one.
-    if (!partyId || partyId === "2513960210") {
-        partyId = knownGoodPartyId;
-        localStorage.setItem('mobileAppPartyId', partyId); // Update localStorage with the good one
+    // Check if we have a party ID from localStorage, otherwise set to empty string
+    if (!partyId || partyId.trim() === "") {
+        partyId = "";
+        console.log("No party ID found in localStorage - user must enter one");
+    } else {
+        console.log("Using Party ID from localStorage:", partyId);
     }
-    
-    console.log("Using Party ID:", partyId); // Log the partyId being used
 
     let staticListenersAdded = false;
 
@@ -366,6 +364,14 @@
         console.log("Fetching accounts for party ID:", partyId);
         const { accountsListDiv } = getElements();
         if (!accountsListDiv) return;
+        
+        // Check if party ID is available
+        if (!partyId || partyId.trim() === "") {
+            accountsListDiv.innerHTML = '<div class="text-center text-gray-500 py-4">Please enter a Party ID above to load accounts.</div>';
+            accountsData = [];
+            return;
+        }
+        
         try {
             // Show loading indicator
             accountsListDiv.innerHTML = '<div class="text-center text-gray-500 py-4">Loading accounts...</div>';
@@ -486,6 +492,13 @@
         console.log("Fetching loans for party ID:", partyId);
         const { loansListDiv } = getElements();
         if (!loansListDiv) return;
+        
+        // Check if party ID is available
+        if (!partyId || partyId.trim() === "") {
+            loansListDiv.innerHTML = '<div class="text-center text-gray-500 py-4">Please enter a Party ID above to load loans.</div>';
+            loansData = [];
+            return;
+        }
         
         try {
             // Show loading indicator

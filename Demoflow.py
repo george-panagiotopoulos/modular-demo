@@ -271,6 +271,114 @@ def create_customer():
         log_api_call(uri, "POST", payload, "N/A (Request Failed)", {"error": str(e)})
         return None
 
+def get_party_by_date_of_birth(date_of_birth):
+    """Gets parties by date of birth via API call."""
+    uri = f"{PARTY_API_BASE_URI}?dateOfBirth={date_of_birth}"
+    print(f"Attempting to get parties by date of birth {date_of_birth} from {uri}")
+    try:
+        start_time = time.time()
+        response = requests.get(uri, headers={'Accept': 'application/json'})
+        end_time = time.time()
+        response_time = end_time - start_time
+        
+        response_data = {}
+        try:
+            response_data = response.json()
+        except json.JSONDecodeError:
+            response_data = {"error": "Failed to decode JSON response", "content": response.text}
+        log_api_call(uri, "GET", None, response.status_code, response_data)
+        if response.status_code == 200:
+            print(f"Successfully fetched parties by date of birth {date_of_birth}. Status: {response.status_code}, Response time: {response_time:.3f} seconds")
+            return response_data
+        else:
+            print(f"Failed to fetch parties by date of birth {date_of_birth}. Status: {response.status_code}, Response time: {response_time:.3f} seconds")
+            return None
+    except requests.exceptions.RequestException as e:
+        print(f"Error during API call to get parties by date of birth: {e}")
+        log_api_call(uri, "GET", None, "N/A (Request Failed)", {"error": str(e)})
+        return None
+
+def get_party_by_last_name(last_name):
+    """Gets parties by last name via API call."""
+    uri = f"{PARTY_API_BASE_URI}?lastName={last_name}"
+    print(f"Attempting to get parties by last name {last_name} from {uri}")
+    try:
+        start_time = time.time()
+        response = requests.get(uri, headers={'Accept': 'application/json'})
+        end_time = time.time()
+        response_time = end_time - start_time
+        
+        response_data = {}
+        try:
+            response_data = response.json()
+        except json.JSONDecodeError:
+            response_data = {"error": "Failed to decode JSON response", "content": response.text}
+        log_api_call(uri, "GET", None, response.status_code, response_data)
+        if response.status_code == 200:
+            print(f"Successfully fetched parties by last name {last_name}. Status: {response.status_code}, Response time: {response_time:.3f} seconds")
+            return response_data
+        else:
+            print(f"Failed to fetch parties by last name {last_name}. Status: {response.status_code}, Response time: {response_time:.3f} seconds")
+            return None
+    except requests.exceptions.RequestException as e:
+        print(f"Error during API call to get parties by last name: {e}")
+        log_api_call(uri, "GET", None, "N/A (Request Failed)", {"error": str(e)})
+        return None
+
+def get_party_by_last_name_and_date_of_birth(last_name, date_of_birth):
+    """Gets parties by last name and date of birth via API call."""
+    uri = f"{PARTY_API_BASE_URI}?lastName={last_name}&dateOfBirth={date_of_birth}"
+    print(f"Attempting to get parties by last name {last_name} and date of birth {date_of_birth} from {uri}")
+    try:
+        start_time = time.time()
+        response = requests.get(uri, headers={'Accept': 'application/json'})
+        end_time = time.time()
+        response_time = end_time - start_time
+        
+        response_data = {}
+        try:
+            response_data = response.json()
+        except json.JSONDecodeError:
+            response_data = {"error": "Failed to decode JSON response", "content": response.text}
+        log_api_call(uri, "GET", None, response.status_code, response_data)
+        if response.status_code == 200:
+            print(f"Successfully fetched parties by last name {last_name} and date of birth {date_of_birth}. Status: {response.status_code}, Response time: {response_time:.3f} seconds")
+            return response_data
+        else:
+            print(f"Failed to fetch parties by last name {last_name} and date of birth {date_of_birth}. Status: {response.status_code}, Response time: {response_time:.3f} seconds")
+            return None
+    except requests.exceptions.RequestException as e:
+        print(f"Error during API call to get parties by last name and date of birth: {e}")
+        log_api_call(uri, "GET", None, "N/A (Request Failed)", {"error": str(e)})
+        return None
+
+def get_party_by_id(party_id):
+    """Gets a specific party by party ID via API call."""
+    uri = f"{PARTY_API_BASE_URI}/{party_id}"
+    print(f"Attempting to get party by ID {party_id} from {uri}")
+    try:
+        start_time = time.time()
+        response = requests.get(uri, headers={'Accept': 'application/json'})
+        end_time = time.time()
+        response_time = end_time - start_time
+        
+        response_data = {}
+        try:
+            response_data = response.json()
+        except json.JSONDecodeError:
+            response_data = {"error": "Failed to decode JSON response", "content": response.text}
+        log_api_call(uri, "GET", None, response.status_code, response_data)
+        if response.status_code == 200:
+            print(f"Successfully fetched party by ID {party_id}. Status: {response.status_code}, Response time: {response_time:.3f} seconds")
+            return response_data
+        else:
+            print(f"Failed to fetch party by ID {party_id}. Status: {response.status_code}, Response time: {response_time:.3f} seconds")
+            return None
+    except requests.exceptions.RequestException as e:
+        print(f"Error during API call to get party by ID: {e}")
+        log_api_call(uri, "GET", None, "N/A (Request Failed)", {"error": str(e)})
+        return None
+
 def generate_loan_term():
     """Generates a random loan term between 6 months and 10 years."""
     total_months = random.randint(6, 120)
@@ -836,6 +944,35 @@ if __name__ == "__main__":
 
         if customer_id:
             print(f"Successfully created customer with ID: {customer_id}")
+            
+            # Add new step to demonstrate party retrieval APIs
+            print("\n--- Step 1.5: Demonstrate Party Retrieval APIs ---")
+            print("# Testing various ways to retrieve party data using the newly created customer")
+            
+            # Extract customer data for testing retrieval APIs
+            customer_data = created_customer_response
+            if isinstance(created_customer_response.get("body"), dict):
+                customer_data = created_customer_response.get("body")
+            
+            # Get the customer's details for testing
+            date_of_birth = customer_data.get("dateOfBirth")
+            last_name = customer_data.get("lastName")
+            
+            if date_of_birth:
+                print(f"\n--- Testing: Get Party by Date of Birth ({date_of_birth}) ---")
+                get_party_by_date_of_birth(date_of_birth)
+            
+            if last_name:
+                print(f"\n--- Testing: Get Party by Last Name ({last_name}) ---")
+                get_party_by_last_name(last_name)
+            
+            if date_of_birth and last_name:
+                print(f"\n--- Testing: Get Party by Last Name and Date of Birth ({last_name}, {date_of_birth}) ---")
+                get_party_by_last_name_and_date_of_birth(last_name, date_of_birth)
+            
+            if customer_id:
+                print(f"\n--- Testing: Get Party by ID ({customer_id}) ---")
+                get_party_by_id(customer_id)
             
             # Add new step for current account creation
             print("\n--- Step 2: Create Current Account ---")

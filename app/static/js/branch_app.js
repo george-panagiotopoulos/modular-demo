@@ -5,6 +5,7 @@
     // State (now scoped to this IIFE)
     let customersData = [];
     let selectedCustomerId = null;
+    let selectedCustomer = null;
     let customerAccounts = [];
     let staticListenersAdded = false; // Track if static listeners are added
     let selectedLoanId = null; // Track the selected loan ID
@@ -12,30 +13,229 @@
     // --- DOM Elements ---
     function getElements() {
         return {
-            customerSelect: document.getElementById('customer-search'),
+            // New search interface elements
+            searchPartyIdInput: document.getElementById('search-party-id'),
+            searchLastNameInput: document.getElementById('search-last-name'),
+            searchDateOfBirthInput: document.getElementById('search-date-of-birth'),
+            searchCustomersBtn: document.getElementById('search-customers-btn'),
+            clearSearchBtn: document.getElementById('clear-search-btn'),
+            searchStatus: document.getElementById('search-status'),
+            searchError: document.getElementById('search-error'),
+            searchResultsArea: document.getElementById('search-results-area'),
+            searchResultsList: document.getElementById('search-results-list'),
+            selectedCustomerArea: document.getElementById('selected-customer-area'),
+            selectedCustomerInfo: document.getElementById('selected-customer-info'),
             loadCustomerBtn: document.getElementById('load-customer-btn'),
-            customerLoadError: document.getElementById('customer-load-error'),
+            
+            // Existing elements
             customerDetailsArea: document.getElementById('customer-details-area'),
             customerAccountsArea: document.getElementById('customer-accounts-area'),
             accountsListDiv: document.getElementById('customer-accounts-area')?.querySelector('#accounts-list'), // Safer access
             transactionsArea: document.getElementById('account-transactions-area'),
-            transactionsListDiv: document.getElementById('account-transactions-area')?.querySelector('#transactions-list'), // Safer access
-            transactionsTitle: document.getElementById('account-transactions-area')?.querySelector('#transactions-title'),
+            transactionsListDiv: document.getElementById('transactions-list'),
+            transactionsTitle: document.getElementById('transactions-title'),
             backToCustomerBtn: document.getElementById('back-to-customer')
         };
     }
 
+    // --- New Search Functions ---
+    async function performCustomerSearch() {
+        const elements = getElements();
+        const partyId = elements.searchPartyIdInput?.value.trim() || '';
+        const lastName = elements.searchLastNameInput?.value.trim() || '';
+        const dateOfBirth = elements.searchDateOfBirthInput?.value.trim() || '';
+        
+        // Clear previous results and errors
+        clearSearchResults();
+        if (elements.searchError) elements.searchError.textContent = '';
+        
+        // Validate that at least one search criteria is provided
+        if (!partyId && !lastName && !dateOfBirth) {
+            if (elements.searchError) elements.searchError.textContent = 'Please enter at least one search criteria.';
+            return;
+        }
+        
+        // Show loading status
+        if (elements.searchStatus) elements.searchStatus.textContent = 'Searching for customers...';
+        if (elements.searchCustomersBtn) elements.searchCustomersBtn.disabled = true;
+        
+        try {
+            // Build search parameters with correct parameter names (camelCase)
+            const params = new URLSearchParams();
+            if (partyId) params.append('partyId', partyId);
+            if (lastName) params.append('lastName', lastName);
+            if (dateOfBirth) params.append('dateOfBirth', dateOfBirth);
+            
+            const response = await fetch(`/api/branch/customers/search?${params.toString()}`);
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || 'Search failed');
+            }
+            
+            if (elements.searchStatus) elements.searchStatus.textContent = '';
+            displaySearchResults(data.customers || []);
+            
+        } catch (error) {
+            console.error('Search error:', error);
+            if (elements.searchError) elements.searchError.textContent = `Search failed: ${error.message}`;
+            if (elements.searchStatus) elements.searchStatus.textContent = '';
+        } finally {
+            if (elements.searchCustomersBtn) elements.searchCustomersBtn.disabled = false;
+        }
+    }
+
+    function displaySearchResults(customers) {
+        const elements = getElements();
+        
+        if (customers.length === 0) {
+            if (elements.searchStatus) elements.searchStatus.textContent = 'No customers found matching your search criteria.';
+            if (elements.searchResultsArea) elements.searchResultsArea.classList.add('hidden');
+            return;
+        }
+        
+        // Clear previous results
+        if (elements.searchResultsList) elements.searchResultsList.innerHTML = '';
+        
+        // Display each customer as a selectable card
+        customers.forEach(customer => {
+            const customerCard = document.createElement('div');
+            customerCard.className = 'p-3 border border-gray-200 rounded-md cursor-pointer hover:bg-gray-50 hover:border-blue-300 transition-colors';
+            
+            // Map API response fields to display format
+            const displayName = `${customer.firstName || 'N/A'} ${customer.lastName || ''}`.trim();
+            const customerId = customer.customerId || customer.id || 'N/A';
+            const dateOfBirth = customer.dateOfBirth || 'N/A';
+            
+            customerCard.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <div>
+                        <div class="font-medium text-gray-900">${displayName}</div>
+                        <div class="text-sm text-gray-600">ID: ${customerId}</div>
+                        <div class="text-sm text-gray-600">DOB: ${dateOfBirth}</div>
+                    </div>
+                    <button class="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200">
+                        Select
+                    </button>
+                </div>
+            `;
+            
+            // Add click handler to select this customer - normalize the customer object
+            const normalizedCustomer = {
+                id: customerId,
+                name: customer.firstName || '',
+                lastName: customer.lastName || '',
+                dateOfBirth: dateOfBirth,
+                // Keep all original fields for backend compatibility
+                customerId: customerId,
+                firstName: customer.firstName,
+                middleName: customer.middleName,
+                cityOfBirth: customer.cityOfBirth
+            };
+            
+            customerCard.addEventListener('click', () => selectCustomer(normalizedCustomer));
+            
+            if (elements.searchResultsList) elements.searchResultsList.appendChild(customerCard);
+        });
+        
+        if (elements.searchResultsArea) elements.searchResultsArea.classList.remove('hidden');
+        if (elements.searchStatus) elements.searchStatus.textContent = `Found ${customers.length} customer(s)`;
+    }
+
+    function selectCustomer(customer) {
+        const elements = getElements();
+        selectedCustomer = customer;
+        selectedCustomerId = customer.id;
+        
+        // Update selected customer display
+        if (elements.selectedCustomerInfo) {
+            elements.selectedCustomerInfo.innerHTML = `
+                <div class="font-medium">${customer.name || 'N/A'} ${customer.lastName || ''}</div>
+                <div class="text-sm">ID: ${customer.id || 'N/A'}</div>
+                <div class="text-sm">DOB: ${customer.dateOfBirth || 'N/A'}</div>
+            `;
+        }
+        
+        if (elements.selectedCustomerArea) elements.selectedCustomerArea.classList.remove('hidden');
+        
+        // Hide search results to focus on selected customer
+        if (elements.searchResultsArea) elements.searchResultsArea.classList.add('hidden');
+        
+        // Clear any previous customer details
+        hideCustomerDetails();
+    }
+
+    function clearSearch() {
+        const elements = getElements();
+        
+        // Clear all input fields
+        if (elements.searchPartyIdInput) elements.searchPartyIdInput.value = '';
+        if (elements.searchLastNameInput) elements.searchLastNameInput.value = '';
+        if (elements.searchDateOfBirthInput) elements.searchDateOfBirthInput.value = '';
+        
+        // Clear results and status
+        clearSearchResults();
+        if (elements.searchStatus) elements.searchStatus.textContent = '';
+        if (elements.searchError) elements.searchError.textContent = '';
+        
+        // Hide selected customer
+        if (elements.selectedCustomerArea) elements.selectedCustomerArea.classList.add('hidden');
+        selectedCustomer = null;
+        selectedCustomerId = null;
+        
+        // Hide customer details
+        hideCustomerDetails();
+    }
+
+    function clearSearchResults() {
+        const elements = getElements();
+        if (elements.searchResultsList) elements.searchResultsList.innerHTML = '';
+        if (elements.searchResultsArea) elements.searchResultsArea.classList.add('hidden');
+    }
+
+    async function loadSelectedCustomer() {
+        const elements = getElements();
+        
+        if (!selectedCustomerId) {
+            if (elements.searchError) elements.searchError.textContent = 'No customer selected.';
+            return;
+        }
+        
+        if (elements.loadCustomerBtn) {
+            elements.loadCustomerBtn.disabled = true;
+            elements.loadCustomerBtn.textContent = 'Loading...';
+        }
+        
+        try {
+            // Load customer details and accounts
+            await fetchCustomerData(selectedCustomerId);
+            
+            // Show customer details area
+            showCustomerView();
+            
+        } catch (error) {
+            console.error('Error loading customer:', error);
+            if (elements.searchError) elements.searchError.textContent = `Failed to load customer data: ${error.message}`;
+        } finally {
+            if (elements.loadCustomerBtn) {
+                elements.loadCustomerBtn.disabled = false;
+                elements.loadCustomerBtn.textContent = 'Load Customer Data';
+            }
+        }
+    }
+
+    function hideCustomerDetails() {
+        const elements = getElements();
+        if (elements.customerDetailsArea) elements.customerDetailsArea.classList.add('hidden');
+        if (elements.customerAccountsArea) elements.customerAccountsArea.classList.add('hidden');
+        if (elements.transactionsArea) elements.transactionsArea.classList.add('hidden');
+    }
+
     // --- Rendering Functions ---
     function populateCustomerSelect(customers) {
-        const { customerSelect } = getElements();
-        if (!customerSelect) return;
-        customerSelect.innerHTML = '<option value="">Select a customer...</option>'; // Reset
-        customers.forEach(c => {
-            const option = document.createElement('option');
-            option.value = c.customerId;
-            option.textContent = `${c.lastName}, ${c.firstName} (${c.customerId})`;
-            customerSelect.appendChild(option);
-        });
+        // This function is no longer needed with the new search interface
+        // Keeping it for backward compatibility but it won't be used
+        console.log('populateCustomerSelect called but not used in new search interface');
     }
 
     function renderCustomerDetails(customer) {
@@ -76,6 +276,12 @@
         const balance = isLoan ? account.principalAmount : account.currentBalance;
         const formattedBalance = new Intl.NumberFormat('en-US', { style: 'currency', currency: account.currency }).format(Math.abs(balance));
 
+        // Create display name with arrangement ID if different from account ID
+        let displayId = account.accountId;
+        if (account.arrangementId && account.arrangementId !== account.accountId) {
+            displayId = `${account.accountId} (${account.arrangementId})`;
+        }
+
         // Customize the button based on account type
         let actionButton = `
             <button data-account-id="${account.accountId}" class="view-transactions-btn text-xs text-blue-600 hover:underline focus:outline-none">
@@ -95,29 +301,13 @@
         return `
             <div class="flex justify-between items-center p-3 border rounded-md bg-gray-50 hover:bg-gray-100 mb-2">
                 <div>
-                    <span class="font-medium text-gray-800">${account.displayName} (${account.accountId})</span>
+                    <span class="font-medium text-gray-800">${account.displayName} (${displayId})</span>
                     <span class="text-xs text-gray-500 ml-2">${account.productName} - Opened: ${account.openDate || 'N/A'}</span>
                 </div>
                 <div class="text-right">
                     <div class="font-semibold ${isLoan ? 'text-red-700' : 'text-gray-900'}">${formattedBalance} ${account.currency}</div>
                     ${actionButton}
                 </div>
-            </div>
-        `;
-    }
-
-    function renderTransactionRow(transaction) {
-        const amountClass = transaction.amount < 0 ? 'text-red-600' : 'text-green-600';
-        const formattedAmount = new Intl.NumberFormat('en-US', { style: 'currency', currency: transaction.currency }).format(transaction.amount);
-        const date = new Date(transaction.bookingDate).toLocaleDateString();
-
-        return `
-            <div class="flex justify-between items-center border-b border-gray-200 py-2">
-                <div>
-                    <div class="text-sm text-gray-800">${transaction.description}</div>
-                    <div class="text-xs text-gray-500">${date} - ${transaction.type}</div>
-                </div>
-                <div class="text-sm font-medium ${amountClass}">${formattedAmount}</div>
             </div>
         `;
     }
@@ -135,10 +325,57 @@
     function renderTransactionsList(transactions, targetDiv) {
         if (!targetDiv) return;
         if (!transactions || transactions.length === 0) {
-            targetDiv.innerHTML = '<div class="text-gray-500">No transactions found for this account.</div>';
+            targetDiv.innerHTML = '<div class="text-center text-gray-500 py-4">No transactions found for this account.</div>';
             return;
         }
-        targetDiv.innerHTML = transactions.map(renderTransactionRow).join('');
+        
+        // Use the same transaction rendering as mobile app
+        targetDiv.innerHTML = transactions.map(transaction => {
+            const amountClass = transaction.amount < 0 ? 'text-red-600' : 'text-green-600';
+            const formattedAmount = new Intl.NumberFormat('en-US', { style: 'currency', currency: transaction.currency }).format(transaction.amount);
+            
+            // Format date - handle both YYYY-MM-DD and other formats
+            const formatDate = (dateStr) => {
+                if (!dateStr) return "N/A";
+                
+                try {
+                    // Try to parse as ISO date first (YYYY-MM-DD)
+                    if (dateStr.includes('-')) {
+                        const date = new Date(dateStr);
+                        return date.toLocaleDateString();
+                    } else if (dateStr.length === 8) {
+                        // Handle YYYYMMDD format
+                        const year = dateStr.substring(0, 4);
+                        const month = dateStr.substring(4, 6);
+                        const day = dateStr.substring(6, 8);
+                        return new Date(`${year}-${month}-${day}`).toLocaleDateString();
+                    }
+                    return dateStr; // Return as is if we can't parse
+                } catch (e) {
+                    return dateStr; // Return original on error
+                }
+            };
+            
+            const date = formatDate(transaction.date);
+            const icon = transaction.amount < 0 
+                ? `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>`
+                : `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>`;
+
+            return `
+                <div class="flex justify-between items-center border-b border-gray-100 py-2 last:border-b-0 hover:bg-gray-50 transition-colors duration-150 rounded px-2">
+                    <div class="flex items-center">
+                        <div class="mr-3 bg-gray-100 rounded-full p-2">
+                            ${icon}
+                        </div>
+                        <div>
+                            <div class="text-sm font-medium text-gray-800">${transaction.description}</div>
+                            <div class="text-xs text-gray-500">${date} • ${transaction.type}</div>
+                        </div>
+                    </div>
+                    <div class="text-sm font-semibold ${amountClass}">${formattedAmount}</div>
+                </div>
+            `;
+        }).join('');
     }
 
     function renderLoanDetails(loanData) {
@@ -597,9 +834,9 @@
 
     async function fetchCustomerData(customerId) {
         console.log(`Fetching customer data for ${customerId}...`);
-        const { customerDetailsArea, customerAccountsArea, accountsListDiv, customerLoadError } = getElements();
+        const { customerDetailsArea, customerAccountsArea, accountsListDiv, searchError } = getElements();
         if (!customerDetailsArea || !customerAccountsArea || !accountsListDiv) return;
-        customerLoadError.textContent = ''; // Clear previous errors
+        if (searchError) searchError.textContent = ''; // Clear previous errors
 
         try {
             // 1. Fetch customer details
@@ -609,8 +846,8 @@
             renderCustomerDetails(customerData);
 
             // 2. Fetch both loans and current accounts
-            // First, get all arrangements for this customer
-            const arrangementsRes = await fetch(`/api/branch/party/${customerId}/arrangements?_=${Date.now()}`);
+            // First, get all arrangements for this customer using the same Holdings API as mobile app
+            const arrangementsRes = await fetch(`/api/proxy/holdings/parties/${customerId}/arrangements?_=${Date.now()}`);
             if (!arrangementsRes.ok) throw new Error(`Arrangements fetch failed: ${arrangementsRes.status}`);
             const arrangementsData = await arrangementsRes.json();
             
@@ -620,29 +857,69 @@
             
             // Process each arrangement to get balance data for accounts
             for (const arrangement of arrangements) {
-                if (arrangement.productId === "CHECKING.ACCOUNT") {
+                if (arrangement.productLine === "ACCOUNTS") {
                     try {
                         const arrangementId = arrangement.arrangementId;
-                        const balanceRes = await fetch(`/api/branch/accounts/${arrangementId}/balances?_=${Date.now()}`);
+                        
+                        // Get the proper Holdings account ID from alternateReferences
+                        let holdingsAccountId = arrangementId; // fallback
+                        if (arrangement.alternateReferences && arrangement.alternateReferences.length > 0) {
+                            console.log(`Checking alternateReferences for arrangement ${arrangementId}:`, arrangement.alternateReferences);
+                            for (const ref of arrangement.alternateReferences) {
+                                if (ref.alternateType === "ACCOUNT") {
+                                    holdingsAccountId = ref.alternateId;
+                                    console.log(`Found Holdings account ID ${holdingsAccountId} for arrangement ${arrangementId}`);
+                                    break;
+                                }
+                            }
+                        } else {
+                            console.log(`No alternateReferences found for arrangement ${arrangementId}`);
+                        }
+                        
+                        // Use Holdings API for balance like mobile app does
+                        const balanceRes = await fetch(`/api/proxy/holdings/accounts/${holdingsAccountId}/balances?_=${Date.now()}`);
                         
                         if (balanceRes.ok) {
                             const balanceData = await balanceRes.json();
-                            currentAccounts.push({
-                                accountId: arrangementId,
-                                displayName: arrangement.productName || "Current Account",
-                                productName: arrangement.productTypeName || "Current Account",
-                                type: "current",
-                                currency: arrangement.currencyId || "USD",
-                                currentBalance: balanceData.ledgerBalance || 0,
-                                availableBalance: balanceData.availableBalance || 0,
-                                openDate: balanceData.openingDate || ''
-                            });
+                            console.log(`Balance data for ${holdingsAccountId}:`, balanceData);
+                            
+                            // Check if we have balance items (Holdings API format)
+                            const balanceItems = balanceData.items || [];
+                            if (balanceItems.length > 0) {
+                                const balance = balanceItems[0]; // Use the first balance item
+                                
+                                currentAccounts.push({
+                                    accountId: holdingsAccountId, // Use Holdings account ID for transactions
+                                    arrangementId: arrangementId, // Keep arrangement ID for reference
+                                    displayName: arrangement.productName || "Current Account",
+                                    productName: arrangement.productGroup || "Current Account",
+                                    type: "current",
+                                    currency: balance.currencyId || "USD",
+                                    currentBalance: balance.onlineActualBalance || 0,
+                                    availableBalance: balance.availableBalance || 0,
+                                    openDate: balance.openingDate || ''
+                                });
+                            } else {
+                                // Add account with default values if no balance items
+                                currentAccounts.push({
+                                    accountId: holdingsAccountId, // Use Holdings account ID for transactions
+                                    arrangementId: arrangementId, // Keep arrangement ID for reference
+                                    displayName: arrangement.productName || "Current Account",
+                                    productName: arrangement.productGroup || "Current Account",
+                                    type: "current", 
+                                    currency: arrangement.currencyId || "USD",
+                                    currentBalance: 0,
+                                    availableBalance: 0,
+                                    openDate: ''
+                                });
+                            }
                         } else {
                             // Add account with default values if balance fetch fails
                             currentAccounts.push({
-                                accountId: arrangementId,
+                                accountId: holdingsAccountId, // Use Holdings account ID for transactions
+                                arrangementId: arrangementId, // Keep arrangement ID for reference
                                 displayName: arrangement.productName || "Current Account",
-                                productName: arrangement.productTypeName || "Current Account",
+                                productName: arrangement.productGroup || "Current Account",
                                 type: "current", 
                                 currency: arrangement.currencyId || "USD",
                                 currentBalance: 0,
@@ -669,24 +946,57 @@
 
         } catch (error) {
             console.error(`Error loading customer data for ${customerId}:`, error);
-            if(customerLoadError) customerLoadError.textContent = `Failed to load customer data: ${error.message}`;
+            if(searchError) searchError.textContent = `Failed to load customer data: ${error.message}`;
         }
     }
 
     async function fetchBranchTransactions(accountId) {
-        console.log(`Fetching branch transactions for ${accountId}...`);
+        console.log(`Fetching transactions for account ID: ${accountId}`);
         const { transactionsListDiv } = getElements();
-        if(!transactionsListDiv) return;
-        transactionsListDiv.innerHTML = '<div class="text-gray-500">Loading transactions...</div>';
+        if (!transactionsListDiv) return;
+        
         try {
-            const response = await fetch(`/api/branch/accounts/${accountId}/transactions?_=${Date.now()}`);
-            if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
-            const transactions = await response.json();
-            renderTransactionsList(transactions, transactionsListDiv);
-
+            // Show loading indicator
+            transactionsListDiv.innerHTML = '<div class="text-center text-gray-500 py-4">Loading transactions...</div>';
+            
+            // Fetch transactions directly from the Holdings API
+            const apiUrl = `/api/proxy/holdings/accounts/${accountId}/transactions?_=${Date.now()}`;
+            console.log("Fetching transactions from URL:", apiUrl);
+            
+            const response = await fetch(apiUrl);
+            
+            if (!response.ok) {
+                const errorText = await response.text().catch(() => "Failed to get error text");
+                console.error(`HTTP Error ${response.status}: ${response.statusText}`, errorText);
+                throw new Error(`HTTP Error: ${response.status} - ${response.statusText}`);
+            }
+            
+            const transactionsData = await response.json();
+            console.log("Transactions data received:", transactionsData);
+            
+            // Check if we have transaction items
+            const transactions = transactionsData.items || [];
+            if (transactions.length === 0) {
+                transactionsListDiv.innerHTML = '<div class="text-center text-gray-500 py-4">No transactions found for this account.</div>';
+                return;
+            }
+            
+            // Transform API data into transaction objects for rendering
+            const formattedTransactions = transactions.map(tx => ({
+                id: tx.id || `tx-${Math.random().toString(36).substring(2, 10)}`,
+                date: tx.valueDate || tx.bookingDate,
+                amount: tx.transactionAmount || 0,
+                currency: tx.currency || "USD",
+                description: tx.narrative || "Transaction",
+                type: tx.paymentIndicator || "Debit",
+                icon: tx.paymentIndicator === "Credit" ? "arrow-down" : "arrow-up",
+                status: "Completed"
+            }));
+            
+            renderTransactionsList(formattedTransactions, transactionsListDiv);
         } catch (error) {
-            console.error(`Error fetching branch transactions for ${accountId}:`, error);
-            transactionsListDiv.innerHTML = '<div class="text-red-500">Could not load transactions.</div>';
+            console.error("Error fetching transactions:", error);
+            transactionsListDiv.innerHTML = `<div class="text-center text-red-500 py-4">Could not load transactions: ${error.message}</div>`;
         }
     }
 
@@ -1010,7 +1320,10 @@
         viewTransaction: [], // Array for dynamic buttons
         viewLoanDetails: [], // Array for dynamic loan details buttons
         viewLoanSchedules: [], // Array for dynamic loan schedules buttons
-        backToLoanDetails: null // Handler for back button from schedules to details
+        backToLoanDetails: null, // Handler for back button from schedules to details
+        searchCustomers: null,
+        clearSearch: null,
+        searchKeypress: []
     };
 
     function addAccountTransactionButtonListeners() {
@@ -1030,7 +1343,6 @@
              const handler = (e) => {
                 const accountId = e.target.getAttribute('data-account-id');
                 showTransactionsView(accountId);
-                fetchBranchTransactions(accountId);
              };
              button.addEventListener('click', handler);
              eventHandlers.viewTransaction.push({ button, handler }); // Store for removal
@@ -1049,73 +1361,108 @@
 
     function addStaticListeners() {
         if (staticListenersAdded) return; // Add static listeners only once
-        const { loadCustomerBtn, customerSelect, backToCustomerBtn } = getElements();
+        const elements = getElements();
 
-        if (loadCustomerBtn && customerSelect) {
-            eventHandlers.loadCustomer = () => {
-                selectedCustomerId = customerSelect.value;
-                if (selectedCustomerId) {
-                    fetchCustomerData(selectedCustomerId);
-                    showCustomerView(); // Ensure customer view is shown initially
-                } else {
-                    const errEl = getElements().customerLoadError;
-                    if(errEl) errEl.textContent = 'Please select a customer.';
-                }
-            };
-            loadCustomerBtn.addEventListener('click', eventHandlers.loadCustomer);
+        // Search functionality event listeners
+        if (elements.searchCustomersBtn) {
+            eventHandlers.searchCustomers = performCustomerSearch;
+            elements.searchCustomersBtn.addEventListener('click', eventHandlers.searchCustomers);
         }
 
-        if (backToCustomerBtn) {
+        if (elements.clearSearchBtn) {
+            eventHandlers.clearSearch = clearSearch;
+            elements.clearSearchBtn.addEventListener('click', eventHandlers.clearSearch);
+        }
+
+        if (elements.loadCustomerBtn) {
+            eventHandlers.loadCustomer = loadSelectedCustomer;
+            elements.loadCustomerBtn.addEventListener('click', eventHandlers.loadCustomer);
+        }
+
+        // Allow Enter key to trigger search in input fields
+        [elements.searchPartyIdInput, elements.searchLastNameInput, elements.searchDateOfBirthInput].forEach(input => {
+            if (input) {
+                const handler = (e) => {
+                    if (e.key === 'Enter') {
+                        performCustomerSearch();
+                    }
+                };
+                input.addEventListener('keypress', handler);
+                eventHandlers.searchKeypress = eventHandlers.searchKeypress || [];
+                eventHandlers.searchKeypress.push({ input, handler });
+            }
+        });
+
+        if (elements.backToCustomerBtn) {
             eventHandlers.backToCustomer = showCustomerView;
-            backToCustomerBtn.addEventListener('click', eventHandlers.backToCustomer);
+            elements.backToCustomerBtn.addEventListener('click', eventHandlers.backToCustomer);
         }
+
         staticListenersAdded = true;
     }
 
     function removeAllListeners() {
-         console.log("Removing Branch App listeners...");
-         const { loadCustomerBtn, backToCustomerBtn } = getElements();
+        const elements = getElements();
 
-         if (eventHandlers.loadCustomer && loadCustomerBtn) {
-             loadCustomerBtn.removeEventListener('click', eventHandlers.loadCustomer);
-             eventHandlers.loadCustomer = null;
-         }
-         if (eventHandlers.backToCustomer && backToCustomerBtn) {
-            backToCustomerBtn.removeEventListener('click', eventHandlers.backToCustomer);
-            eventHandlers.backToCustomer = null;
+        // Remove search-related listeners
+        if (eventHandlers.searchCustomers && elements.searchCustomersBtn) {
+            elements.searchCustomersBtn.removeEventListener('click', eventHandlers.searchCustomers);
         }
+        if (eventHandlers.clearSearch && elements.clearSearchBtn) {
+            elements.clearSearchBtn.removeEventListener('click', eventHandlers.clearSearch);
+        }
+        if (eventHandlers.loadCustomer && elements.loadCustomerBtn) {
+            elements.loadCustomerBtn.removeEventListener('click', eventHandlers.loadCustomer);
+        }
+        if (eventHandlers.backToCustomer && elements.backToCustomerBtn) {
+            elements.backToCustomerBtn.removeEventListener('click', eventHandlers.backToCustomer);
+        }
+
+        // Remove keypress listeners
+        if (eventHandlers.searchKeypress) {
+            eventHandlers.searchKeypress.forEach(({ input, handler }) => {
+                input.removeEventListener('keypress', handler);
+            });
+        }
+
+        // Remove dynamic listeners
         eventHandlers.viewTransaction.forEach(({button, handler}) => button.removeEventListener('click', handler));
-        eventHandlers.viewTransaction = [];
-        
-        // Clean up loan detail related listeners
         eventHandlers.viewLoanDetails.forEach(({button, handler}) => button.removeEventListener('click', handler));
-        eventHandlers.viewLoanDetails = [];
-        
         eventHandlers.viewLoanSchedules.forEach(({button, handler}) => button.removeEventListener('click', handler));
-        eventHandlers.viewLoanSchedules = [];
-        
-        if (eventHandlers.backToLoanDetails) {
-            const { button, handler } = eventHandlers.backToLoanDetails;
-            if (button && handler) {
-                button.removeEventListener('click', handler);
+
+        // Clear all handlers
+        Object.keys(eventHandlers).forEach(key => {
+            if (Array.isArray(eventHandlers[key])) {
+                eventHandlers[key] = [];
+            } else {
+                eventHandlers[key] = null;
             }
-            eventHandlers.backToLoanDetails = null;
-        }
-        
-        staticListenersAdded = false; // Reset flag
-        console.log("Branch App listeners removed.");
+        });
+
+        staticListenersAdded = false;
     }
 
-    // --- Initialization ---
     function initBranchAppTab() {
-        console.log("Initializing Branch App Tab...");
-        fetchCustomers(); // Load customer list for dropdown
+        console.log("Initializing Branch App tab...");
+        
+        // Remove any existing listeners first
+        removeAllListeners();
+        
+        // Add static event listeners for the new search interface
         addStaticListeners();
-        // Initially hide details/accounts sections until a customer is loaded
-        const { customerDetailsArea, customerAccountsArea, transactionsArea } = getElements();
-        if(customerDetailsArea) customerDetailsArea.classList.add('hidden');
-        if(customerAccountsArea) customerAccountsArea.classList.add('hidden');
-        if(transactionsArea) transactionsArea.classList.add('hidden');
+        
+        // Clear any previous state
+        selectedCustomerId = null;
+        selectedCustomer = null;
+        customerAccounts = [];
+        
+        // Hide all detail areas initially
+        hideCustomerDetails();
+        
+        // Clear search interface
+        clearSearch();
+        
+        console.log("Branch App tab initialized with search interface");
     }
 
     // --- Global Cleanup Function --- 

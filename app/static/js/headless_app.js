@@ -33,7 +33,7 @@
             samplePayload: {
                 "parties": [
                     {
-                        "partyId": "2513655771",
+                        "partyId": "YOUR_PARTY_ID",
                         "partyRole": "OWNER"
                     }
                 ],
@@ -57,7 +57,7 @@
             label: "Get Party Arrangements", 
             template: "http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v1.0.0/holdings/parties/{partyId}/arrangements",
             placeholders: { 
-                partyId: "2513655771" 
+                partyId: "YOUR_PARTY_ID" 
             },
             defaultMethod: "GET"
         },
@@ -70,7 +70,7 @@
                 "body": {
                     "partyIds": [
                         {
-                            "partyId": "2513655771",
+                            "partyId": "YOUR_PARTY_ID",
                             "partyRole": "OWNER"
                         }
                     ],
@@ -147,7 +147,7 @@
             label: "Customer Arrangements", 
             template: "http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v7.0.0/holdings/customers/{customerId}/arrangements",
             placeholders: { 
-                customerId: "2513655771" 
+                customerId: "YOUR_CUSTOMER_ID" 
             },
             defaultMethod: "GET"
         },

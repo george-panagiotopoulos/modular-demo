@@ -1,4 +1,4 @@
-from flask import render_template, jsonify, current_app, url_for, abort, request, Response, stream_with_context
+from flask import render_template, jsonify, current_app, url_for, abort, request, Response, stream_with_context, redirect
 from . import main_bp
 import os
 import datetime
@@ -168,19 +168,24 @@ def get_architecture_diagram_path():
 
 @main_bp.route('/api/mobile/accounts')
 def get_mobile_accounts():
-    """Provides the list of accounts for the mobile app."""
-    # Placeholder: In a real app, call a live API endpoint.
-    # Example: accounts = banking_operations.get_customer_accounts(CUSTOMER_ID)
-    print("WARN: /api/mobile/accounts is returning placeholder data.")
-    return jsonify([]) 
+    """Redirects to the proxy Holdings arrangements endpoint."""
+    # The mobile app should use the proxy endpoint directly
+    # Get party ID from request args - no default provided
+    party_id = request.args.get('partyId')
+    
+    if not party_id:
+        return jsonify({"error": "Party ID parameter is required"}), 400
+        
+    proxy_url = url_for('main_bp.proxy_holdings_party_arrangements', party_id=party_id)
+    return redirect(proxy_url)
 
 @main_bp.route('/api/mobile/accounts/<string:account_id>/transactions')
 def get_mobile_transactions(account_id):
-    """Provides transactions for a specific account."""
-    # Placeholder: In a real app, call a live API endpoint.
-    # Example: transactions = banking_operations.get_account_transactions(account_id)
-    print(f"WARN: /api/mobile/accounts/{account_id}/transactions is returning placeholder data.")
-    return jsonify([])
+    """Provides transactions for a specific account - redirects to proxy endpoint."""
+    # The mobile app should use the proxy endpoint directly
+    # This route exists for compatibility but redirects to the proxy
+    proxy_url = url_for('main_bp.proxy_holdings_account_transactions', account_id=account_id)
+    return redirect(proxy_url)
 
 @main_bp.route('/api/mobile/transfer', methods=['POST'])
 def mobile_transfer():
@@ -264,23 +269,9 @@ def get_party_loans(party_id):
                                         "status": "Active"
                                     })
                 
-                # If no loans found in the API response or API call failed, use demo data
-                if not loans_data and party_id == "2513655771":
-                    loans_data = [{
-                        "loanId": "AA25073599N9",
-                        "displayName": "Home Mortgage",
-                        "productName": "MORTGAGE.PRODUCT",
-                        "type": "loan",
-                        "currency": "USD",
-                        "principalAmount": 225351.00,
-                        "outstandingBalance": 225351.00,
-                        "term": "109M",
-                        "maturityDate": "20340414",
-                        "nextPaymentAmount": 2450.67,
-                        "nextPaymentDate": "20250414",
-                        "interestRate": 1.75,
-                        "status": "Active"
-                    }]
+                # If no loans found in the API response, return empty data
+                if not loans_data:
+                    loans_data = []
                 
                 return jsonify(loans_data)
             
@@ -290,23 +281,7 @@ def get_party_loans(party_id):
                 track_api_call(uri, "GET", error=error_info)
                 print(f"ERROR: {error_info['message']}")
                 
-                # Fall back to demo data for 2513655771
-                if party_id == "2513655771":
-                    return jsonify([{
-                        "loanId": "AA25073599N9",
-                        "displayName": "Home Mortgage",
-                        "productName": "MORTGAGE.PRODUCT",
-                        "type": "loan",
-                        "currency": "USD",
-                        "principalAmount": 225351.00,
-                        "outstandingBalance": 225351.00,
-                        "term": "109M",
-                        "maturityDate": "20340414",
-                        "nextPaymentAmount": 2450.67,
-                        "nextPaymentDate": "20250414",
-                        "interestRate": 1.75,
-                        "status": "Active"
-                    }])
+                # Return empty data on parsing error
                 return jsonify([])
         else:
             # API call failed
@@ -318,23 +293,7 @@ def get_party_loans(party_id):
             track_api_call(uri, "GET", error=error_info)
             print(f"ERROR: {error_info['message']}")
             
-            # Fall back to demo data for 2513655771
-            if party_id == "2513655771":
-                return jsonify([{
-                    "loanId": "AA25073599N9",
-                    "displayName": "Home Mortgage",
-                    "productName": "MORTGAGE.PRODUCT",
-                    "type": "loan",
-                    "currency": "USD",
-                    "principalAmount": 225351.00,
-                    "outstandingBalance": 225351.00,
-                    "term": "109M",
-                    "maturityDate": "20340414",
-                    "nextPaymentAmount": 2450.67,
-                    "nextPaymentDate": "20250414",
-                    "interestRate": 1.75,
-                    "status": "Active"
-                }])
+            # Return empty data on API failure
             return jsonify([])
             
     except requests.exceptions.RequestException as e:
@@ -343,23 +302,7 @@ def get_party_loans(party_id):
         track_api_call(uri, "GET", error=error_info)
         print(f"ERROR: {error_info['message']}")
         
-        # Fall back to demo data for 2513655771
-        if party_id == "2513655771":
-            return jsonify([{
-                "loanId": "AA25073599N9",
-                "displayName": "Home Mortgage",
-                "productName": "MORTGAGE.PRODUCT",
-                "type": "loan",
-                "currency": "USD",
-                "principalAmount": 225351.00,
-                "outstandingBalance": 225351.00,
-                "term": "109M",
-                "maturityDate": "20340414",
-                "nextPaymentAmount": 2450.67,
-                "nextPaymentDate": "20250414",
-                "interestRate": 1.75,
-                "status": "Active"
-            }])
+        # Return empty data on network error
         return jsonify([])
 
 @main_bp.route('/api/mobile/loans/<string:loan_id>/schedules')
@@ -567,20 +510,10 @@ def get_branch_customers():
             # Format the parties data for the branch app
             customers = []
             
-            # Add the default hardcoded customer if it's not already in the list
-            default_customer = {
-                "customerId": "2513655771", 
-                "firstName": "David",
-                "lastName": "Jones",
-                "dateOfBirth": "1985-03-21",
-                "status": "Active"
-            }
-            customers.append(default_customer)
-            
-            # Also check for a party ID from the mobile app params
+            # Check for a party ID from the mobile app params
             mobile_party_id = request.args.get('mobilePartyId')
-            if mobile_party_id and mobile_party_id != default_customer["customerId"]:
-                # Add the mobile party ID as a customer if it's different
+            if mobile_party_id:
+                # Add the mobile party ID as a customer
                 print(f"Adding mobile party ID to customer list: {mobile_party_id}")
                 mobile_customer = {
                     "customerId": mobile_party_id,
@@ -600,8 +533,8 @@ def get_branch_customers():
                     "dateOfBirth": party.get('dateOfBirth', ''),
                     "status": "Active"  # Default status
                 }
-                # Only add if not the same as current customer
-                if customer["customerId"] != default_customer["customerId"] and (not mobile_party_id or customer["customerId"] != mobile_party_id):
+                # Only add if not the same as mobile party ID
+                if not mobile_party_id or customer["customerId"] != mobile_party_id:
                     customers.append(customer)
             
             # Track the successful API call
@@ -614,63 +547,138 @@ def get_branch_customers():
             
             # Check for mobile party ID even if API fails
             mobile_party_id = request.args.get('mobilePartyId')
-            if mobile_party_id and mobile_party_id != "2513655771":
-                return jsonify([
-                    {
-                        "customerId": "2513655771", 
-                        "firstName": "David",
-                        "lastName": "Jones",
-                        "dateOfBirth": "1985-03-21",
-                        "status": "Active"
-                    },
-                    {
-                        "customerId": mobile_party_id,
-                        "firstName": "Customer",
-                        "lastName": f"ID: {mobile_party_id}",
-                        "dateOfBirth": "",
-                        "status": "Active"
-                    }
-                ])
-            
-            # Return hardcoded customer as fallback
-            return jsonify([{
-                "customerId": "2513655771", 
-                "firstName": "David",
-                "lastName": "Jones",
-                "dateOfBirth": "1985-03-21",
-                "status": "Active"
-            }])
-    except Exception as e:
-        print(f"ERROR: Failed to fetch parties: {str(e)}")
-        
-        # Check for mobile party ID even if exception occurs
-        mobile_party_id = request.args.get('mobilePartyId')
-        if mobile_party_id and mobile_party_id != "2513655771":
-            return jsonify([
-                {
-                    "customerId": "2513655771", 
-                    "firstName": "David",
-                    "lastName": "Jones",
-                    "dateOfBirth": "1985-03-21",
-                    "status": "Active"
-                },
-                {
+            if mobile_party_id:
+                return jsonify([{
                     "customerId": mobile_party_id,
                     "firstName": "Customer",
                     "lastName": f"ID: {mobile_party_id}",
                     "dateOfBirth": "",
                     "status": "Active"
-                }
-            ])
+                }])
+            
+            # Return empty list if no mobile party ID and API fails
+            return jsonify([])
+    except Exception as e:
+        print(f"ERROR: Failed to fetch parties: {str(e)}")
         
-        # Return hardcoded customer as fallback
-        return jsonify([{
-            "customerId": "2513655771", 
-            "firstName": "David",
-            "lastName": "Jones",
-            "dateOfBirth": "1985-03-21",
-            "status": "Active"
-        }])
+        # Check for mobile party ID even if exception occurs
+        mobile_party_id = request.args.get('mobilePartyId')
+        if mobile_party_id:
+            return jsonify([{
+                "customerId": mobile_party_id,
+                "firstName": "Customer",
+                "lastName": f"ID: {mobile_party_id}",
+                "dateOfBirth": "",
+                "status": "Active"
+            }])
+        
+        # Return empty list if no mobile party ID
+        return jsonify([])
+
+@main_bp.route('/api/branch/customers/search')
+def search_branch_customers():
+    """Search for customers using various criteria (party ID, last name, date of birth)."""
+    try:
+        # Get search parameters
+        party_id = request.args.get('partyId', '').strip()
+        last_name = request.args.get('lastName', '').strip()
+        date_of_birth = request.args.get('dateOfBirth', '').strip()
+        
+        # Determine which API to call based on provided parameters
+        api_url = None
+        search_type = ""
+        
+        if party_id:
+            # Search by party ID - direct lookup
+            api_url = f"{PARTY_API_BASE_URI}/{party_id}"
+            search_type = "party_id"
+        elif last_name and date_of_birth:
+            # Search by both last name and date of birth
+            api_url = f"{PARTY_API_BASE_URI}?lastName={last_name}&dateOfBirth={date_of_birth}"
+            search_type = "last_name_and_dob"
+        elif last_name:
+            # Search by last name only
+            api_url = f"{PARTY_API_BASE_URI}?lastName={last_name}"
+            search_type = "last_name"
+        elif date_of_birth:
+            # Search by date of birth only
+            api_url = f"{PARTY_API_BASE_URI}?dateOfBirth={date_of_birth}"
+            search_type = "date_of_birth"
+        else:
+            return jsonify({"error": "At least one search parameter is required (partyId, lastName, or dateOfBirth)"}), 400
+        
+        print(f"Searching customers using {search_type}: {api_url}")
+        
+        # Make the API call
+        response = requests.get(
+            api_url,
+            headers={"Accept": "application/json"}
+        )
+        
+        if response.status_code == 200:
+            response_data = response.json()
+            
+            # Track the successful API call
+            track_api_call(api_url, "GET", response=response_data)
+            
+            customers = []
+            
+            if search_type == "party_id":
+                # Single party response format
+                customer = {
+                    "customerId": response_data.get('partyId', party_id),
+                    "firstName": response_data.get('firstName', ''),
+                    "lastName": response_data.get('lastName', ''),
+                    "dateOfBirth": response_data.get('dateOfBirth', ''),
+                    "cityOfBirth": response_data.get('cityOfBirth', ''),
+                    "middleName": response_data.get('middleName', ''),
+                    "status": "Active"
+                }
+                customers.append(customer)
+            else:
+                # Multiple parties response format
+                parties = response_data.get('parties', [])
+                for party in parties:
+                    customer = {
+                        "customerId": party.get('partyId', ''),
+                        "firstName": party.get('firstName', ''),
+                        "lastName": party.get('lastName', ''),
+                        "dateOfBirth": party.get('dateOfBirth', ''),
+                        "cityOfBirth": party.get('cityOfBirth', ''),
+                        "middleName": party.get('middleName', ''),
+                        "status": "Active"
+                    }
+                    customers.append(customer)
+            
+            return jsonify({
+                "success": True,
+                "customers": customers,
+                "searchType": search_type,
+                "searchParams": {
+                    "partyId": party_id,
+                    "lastName": last_name,
+                    "dateOfBirth": date_of_birth
+                }
+            })
+        else:
+            error = {"status": response.status_code, "message": f"Search failed: {response.text}"}
+            track_api_call(api_url, "GET", error=error)
+            
+            return jsonify({
+                "success": False,
+                "error": f"API call failed with status {response.status_code}",
+                "customers": [],
+                "searchType": search_type
+            }), response.status_code
+            
+    except Exception as e:
+        print(f"ERROR: Failed to search customers: {str(e)}")
+        return jsonify({
+            "success": False,
+            "error": f"Server error: {str(e)}",
+            "customers": [],
+            "searchType": "unknown"
+        }), 500
 
 @main_bp.route('/api/branch/customers/<string:customer_id>')
 def get_branch_customer_details(customer_id):
@@ -702,18 +710,10 @@ def get_branch_customer_details(customer_id):
             }
             
             # Add stubbed contact info
-            if customer_id == "2513655771":
-                # Use David Jones for email
-                customer_details["firstName"] = "David"
-                customer_details["lastName"] = "Jones"
-                customer_details["primaryEmail"] = "david.jones@example.com"
-                customer_details["mobilePhone"] = "+1 555-123-4567"
-                customer_details["homePhone"] = "+1 555-765-4321"
-            else:
-                customer_details["primaryEmail"] = "customer@example.com"
-                customer_details["mobilePhone"] = "+1 555-000-0000"
-                customer_details["homePhone"] = "+1 555-000-0001"
-                
+            customer_details["primaryEmail"] = "customer@example.com"
+            customer_details["mobilePhone"] = "+1 555-000-0000"
+            customer_details["homePhone"] = "+1 555-000-0001"
+            
             return jsonify(customer_details)
         else:
             # If API call fails, return a generic customer with the requested ID
@@ -722,8 +722,8 @@ def get_branch_customer_details(customer_id):
             
             return jsonify({
                 "customerId": customer_id,
-                "firstName": "David" if customer_id == "2513655771" else "Unknown",
-                "lastName": "Jones" if customer_id == "2513655771" else "Customer",
+                "firstName": "Unknown",
+                "lastName": "Customer",
                 "dateOfBirth": "N/A",
                 "nationality": "US"
             })
@@ -731,8 +731,8 @@ def get_branch_customer_details(customer_id):
         print(f"ERROR: Failed to fetch customer details for {customer_id}: {str(e)}")
         return jsonify({
             "customerId": customer_id,
-            "firstName": "David" if customer_id == "2513655771" else "Unknown",
-            "lastName": "Jones" if customer_id == "2513655771" else "Customer",
+            "firstName": "Unknown",
+            "lastName": "Customer",
             "dateOfBirth": "N/A",
             "nationality": "US"
         })
@@ -806,148 +806,102 @@ def get_branch_customer_accounts(customer_id):
 @main_bp.route('/api/branch/accounts/<string:account_id>/transactions')
 def get_branch_account_transactions(account_id):
     """Provides transactions for a specific account (branch context)."""
+    print(f"Fetching transactions for account/arrangement: {account_id}")
+    
+    # The account_id might be an arrangement ID (AA250735MX1Q) instead of a proper Holdings account ID (GB0010001-XXXXXXXX)
+    # First, determine if this is a proper Holdings account ID (contains a hyphen)
+    holdings_account_id = account_id
+    
+    if '-' not in account_id:
+        # Try to find the proper account ID format from customer arrangements
+        # Get party_id from the request args - no default provided
+        party_id = request.args.get('partyId', request.args.get('party_id'))
+        
+        if not party_id:
+            return jsonify({"error": "Party ID is required to look up proper account format"}), 400
+            
+        print(f"Using party_id {party_id} to look up proper account ID format")
+        
+        # Get arrangements for this party to find the mapping
+        arrangements_url = f"http://modulardemo.northeurope.cloudapp.azure.com/ms-holdings-api/api/v1.0.0/holdings/parties/{party_id}/arrangements"
+        try:
+            arrangements_response = requests.get(
+                arrangements_url,
+                headers={"Accept": "application/json"}
+            )
+            
+            if arrangements_response.ok:
+                arrangements_data = arrangements_response.json()
+                if 'arrangements' in arrangements_data and isinstance(arrangements_data['arrangements'], list):
+                    for arrangement in arrangements_data['arrangements']:
+                        # Check if this arrangement matches our account_id
+                        if arrangement.get('contractReference') == account_id:
+                            # Look for alternateReferences with type ACCOUNT
+                            alt_refs = arrangement.get('alternateReferences', [])
+                            for alt_ref in alt_refs:
+                                if isinstance(alt_ref, dict) and alt_ref.get('alternateType') == 'ACCOUNT':
+                                    holdings_account_id = alt_ref.get('alternateId')
+                                    print(f"Found proper Holdings account ID {holdings_account_id} for arrangement {account_id}")
+                                    break
+                            break
+        except Exception as e:
+            print(f"Error looking up account ID format: {str(e)}")
+    
+    # Now use the proper account ID to fetch transactions
+    target_url = f"http://modulardemo.northeurope.cloudapp.azure.com/ms-holdings-api/api/v3.0.0/holdings/accounts/{holdings_account_id}/transactions"
+    print(f"Making API call to fetch transactions for account: {holdings_account_id}")
+    
     try:
-        account_type = account_id.split('-')[-1]  # Extract the account type suffix
-        
-        # Generate deterministic but realistic sample transactions
-        transactions = []
-        
-        # Current date for reference
-        today = datetime.datetime.now()
-        
-        # Generate transactions for the past 30 days
-        for i in range(30):
-            # Date for this transaction (going backward from today)
-            trans_date = today - datetime.timedelta(days=i)
-            date_str = trans_date.strftime("%Y-%m-%d")
-            
-            # Generate different transaction types based on account type
-            if account_type == "CHK":
-                # Checking account - mix of deposits, withdrawals, payments
-                if i % 7 == 0:  # Weekly salary deposit
-                    transactions.append({
-                        "transactionId": f"T{account_id}-{i}",
-                        "description": "DIRECT DEPOSIT - EMPLOYER PAYROLL",
-                        "amount": 2145.78,
-                        "currency": "USD",
-                        "bookingDate": date_str,
-                        "valueDate": date_str,
-                        "type": "deposit"
-                    })
-                elif i % 5 == 0:  # Regular bills
-                    transactions.append({
-                        "transactionId": f"T{account_id}-{i}",
-                        "description": "AUTOPAY - UTILITY BILL",
-                        "amount": -142.57,
-                        "currency": "USD",
-                        "bookingDate": date_str,
-                        "valueDate": date_str,
-                        "type": "payment"
-                    })
-                elif i % 3 == 0:  # Grocery shopping
-                    transactions.append({
-                        "transactionId": f"T{account_id}-{i}",
-                        "description": "POS PURCHASE - GROCERY STORE",
-                        "amount": -87.45,
-                        "currency": "USD",
-                        "bookingDate": date_str,
-                        "valueDate": date_str,
-                        "type": "purchase"
-                    })
-                else:  # Other random transactions
-                    transactions.append({
-                        "transactionId": f"T{account_id}-{i}",
-                        "description": "DEBIT CARD PURCHASE - RETAIL",
-                        "amount": -(25 + (i % 10) * 5.5),
-                        "currency": "USD",
-                        "bookingDate": date_str,
-                        "valueDate": date_str,
-                        "type": "purchase"
-                    })
-            
-            elif account_type == "SAV":
-                # Savings account - mostly deposits and interest
-                if i % 10 == 0:
-                    transactions.append({
-                        "transactionId": f"T{account_id}-{i}",
-                        "description": "TRANSFER FROM CHECKING",
-                        "amount": 500.00,
-                        "currency": "USD",
-                        "bookingDate": date_str,
-                        "valueDate": date_str,
-                        "type": "transfer"
-                    })
-                elif i == 1:  # Monthly interest
-                    transactions.append({
-                        "transactionId": f"T{account_id}-{i}",
-                        "description": "INTEREST PAYMENT",
-                        "amount": 21.35,
-                        "currency": "USD",
-                        "bookingDate": date_str,
-                        "valueDate": date_str,
-                        "type": "interest"
-                    })
-            
-            elif account_type == "LOAN":
-                # Loan account - monthly payments
-                if i % 30 == 0:
-                    transactions.append({
-                        "transactionId": f"T{account_id}-{i}",
-                        "description": "MONTHLY PAYMENT",
-                        "amount": -1573.25,
-                        "currency": "USD",
-                        "bookingDate": date_str,
-                        "valueDate": date_str,
-                        "type": "payment"
-                    })
-            
-            elif account_type == "CC":
-                # Credit card - various purchases and payments
-                if i % 15 == 0:  # Bi-weekly payment
-                    transactions.append({
-                        "transactionId": f"T{account_id}-{i}",
-                        "description": "PAYMENT - THANK YOU",
-                        "amount": 1500.00,
-                        "currency": "USD",
-                        "bookingDate": date_str,
-                        "valueDate": date_str,
-                        "type": "payment"
-                    })
-                elif i % 2 == 0:  # Frequent purchases
-                    transactions.append({
-                        "transactionId": f"T{account_id}-{i}",
-                        "description": "PURCHASE - ONLINE RETAILER",
-                        "amount": -(30 + (i % 15) * 4.5),
-                        "currency": "USD",
-                        "bookingDate": date_str,
-                        "valueDate": date_str,
-                        "type": "purchase"
-                    })
-                elif i % 7 == 3:  # Weekly dining
-                    transactions.append({
-                        "transactionId": f"T{account_id}-{i}",
-                        "description": "RESTAURANT PURCHASE",
-                        "amount": -(50 + (i % 5) * 10),
-                        "currency": "USD",
-                        "bookingDate": date_str,
-                        "valueDate": date_str,
-                        "type": "purchase"
-                    })
-        
-        # Sort transactions by date (newest first)
-        transactions.sort(key=lambda x: x["bookingDate"], reverse=True)
-        
-        # Log the API call
-        track_api_call(
-            f"/api/branch/accounts/{account_id}/transactions", 
-            "GET", 
-            response={"transactionCount": len(transactions)}
+        # Make the actual API call
+        response = requests.get(
+            target_url,
+            headers={"Accept": "application/json"},
+            params=request.args
         )
         
-        return jsonify(transactions)
+        # Track the API call
+        track_api_call(target_url, "GET", params=dict(request.args), 
+                      response=response.json() if response.ok else None,
+                      error=None if response.ok else {"message": response.text, "status": response.status_code})
+        
+        # Process the response for branch banking frontend
+        if response.ok:
+            try:
+                # The Holdings API returns data in {items: [...]} format
+                response_data = response.json()
+                
+                # Extract the transactions from items array
+                if 'items' in response_data and isinstance(response_data['items'], list):
+                    transactions = []
+                    
+                    # Transform each item to match what branch expects
+                    for item in response_data['items']:
+                        transaction = {
+                            "transactionId": item.get('id', ''),
+                            "description": item.get('narrative', 'Transaction'),
+                            "amount": item.get('transactionAmount', 0),
+                            "currency": item.get('currency', 'USD'),
+                            "bookingDate": item.get('bookingDate', ''),
+                            "valueDate": item.get('valueDate', ''),
+                            "type": "payment" if item.get('paymentIndicator') == 'Debit' else "deposit"
+                        }
+                        transactions.append(transaction)
+                    
+                    print(f"Processed {len(transactions)} transactions for branch account {holdings_account_id}")
+                    return jsonify(transactions)
+                else:
+                    print(f"No transaction items found in response for account {holdings_account_id}")
+                    return jsonify([])
+            except Exception as e:
+                print(f"Error processing transaction data for branch: {str(e)}")
+                return jsonify([])
+        else:
+            print(f"Error response from Holdings API: {response.status_code}")
+            return jsonify([]), response.status_code
     except Exception as e:
-        print(f"ERROR: Failed to generate transactions for account {account_id}: {str(e)}")
-        return jsonify([])
+        print(f"Error fetching account transactions for account {holdings_account_id}: {str(e)}")
+        track_api_call(target_url, "GET", params=dict(request.args), error={"message": str(e), "status": 500})
+        return jsonify([]), 500
 
 @main_bp.route('/api/branch/loans/<string:loan_id>/details')
 def get_branch_loan_details(loan_id):
