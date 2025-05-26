@@ -425,20 +425,32 @@
                     // Format and display event data
                     const eventData = data.data;
                     
+                    // Format the event data for display
                     const eventElement = document.createElement('div');
                     eventElement.className = 'mb-2 p-1 border-b border-gray-200 hover:bg-gray-50';
                     
                     // Format timestamp
-                    const timestamp = eventData.timestamp ? eventData.timestamp : new Date().toLocaleTimeString();
+                    const timestamp = eventData.time ? 
+                        new Date(eventData.time).toLocaleString('en-US', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
+                            hour12: true
+                        }) : 
+                        new Date().toLocaleString();
                     
                     // Create event header with more efficient rendering for party domain
                     const headerDiv = document.createElement('div');
-                    headerDiv.className = 'flex justify-between items-center text-xs text-teal-700 font-bold';
+                    headerDiv.className = 'flex flex-col text-xs text-teal-700';
                     
                     // Use the same header format for all domains
                     headerDiv.innerHTML = `
-                        <span>${timestamp}</span>
-                        <span>Topic: ${eventData.topic}, Partition: ${eventData.partition}, Offset: ${eventData.offset}</span>
+                        <div class="text-gray-500 font-bold">${timestamp}</div>
+                        <div class="font-bold">Topic: ${eventData.topic}</div>
+                        <div class="text-gray-600 font-bold">Partition: ${eventData.partition}, Offset: ${eventData.offset}</div>
                     `;
                     eventElement.appendChild(headerDiv);
                     

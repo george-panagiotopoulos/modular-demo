@@ -1426,7 +1426,7 @@ def stream_kafka_events(domain):
                 continue
                 
             if msg.error():
-                if msg.error().code() == KafkaException._PARTITION_EOF:
+                if msg.error().code() == -191:  # KafkaError.PARTITION_EOF
                     continue
                 error_msg = f"Kafka error: {msg.error()}"
                 yield f"data: {json.dumps({'type': 'error', 'message': error_msg})}\n\n"
