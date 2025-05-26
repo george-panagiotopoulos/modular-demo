@@ -7,10 +7,10 @@
     let loansData = [];
     let partyId = localStorage.getItem('mobileAppPartyId');
     
-    // Check if we have a party ID from localStorage, otherwise set to empty string
+    // Check if we have a party ID from localStorage, otherwise set to default
     if (!partyId || partyId.trim() === "") {
-        partyId = "";
-        console.log("No party ID found in localStorage - user must enter one");
+        partyId = "2514672778";
+        console.log("No party ID found in localStorage - using default: 2514672778");
     } else {
         console.log("Using Party ID from localStorage:", partyId);
     }
@@ -615,18 +615,19 @@
 
     // --- UI Interaction ---
     function showHome() {
-        const { accountsSectionDiv, loansSectionDiv, transactionsSection, transferSection, loanScheduleSection } = getElements();
+        console.log("Showing home view with party ID:", partyId);
         
-        // Show the main sections
-        if(accountsSectionDiv) accountsSectionDiv.classList.remove('hidden');
-        if(loansSectionDiv) loansSectionDiv.classList.remove('hidden');
+        // Show accounts and loans sections, hide others
+        const elements = getElements();
+        elements.accountsSectionDiv.classList.remove('hidden');
+        elements.loansSectionDiv.classList.remove('hidden');
+        elements.transactionsSection.classList.add('hidden');
+        elements.loanScheduleSection.classList.add('hidden');
+        elements.transferSection.classList.add('hidden');
         
-        // Hide other detail sections
-        if(transactionsSection) transactionsSection.classList.add('hidden');
-        if(transferSection) transferSection.classList.add('hidden');
-        if(loanScheduleSection) loanScheduleSection.classList.add('hidden');
-        
-        console.log("[showHome] Returned to home screen");
+        // Load data
+        fetchAccounts();
+        fetchLoans();
     }
     
     function showTransactions(id) {
@@ -1116,18 +1117,22 @@
 
     // --- Initialization ---
     function initMobileAppTab() {
-        console.log("Initializing Mobile App Tab...");
+        console.log("Initializing mobile app tab");
         
-        // Set the input field to show the current party ID
-        const { partyIdInput } = getElements();
-        if (partyIdInput) {
-            partyIdInput.value = partyId;
+        // Set the party ID input field value
+        const elements = getElements();
+        if (elements.partyIdInput) {
+            elements.partyIdInput.value = partyId;
         }
         
-        addStaticListeners();
-        addPartyIdChangeListener();
-        fetchAccounts();
-        fetchLoans();
+        // Add static listeners if not already added
+        if (!staticListenersAdded) {
+            addStaticListeners();
+            staticListenersAdded = true;
+        }
+        
+        // Load initial data
+        showHome();
     }
 
     // --- Global Cleanup Function --- 

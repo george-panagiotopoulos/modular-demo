@@ -1,13 +1,18 @@
 <div class="headless-v2-container flex flex-col h-full p-4 gap-4 bg-gray-50">
+    <!-- Disclaimer for Headless demo -->
+    <div class="text-xs text-red-600 text-center mb-2">
+        This headless demo is for demonstration purposes only and is not part of the Temenos product.
+    </div>
+    
     <div class="flex justify-between items-center mb-2">
         <h2 class="text-xl font-bold text-teal-800">Demo Sequence Diagram</h2>
         <button id="toggle-diagram" class="px-3 py-1 bg-teal-600 text-white rounded hover:bg-teal-700 text-sm">
-            Hide Diagram
+            Show Diagram
         </button>
     </div>
     
     <!-- Sequence Diagram Display -->
-    <div id="diagram-container" class="flex justify-center mb-4">
+    <div id="diagram-container" class="flex justify-center mb-4 hidden">
         <img src="/static/images/sequence_diagram.png" alt="Sequence Diagram" class="border border-gray-300 shadow-sm rounded" />
     </div>
     
