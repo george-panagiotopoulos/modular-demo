@@ -425,70 +425,8 @@
                     // Format and display event data
                     const eventData = data.data;
                     
-                    // Format the event data for display
-                    const eventElement = document.createElement('div');
-                    eventElement.className = 'mb-2 p-1 border-b border-gray-200 hover:bg-gray-50';
-                    
-                    // Format timestamp
-                    const timestamp = eventData.time ? 
-                        new Date(eventData.time).toLocaleString('en-US', {
-                            year: 'numeric',
-                            month: '2-digit',
-                            day: '2-digit',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            second: '2-digit',
-                            hour12: true
-                        }) : 
-                        new Date().toLocaleString();
-                    
-                    // Create event header with more efficient rendering for party domain
-                    const headerDiv = document.createElement('div');
-                    headerDiv.className = 'flex flex-col text-xs text-teal-700';
-                    
-                    // Use the same header format for all domains
-                    headerDiv.innerHTML = `
-                        <div class="text-gray-500 font-bold">${timestamp}</div>
-                        <div class="font-bold">Topic: ${eventData.topic}</div>
-                        <div class="text-gray-600 font-bold">Partition: ${eventData.partition}, Offset: ${eventData.offset}</div>
-                    `;
-                    eventElement.appendChild(headerDiv);
-                    
-                    // Add event payload as collapsible section
-                    const payloadDiv = document.createElement('div');
-                    payloadDiv.className = 'mt-1 pl-2 border-l-2 border-teal-200 text-xs';
-                    
-                    // Format the payload
-                    if (eventData.payload) {
-                        if (typeof eventData.payload === 'object') {
-                            // Use the same formatting for all domains
-                            payloadDiv.innerHTML = `<pre class="whitespace-pre-wrap overflow-x-auto">${formatJSON(eventData.payload)}</pre>`;
-                        } else {
-                            payloadDiv.innerHTML = `<pre class="whitespace-pre-wrap overflow-x-auto">${eventData.payload}</pre>`;
-                        }
-                    }
-                    
-                    eventElement.appendChild(payloadDiv);
-                    
-                    // Always add to the top of the events container (newest first)
-                    eventsContainer.insertBefore(eventElement, eventsContainer.firstChild);
-                    
-                    // Limit number of events shown to prevent browser performance issues
-                    const children = Array.from(eventsContainer.children);
-                    // Keep only the first 25 real event elements (not info/error messages)
-                    const eventElements = children.filter(child => 
-                        child.classList.contains('mb-2') && 
-                        child.classList.contains('p-1') && 
-                        child.classList.contains('border-b')
-                    );
-                    
-                    if (eventElements.length > 25) {
-                        for (let i = 25; i < eventElements.length; i++) {
-                            if (eventElements[i] && eventElements[i].parentNode === eventsContainer) {
-                                eventsContainer.removeChild(eventElements[i]);
-                            }
-                        }
-                    }
+                    // Use colored summary buttons for all domains
+                    displayEventSummary(eventData, eventsContainer);
                 }
                 // Ignore ping messages
             } catch (e) {
@@ -518,6 +456,146 @@
                 }
             }, reconnectDelay);
         };
+    }
+    
+    function displayEventSummary(eventData, eventsContainer) {
+        // Extract event information - use timestamp from eventData, fallback to payload.time
+        let timestamp;
+        if (eventData.timestamp) {
+            // Backend sends timestamp as H:M:S format, convert to full datetime
+            const today = new Date();
+            const timeStr = eventData.timestamp;
+            const [hours, minutes, seconds] = timeStr.split(':');
+            today.setHours(parseInt(hours), parseInt(minutes), parseInt(seconds));
+            timestamp = today.toLocaleString('en-US', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            });
+        } else if (eventData.payload && eventData.payload.time) {
+            timestamp = new Date(eventData.payload.time).toLocaleString('en-US', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            });
+        } else {
+            timestamp = new Date().toLocaleString();
+        }
+        
+        const topicName = eventData.topic || 'Unknown Topic';
+        
+        // Extract type and businesskey from payload
+        let eventType = 'Unknown Type';
+        let businessKey = 'Unknown Business Key';
+        
+        if (eventData.payload && typeof eventData.payload === 'object') {
+            eventType = eventData.payload.type || 'Unknown Type';
+            businessKey = eventData.payload.businesskey || 'Unknown Business Key';
+        }
+        
+        // Generate a color based on event type
+        const eventColor = getEventColor(eventType);
+        
+        // Create the summary button
+        const summaryButton = document.createElement('button');
+        summaryButton.className = `w-full text-left p-2 mb-1 rounded text-xs font-medium text-white hover:opacity-80 transition-opacity`;
+        summaryButton.style.backgroundColor = eventColor;
+        
+        summaryButton.innerHTML = `
+            <div class="font-bold">${timestamp}</div>
+            <div class="mt-1">Topic: ${topicName}</div>
+            <div class="mt-1">Type: ${eventType}</div>
+            <div class="mt-1">Business Key: ${businessKey}</div>
+        `;
+        
+        // Create the full event details container (initially hidden)
+        const detailsContainer = document.createElement('div');
+        detailsContainer.className = 'hidden mb-2 p-2 bg-gray-50 border border-gray-200 rounded text-xs';
+        detailsContainer.innerHTML = `
+            <div class="mb-2 font-bold text-teal-700">Full Event Details:</div>
+            <div class="mb-2">
+                <span class="font-medium">Topic:</span> ${eventData.topic}<br>
+                <span class="font-medium">Partition:</span> ${eventData.partition}<br>
+                <span class="font-medium">Offset:</span> ${eventData.offset}
+            </div>
+            <div class="font-medium mb-1">Payload:</div>
+            <pre class="whitespace-pre-wrap overflow-x-auto bg-white p-2 rounded border">${formatJSON(eventData.payload)}</pre>
+        `;
+        
+        // Add click handler to toggle details
+        summaryButton.addEventListener('click', () => {
+            if (detailsContainer.classList.contains('hidden')) {
+                detailsContainer.classList.remove('hidden');
+                summaryButton.style.opacity = '0.7';
+            } else {
+                detailsContainer.classList.add('hidden');
+                summaryButton.style.opacity = '1';
+            }
+        });
+        
+        // Create wrapper for the event
+        const eventWrapper = document.createElement('div');
+        eventWrapper.className = 'mb-2';
+        eventWrapper.appendChild(summaryButton);
+        eventWrapper.appendChild(detailsContainer);
+        
+        // Add to the top of the events container (newest first)
+        eventsContainer.insertBefore(eventWrapper, eventsContainer.firstChild);
+        
+        // Limit number of events shown to prevent browser performance issues
+        limitEventCount(eventsContainer, 25);
+    }
+    
+    function getEventColor(eventType) {
+        // Generate consistent colors based on event type
+        const colors = [
+            '#3B82F6', // Blue
+            '#10B981', // Green
+            '#F59E0B', // Yellow
+            '#EF4444', // Red
+            '#8B5CF6', // Purple
+            '#06B6D4', // Cyan
+            '#F97316', // Orange
+            '#84CC16', // Lime
+            '#EC4899', // Pink
+            '#6B7280'  // Gray
+        ];
+        
+        // Simple hash function to get consistent color for same event type
+        let hash = 0;
+        for (let i = 0; i < eventType.length; i++) {
+            const char = eventType.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash; // Convert to 32-bit integer
+        }
+        
+        return colors[Math.abs(hash) % colors.length];
+    }
+    
+    function limitEventCount(eventsContainer, maxCount) {
+        // Limit number of events shown to prevent browser performance issues
+        const children = Array.from(eventsContainer.children);
+        // Keep only the first maxCount real event elements (not info/error messages)
+        const eventElements = children.filter(child => 
+            child.classList.contains('mb-2') && 
+            (child.classList.contains('p-1') || child.querySelector('button'))
+        );
+        
+        if (eventElements.length > maxCount) {
+            for (let i = maxCount; i < eventElements.length; i++) {
+                if (eventElements[i] && eventElements[i].parentNode === eventsContainer) {
+                    eventsContainer.removeChild(eventElements[i]);
+                }
+            }
+        }
     }
     
     function stopEventStream(domain) {

@@ -584,7 +584,7 @@ def generate_current_account_payload(party_id):
             }
         ],
         "accountName": "current",
-        "openingDate": today_str,
+        "openingDate": "20250314",
         "productId": "CHECKING.ACCOUNT",
         "currency": "USD",
         "branchCode": "01123",
