@@ -18,6 +18,8 @@
             searchPartyIdInput: document.getElementById('search-party-id'),
             searchLastNameInput: document.getElementById('search-last-name'),
             searchDateOfBirthInput: document.getElementById('search-date-of-birth'),
+            searchPhoneInput: document.getElementById('search-phone'),
+            searchEmailInput: document.getElementById('search-email'),
             searchCustomersBtn: document.getElementById('search-customers-btn'),
             clearSearchBtn: document.getElementById('clear-search-btn'),
             searchStatus: document.getElementById('search-status'),
@@ -48,13 +50,15 @@
         const partyId = elements.searchPartyIdInput?.value.trim() || '';
         const lastName = elements.searchLastNameInput?.value.trim() || '';
         const dateOfBirth = elements.searchDateOfBirthInput?.value.trim() || '';
+        const phoneNumber = elements.searchPhoneInput?.value.trim() || '';
+        const email = elements.searchEmailInput?.value.trim() || '';
         
         // Clear previous results and errors
         clearSearchResults();
         if (elements.searchError) elements.searchError.textContent = '';
         
         // Validate that at least one search criteria is provided
-        if (!partyId && !lastName && !dateOfBirth) {
+        if (!partyId && !lastName && !dateOfBirth && !phoneNumber && !email) {
             if (elements.searchError) elements.searchError.textContent = 'Please enter at least one search criteria.';
             return;
         }
@@ -69,6 +73,8 @@
             if (partyId) params.append('partyId', partyId);
             if (lastName) params.append('lastName', lastName);
             if (dateOfBirth) params.append('dateOfBirth', dateOfBirth);
+            if (phoneNumber) params.append('phoneNumber', phoneNumber);
+            if (email) params.append('email', email);
             
             // Perform the search API call
             const response = await fetch(`/api/parties/search?${params.toString()}`);
@@ -286,14 +292,15 @@
 
     function renderAccountRow(account) {
         const isLoan = account.type === 'loan';
+        const isDeposit = account.type === 'deposit' || account.productLine === 'DEPOSITS';
         const balance = isLoan ? (account.outstandingBalance || account.principalAmount || 0) : (account.currentBalance || 0);
         const formattedBalance = new Intl.NumberFormat('en-US', { style: 'currency', currency: account.currency }).format(Math.abs(balance));
 
         // Create display name - for loans, show arrangement ID only
         let displayId = account.accountId;
         if (isLoan) {
-            // For loans, show only the arrangement ID
-            displayId = account.arrangementId || account.loanId || account.accountId;
+            // For loans, show the correct loan ID (contractReference/loanId) not the arrangementId
+            displayId = account.loanId || account.contractReference || account.accountId;
         } else if (account.arrangementId && account.arrangementId !== account.accountId) {
             displayId = `${account.accountId} (${account.arrangementId})`;
         }
@@ -319,15 +326,24 @@
             `;
         }
 
+        // Determine styling based on account type
+        const bgColorClass = isDeposit ? 'bg-green-50 hover:bg-green-100' : (isLoan ? 'bg-red-50 hover:bg-red-100' : 'bg-gray-50 hover:bg-gray-100');
+        const balanceColorClass = isLoan ? 'text-red-700' : (isDeposit ? 'text-green-700' : 'text-gray-900');
+        const balanceLabel = isLoan ? 'Outstanding' : (isDeposit ? 'Deposit Amount' : 'Available');
+        
+        // Add type indicator for deposits
+        const typeIndicator = isDeposit ? '<span class="inline-block px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full ml-2">Term Deposit</span>' : '';
+
         return `
-            <div class="flex justify-between items-center p-3 border rounded-md bg-gray-50 hover:bg-gray-100 mb-2">
+            <div class="flex justify-between items-center p-3 border rounded-md ${bgColorClass} mb-2">
                 <div>
                     <span class="font-medium text-gray-800">${account.displayName || 'Account'} (${displayId})</span>
+                    ${typeIndicator}
                     <span class="text-xs text-gray-500 ml-2">${productName} - ${isLoan ? 'Start' : 'Opened'}: ${startOrOpenDate}</span>
                 </div>
                 <div class="text-right">
-                    <div class="font-semibold ${isLoan ? 'text-red-700' : 'text-gray-900'}">${formattedBalance} ${account.currency}</div>
-                    <div class="text-xs text-gray-500 mb-1">${isLoan ? 'Outstanding' : 'Available'}</div>
+                    <div class="font-semibold ${balanceColorClass}">${formattedBalance} ${account.currency}</div>
+                    <div class="text-xs text-gray-500 mb-1">${balanceLabel}</div>
                     ${actionButton}
                 </div>
             </div>
@@ -430,6 +446,21 @@
                         </div>
                         
                         <div class="border-b border-gray-100 pb-2">
+                            <label class="text-sm font-medium text-gray-500">Interest Rate</label>
+                            <div class="text-base text-gray-900">${loanData.interestRate || 'N/A'}</div>
+                        </div>
+                        
+                        <div class="border-b border-gray-100 pb-2">
+                            <label class="text-sm font-medium text-gray-500">Start Date</label>
+                            <div class="text-base text-gray-900">${loanData.startDate || 'N/A'}</div>
+                        </div>
+                        
+                        <div class="border-b border-gray-100 pb-2">
+                            <label class="text-sm font-medium text-gray-500">Term</label>
+                            <div class="text-base text-gray-900">${loanData.term || 'N/A'}</div>
+                        </div>
+                        
+                        <div class="border-b border-gray-100 pb-2">
                             <label class="text-sm font-medium text-gray-500">Payment Frequency</label>
                             <div class="text-base text-gray-900">Monthly</div>
                         </div>
@@ -439,6 +470,27 @@
                         <div class="border-b border-gray-100 pb-2">
                             <label class="text-sm font-medium text-gray-500">Current Balance</label>
                             <div class="text-lg font-semibold text-red-600">${formattedBalance}</div>
+                        </div>
+                        
+                        <div class="border-b border-gray-100 pb-2">
+                            <label class="text-sm font-medium text-gray-500">Maturity Date</label>
+                            <div class="text-base text-gray-900">${loanData.maturityDate || 'N/A'}</div>
+                        </div>
+                        
+                        <div class="border-b border-gray-100 pb-2">
+                            <label class="text-sm font-medium text-gray-500">Next Payment Date</label>
+                            <div class="text-base text-gray-900">${loanData.nextPaymentDate || 'N/A'}</div>
+                        </div>
+                        
+                        <div class="border-b border-gray-100 pb-2">
+                            <label class="text-sm font-medium text-gray-500">Total Due</label>
+                            <div class="text-base text-gray-900">${loanData.totalDue || 'N/A'}</div>
+                        </div>
+                        
+                        <div class="pt-4">
+                            <button id="view-loan-schedule-btn" data-loan-id="${loanData.loanId || loanData.id}" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                                View Payment Schedule
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -951,7 +1003,13 @@
                     productDisplayName: detailsData.productDisplayName || loanDisplayName,
                     displayName: loanDisplayName,
                     outstandingBalance: loanBalance,
-                    currency: loanCurrency
+                    currency: loanCurrency,
+                    interestRate: detailsData.interestRate,
+                    startDate: detailsData.startDate,
+                    term: detailsData.term,
+                    maturityDate: detailsData.maturityDate,
+                    nextPaymentDate: detailsData.nextPaymentDate,
+                    totalDue: detailsData.totalDue
                 };
                 
                 // Render loan details in the transactions list area
@@ -965,7 +1023,13 @@
                     productDisplayName: loanDisplayName,
                     displayName: loanDisplayName,
                     outstandingBalance: loanBalance,
-                    currency: loanCurrency
+                    currency: loanCurrency,
+                    interestRate: 'N/A',
+                    startDate: 'N/A',
+                    term: 'N/A',
+                    maturityDate: 'N/A',
+                    nextPaymentDate: 'N/A',
+                    totalDue: 'N/A'
                 };
                 
                 renderLoanDetailsInTransactionArea(fallbackData);
@@ -1009,6 +1073,21 @@
                         </div>
                         
                         <div class="border-b border-gray-100 pb-2">
+                            <label class="text-sm font-medium text-gray-500">Interest Rate</label>
+                            <div class="text-base text-gray-900">${loanData.interestRate || 'N/A'}</div>
+                        </div>
+                        
+                        <div class="border-b border-gray-100 pb-2">
+                            <label class="text-sm font-medium text-gray-500">Start Date</label>
+                            <div class="text-base text-gray-900">${loanData.startDate || 'N/A'}</div>
+                        </div>
+                        
+                        <div class="border-b border-gray-100 pb-2">
+                            <label class="text-sm font-medium text-gray-500">Term</label>
+                            <div class="text-base text-gray-900">${loanData.term || 'N/A'}</div>
+                        </div>
+                        
+                        <div class="border-b border-gray-100 pb-2">
                             <label class="text-sm font-medium text-gray-500">Payment Frequency</label>
                             <div class="text-base text-gray-900">Monthly</div>
                         </div>
@@ -1018,6 +1097,21 @@
                         <div class="border-b border-gray-100 pb-2">
                             <label class="text-sm font-medium text-gray-500">Current Balance</label>
                             <div class="text-lg font-semibold text-red-600">${formattedBalance}</div>
+                        </div>
+                        
+                        <div class="border-b border-gray-100 pb-2">
+                            <label class="text-sm font-medium text-gray-500">Maturity Date</label>
+                            <div class="text-base text-gray-900">${loanData.maturityDate || 'N/A'}</div>
+                        </div>
+                        
+                        <div class="border-b border-gray-100 pb-2">
+                            <label class="text-sm font-medium text-gray-500">Next Payment Date</label>
+                            <div class="text-base text-gray-900">${loanData.nextPaymentDate || 'N/A'}</div>
+                        </div>
+                        
+                        <div class="border-b border-gray-100 pb-2">
+                            <label class="text-sm font-medium text-gray-500">Total Due</label>
+                            <div class="text-base text-gray-900">${loanData.totalDue || 'N/A'}</div>
                         </div>
                         
                         <div class="pt-4">
@@ -1060,7 +1154,11 @@
         }
         
         try {
-            const response = await fetch(`/api/loans/${loanId}/schedules?_=${Date.now()}`);
+            const response = await fetch(`/api/loans/${loanId}/schedule?_=${Date.now()}`, {
+                headers: {
+                    'X-Client-Type': 'branch'
+                }
+            });
             
             if (response.ok) {
                 const scheduleData = await response.json();

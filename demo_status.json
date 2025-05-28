@@ -1,0 +1,14 @@
+{
+  "status": "completed",
+  "results": {
+    "party_id": "2514876284",
+    "account_id": "1013718314",
+    "loan_ids": [
+      "AA25073YB6LF",
+      "AA250733NCL6"
+    ]
+  },
+  "error": "",
+  "progress": "Completed successfully!",
+  "timestamp": "2025-05-29T00:12:42.382539"
+}

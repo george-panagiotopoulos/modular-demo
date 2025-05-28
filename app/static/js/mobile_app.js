@@ -41,55 +41,93 @@
             transferResultDiv: document.getElementById('transfer-result'),
             partyIdInput: document.getElementById('party-id-input'),
             changePartyIdButton: document.getElementById('change-party-id'),
+            profileContent: document.getElementById('profile-content'),
+            profileSection: document.getElementById('profile-section'),
+            loanDetailsInfo: document.getElementById('loan-details-info'),
         };
     }
 
     // --- Rendering Functions ---
     // Helper function to safely format currency
     function formatCurrency(amount, currency = 'USD') {
-        // Handle null, undefined, or invalid amounts
         if (amount === null || amount === undefined || isNaN(amount)) {
-            amount = 0;
+            return 'N/A';
         }
         
-        // Handle empty or invalid currency codes
-        if (!currency || typeof currency !== 'string' || currency.trim().length === 0) {
-            currency = 'USD';
-        }
+        const formatter = new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: currency,
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+        
+        return formatter.format(amount);
+    }
+
+    function formatDate(dateString) {
+        if (!dateString) return 'N/A';
         
         try {
-            return new Intl.NumberFormat('en-US', { 
-                style: 'currency', 
-                currency: currency.toUpperCase().trim()
-            }).format(Number(amount));
+            // Handle different date formats
+            let date;
+            if (dateString.includes('-')) {
+                // YYYY-MM-DD format
+                date = new Date(dateString);
+            } else if (dateString.length === 8) {
+                // YYYYMMDD format
+                const year = dateString.substring(0, 4);
+                const month = dateString.substring(4, 6);
+                const day = dateString.substring(6, 8);
+                date = new Date(`${year}-${month}-${day}`);
+            } else {
+                date = new Date(dateString);
+            }
+            
+            if (isNaN(date.getTime())) {
+                return 'N/A';
+            }
+            
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
         } catch (error) {
-            // Fallback if currency is invalid
-            console.warn(`Invalid currency code: ${currency}, using USD as fallback`);
-            return new Intl.NumberFormat('en-US', { 
-                style: 'currency', 
-                currency: 'USD'
-            }).format(Number(amount));
+            console.error('Error formatting date:', error);
+            return 'N/A';
         }
     }
 
     function renderAccountCard(account, isLoan = false) {
         const balance = account.currentBalance || 0;
         const availableBalance = account.availableBalance || 0;
-        const balanceClass = balance < 0 ? 'text-red-600' : 'text-green-600';
+        
+        // Determine if this is a deposit account
+        const isDeposit = account.type === 'deposit' || account.productLine === 'DEPOSITS';
+        const accountTypeLabel = isDeposit ? 'Term Deposit' : 'Current Account';
+        
+        // Set balance color: green for deposits, red for negative balances, green for positive balances
+        let balanceClass;
+        if (isDeposit) {
+            balanceClass = 'text-green-600'; // Always green for term deposits
+        } else {
+            balanceClass = balance < 0 ? 'text-red-600' : 'text-green-600';
+        }
         
         const formattedBalance = formatCurrency(Math.abs(balance), account.currency);
         const formattedAvailable = formatCurrency(availableBalance, account.currency);
 
+        // Consistent card styling for all account types
         return `
-            <div class="account-card p-4 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors" data-account-id="${account.accountId}">
+            <div class="account-card bg-white rounded-lg shadow-md border border-gray-200 p-4 hover:shadow-lg transition-shadow" data-account-id="${account.accountId}">
                 <div class="flex justify-between items-start mb-2">
                     <div>
-                        <h4 class="font-medium text-gray-900">${account.displayName || 'Account'}</h4>
+                        <h4 class="font-semibold text-gray-800">${account.displayName || accountTypeLabel}</h4>
                         <p class="text-sm text-gray-600">${account.accountId}</p>
                     </div>
                     <div class="text-right">
                         <div class="text-lg font-semibold ${balanceClass}">${formattedBalance}</div>
-                        <div class="text-xs text-gray-500">Available: ${formattedAvailable}</div>
+                        <div class="text-xs text-gray-500">${isDeposit ? 'Deposit Amount' : `Available: ${formattedAvailable}`}</div>
                     </div>
                 </div>
                 <div class="mt-3 flex space-x-2">
@@ -103,6 +141,9 @@
 
     function renderTransactionItem(transaction) {
         const formattedAmount = formatCurrency(transaction.amount, transaction.currency);
+        
+        // Determine transaction color - green for credits/deposits, red for debits
+        const amountColorClass = transaction.type === 'credit' ? 'text-green-600' : 'text-red-600';
         
         return `
             <div class="transaction-item flex justify-between items-center py-3 px-4 border-b border-gray-100">
@@ -119,7 +160,7 @@
                     </div>
                 </div>
                 <div class="text-right">
-                    <div class="font-semibold ${transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'}">${formattedAmount}</div>
+                    <div class="font-semibold ${amountColorClass}">${formattedAmount}</div>
                     <div class="text-xs text-gray-500">${transaction.status}</div>
                 </div>
             </div>
@@ -127,17 +168,14 @@
     }
 
     function renderLoanCard(loan) {
-        // Handle missing financial data gracefully
-        const outstandingBalance = loan.outstandingBalance || loan.principalAmount || 0;
-        const currency = loan.currency || 'USD';
-        const formattedBalance = formatCurrency(outstandingBalance, currency);
-        
+        const formattedBalance = formatCurrency(loan.outstandingBalance, loan.currency);
         return `
-            <div class="loan-card p-4 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors" data-loan-id="${loan.loanId}">
+            <div class="bg-white rounded-lg shadow-md border border-gray-200 p-4 hover:shadow-lg transition-shadow">
                 <div class="flex justify-between items-start mb-2">
                     <div>
-                        <h4 class="font-medium text-gray-900">${loan.displayName || loan.productName || 'Loan'}</h4>
-                        <p class="text-sm text-gray-600">${loan.loanId}</p>
+                        <h4 class="font-semibold text-gray-800">${loan.displayName}</h4>
+                        <p class="text-sm text-gray-600">ID: ${loan.loanId}</p>
+                        <p class="text-sm text-gray-600">Status: ${loan.status}</p>
                     </div>
                     <div class="text-right">
                         <div class="text-lg font-semibold text-red-600">${formattedBalance}</div>
@@ -153,158 +191,95 @@
         `;
     }
 
-    function renderLoanSchedule(schedule, targetDiv) {
-        if (!targetDiv) return;
-        if (!schedule || !schedule.payments || schedule.payments.length === 0) {
-            targetDiv.innerHTML = '<div class="text-center text-gray-500 py-4">No payment schedule available.</div>';
+    function renderLoanSchedule(schedule, currency = 'USD') {
+        const loanScheduleList = document.getElementById('loan-schedule-list');
+        
+        if (!loanScheduleList) {
+            console.error('Loan schedule list element not found');
             return;
         }
         
-        // Show only the next 10 payments
-        const displayPayments = schedule.payments.slice(0, 10);
-        
-        // Use an elegant card layout optimized for mobile
-        targetDiv.innerHTML = `
-            <div class="bg-white rounded-xl shadow-lg border border-gray-100">
-                <div class="px-5 py-4 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50">
-                    <h3 class="text-lg font-bold text-gray-800 mb-1">Payment Schedule</h3>
-                    <p class="text-sm text-blue-600 font-medium">Next ${displayPayments.length} payments</p>
-                </div>
-                <div class="divide-y divide-gray-50">
-                    ${displayPayments.map(payment => renderLoanScheduleMobileCard(payment, schedule.currency)).join('')}
-                </div>
-            </div>
-        `;
-    }
-
-    function renderLoanScheduleMobileCard(payment, currency) {
-        const formattedTotal = formatCurrency(payment.totalAmount, currency);
-        const formattedPrincipal = formatCurrency(payment.principal, currency);
-        const formattedInterest = formatCurrency(payment.interest, currency);
-
-        // Format date - handle both YYYY-MM-DD and YYYYMMDD formats
-        const formatDate = (dateStr) => {
-            if (!dateStr) return "N/A";
-            if (dateStr.includes('-')) {
-                return new Date(dateStr).toLocaleDateString('en-US', { 
-                    month: 'short', 
-                    day: 'numeric', 
-                    year: 'numeric' 
-                });
-            } else if (dateStr.length === 8) {
-                const year = dateStr.substring(0, 4);
-                const month = dateStr.substring(4, 6);
-                const day = dateStr.substring(6, 8);
-                return new Date(`${year}-${month}-${day}`).toLocaleDateString('en-US', { 
-                    month: 'short', 
-                    day: 'numeric', 
-                    year: 'numeric' 
-                });
-            }
-            return dateStr;
-        };
-
-        const statusColor = payment.status === "Due" ? "text-red-700 bg-red-100 border-red-200" : "text-blue-700 bg-blue-100 border-blue-200";
-
-        return `
-            <div class="p-5 hover:bg-gray-25 transition-colors duration-200">
-                <div class="flex justify-between items-center mb-3">
-                    <div class="flex-1">
-                        <div class="text-base font-semibold text-gray-800 mb-1">${formatDate(payment.dueDate)}</div>
-                        <div class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-full border ${statusColor}">
-                            ${payment.status}
-                        </div>
-                    </div>
-                    <div class="text-right ml-4">
-                        <div class="text-xl font-bold text-gray-900">${formattedTotal}</div>
-                        <div class="text-xs text-gray-500 font-medium uppercase tracking-wide">Total Payment</div>
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-4 mt-4 pt-3 border-t border-gray-100">
-                    <div class="text-center">
-                        <div class="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">Principal</div>
-                        <div class="text-base font-semibold text-green-700">${formattedPrincipal}</div>
-                    </div>
-                    <div class="text-center">
-                        <div class="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">Interest</div>
-                        <div class="text-base font-semibold text-orange-600">${formattedInterest}</div>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    function renderLoanScheduleInfo(schedule, loan, targetDiv) {
-        if (!targetDiv || !schedule || !loan) return;
-        
-        // Get next payment info from the first payment in the schedule
-        let nextPaymentAmount = 0;
-        let nextPaymentDate = "";
-        
-        if (schedule.payments && schedule.payments.length > 0) {
-            // Find the first due or pending payment
-            const nextPayment = schedule.payments.find(payment => 
-                payment.status === "Due" || payment.status === "Pending"
-            ) || schedule.payments[0];
-            
-            nextPaymentAmount = nextPayment.totalAmount || 0;
-            nextPaymentDate = nextPayment.dueDate || "";
+        if (!schedule || schedule.length === 0) {
+            loanScheduleList.innerHTML = '<div class="text-center text-gray-500 py-4">No upcoming payments found</div>';
+            return;
         }
         
-        const formattedNext = formatCurrency(nextPaymentAmount, schedule.currency);
-        const formattedOutstanding = formatCurrency(loan.outstandingBalance, schedule.currency);
-        
-        // Format date from YYYYMMDD or YYYY-MM-DD to MM/DD/YYYY
-        const formatDate = (dateStr) => {
-            if (!dateStr) return "N/A";
+        const scheduleHTML = schedule.map(payment => {
+            const outstandingAmount = payment.outstandingAmount || 0;
             
-            let year, month, day;
-            
-            // Handle YYYY-MM-DD format from API
-            if (dateStr.includes('-')) {
-                [year, month, day] = dateStr.split('-');
-            } 
-            // Handle YYYYMMDD format from fallback data
-            else if (dateStr.length === 8) {
-                year = dateStr.substring(0, 4);
-                month = dateStr.substring(4, 6);
-                day = dateStr.substring(6, 8);
-            } else {
-                return "N/A"; // Invalid format
-            }
-            
-            return `${month}/${day}/${year}`;
-        };
-        
-        const nextDate = formatDate(nextPaymentDate);
-        const remainingPayments = schedule.payments ? schedule.payments.filter(p => p.status === "Pending").length : 0;
-        
-        targetDiv.innerHTML = `
-            <div class="">
-                <div class="flex justify-between items-start mb-3">
-                    <div>
-                        <h3 class="text-lg font-semibold text-gray-800">${loan.displayName}</h3>
-                        <p class="text-sm text-gray-500">ID: ${loan.loanId} • ${loan.status}</p>
+            return `
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-3">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-bold text-gray-800">${formatDate(payment.dueDate)}</h3>
                     </div>
-                    <div class="flex flex-col items-end">
-                        <span class="text-sm text-gray-500">Outstanding Balance</span>
-                        <span class="text-lg font-bold text-gray-900">${formattedOutstanding}</span>
+                    <div class="space-y-1 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Total Amount:</span>
+                            <span class="font-medium">${formatCurrency(payment.totalAmount, currency)}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Principal:</span>
+                            <span>${formatCurrency(payment.principalAmount, currency)}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Interest:</span>
+                            <span>${formatCurrency(payment.interestAmount, currency)}</span>
+                        </div>
+                        <div class="flex justify-between border-t pt-1 mt-2">
+                            <span class="text-gray-600">Remaining Balance:</span>
+                            <span class="font-medium text-blue-600">${formatCurrency(outstandingAmount, currency)}</span>
+                        </div>
                     </div>
                 </div>
-                
-                <div class="grid grid-cols-2 gap-4 mt-2">
-                    <div class="bg-white rounded-lg p-3 border border-blue-100">
-                        <span class="text-xs text-gray-500 block">Next Payment</span>
-                        <span class="text-base font-semibold text-gray-900">${formattedNext}</span>
+            `;
+        }).join('');
+        
+        loanScheduleList.innerHTML = scheduleHTML;
+    }
+
+    function renderLoanScheduleInfo(loan, schedule) {
+        const loanScheduleInfo = document.getElementById('loan-schedule-info');
+        
+        if (!loanScheduleInfo) {
+            console.error('Loan schedule info element not found');
+            return;
+        }
+        
+        // Get next payment info from schedule
+        const nextPayment = schedule && schedule.length > 0 ? schedule[0] : null;
+        const nextPaymentAmount = nextPayment ? formatCurrency(nextPayment.totalAmount, loan.currency || 'USD') : 'N/A';
+        const nextPaymentDate = nextPayment ? formatDate(nextPayment.dueDate) : 'N/A';
+        
+        // Calculate remaining payments using total payments from loan object
+        const remainingPayments = loan.totalPayments || schedule.length;
+        
+        // Get outstanding balance from the first payment in schedule (most current)
+        const outstandingBalance = nextPayment ? Math.abs(nextPayment.outstandingAmount || 0) : 0;
+        
+        loanScheduleInfo.innerHTML = `
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                <h3 class="text-lg font-semibold text-gray-800 mb-3">${loan.productName || loan.displayName || 'Loan'}</h3>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Loan ID:</span>
+                        <span class="font-medium">${loan.id || loan.loanId || 'N/A'}</span>
                     </div>
-                    <div class="bg-white rounded-lg p-3 border border-blue-100">
-                        <span class="text-xs text-gray-500 block">Due Date</span>
-                        <span class="text-base font-semibold text-gray-900">${nextDate}</span>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Outstanding Balance:</span>
+                        <span class="font-semibold text-red-600">${formatCurrency(outstandingBalance, loan.currency || 'USD')}</span>
                     </div>
-                </div>
-                
-                <div class="mt-3 text-xs text-gray-600">
-                    ${remainingPayments} payments remaining until complete
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Next Payment:</span>
+                        <span class="font-medium">${nextPaymentAmount}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Due Date:</span>
+                        <span class="font-medium">${nextPaymentDate}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Remaining Payments:</span>
+                        <span class="font-medium">${remainingPayments}</span>
+                    </div>
                 </div>
             </div>
         `;
@@ -316,7 +291,34 @@
             targetDiv.innerHTML = '<div class="text-center text-gray-500 py-4">No accounts found.</div>';
             return;
         }
-        targetDiv.innerHTML = accounts.map(renderAccountCard).join('');
+        
+        // Separate current accounts and term deposits
+        const currentAccounts = accounts.filter(account => account.type === 'current' || account.productLine === 'ACCOUNTS');
+        const termDeposits = accounts.filter(account => account.type === 'deposit' || account.productLine === 'DEPOSITS');
+        
+        let html = '';
+        
+        // Render current accounts first
+        if (currentAccounts.length > 0) {
+            html += '<div class="mb-4">';
+            html += '<h3 class="text-lg font-semibold text-gray-800 mb-3">Your Accounts</h3>';
+            html += '<div class="space-y-3">';
+            html += currentAccounts.map(renderAccountCard).join('');
+            html += '</div>';
+            html += '</div>';
+        }
+        
+        // Render term deposits second
+        if (termDeposits.length > 0) {
+            html += '<div class="mb-4">';
+            html += '<h3 class="text-lg font-semibold text-gray-800 mb-3">Your Deposits</h3>';
+            html += '<div class="space-y-3">';
+            html += termDeposits.map(renderAccountCard).join('');
+            html += '</div>';
+            html += '</div>';
+        }
+        
+        targetDiv.innerHTML = html;
         addTransactionButtonListeners(); // Re-add listeners after rendering
     }
 
@@ -335,7 +337,15 @@
             targetDiv.innerHTML = '<div class="text-center text-gray-500 py-4">No loans found.</div>';
             return;
         }
-        targetDiv.innerHTML = loans.map(renderLoanCard).join('');
+        
+        let html = '<div class="mb-4">';
+        html += '<h3 class="text-lg font-semibold text-gray-800 mb-3">Your Loans</h3>';
+        html += '<div class="space-y-3">';
+        html += loans.map(renderLoanCard).join('');
+        html += '</div>';
+        html += '</div>';
+        
+        targetDiv.innerHTML = html;
         addLoanButtonListeners(); // Add listeners after rendering
     }
 
@@ -532,32 +542,109 @@
     }
 
     async function fetchLoanSchedule(loanId) {
-        console.log(`[fetchLoanSchedule] Attempting to fetch schedule for loan ID: ${loanId}`);
-        const { loanScheduleList, loanScheduleInfo } = getElements(); // Corrected from loanScheduleDiv, loanScheduleInfoDiv
+        const loanScheduleList = document.getElementById('loan-schedule-list');
+        const loanScheduleInfo = document.getElementById('loan-schedule-info');
         
         if (!loanScheduleList) {
-            console.error("[fetchLoanSchedule] loanScheduleList element not found in DOM!");
-            // Optionally, display an error message in a general error area if available
-            return null; // Exit if essential element is missing
+            console.error('Loan schedule list element not found');
+            return;
         }
+        
         if (!loanScheduleInfo) {
-            console.warn("[fetchLoanSchedule] loanScheduleInfo element not found in DOM. Info will not be displayed.");
+            console.error('Loan schedule info element not found');
+            return;
         }
-        console.log("[fetchLoanSchedule] DOM elements for schedule:", { loanScheduleList, loanScheduleInfo });
+        
+        // Show loading state
+        loanScheduleList.innerHTML = '<div class="text-center text-gray-500 py-4">Loading loan schedule...</div>';
+        loanScheduleInfo.innerHTML = '<div class="text-center text-gray-500 py-4">Loading loan information...</div>';
+        
+        try {
+            const response = await fetch(`/api/loans/${loanId}/schedule`, {
+                headers: {
+                    'X-Client-Type': 'mobile'
+                }
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log('Loan schedule API response:', data);
+            
+            if (data && data.body && Array.isArray(data.body)) {
+                // Get total payments from header
+                const totalPayments = data.header?.total_size || data.body.length;
+                
+                // Get the full schedule first
+                const fullSchedule = data.body;
+                
+                // Filter for future payments only and limit to next 10
+                const futurePayments = fullSchedule
+                    .filter(payment => new Date(payment.paymentDate) >= new Date())
+                    .slice(0, 10);
+                
+                // Transform the schedule data without payment numbers
+                const transformedSchedule = futurePayments.map((payment, index) => {
+                    return {
+                        dueDate: payment.paymentDate,
+                        totalAmount: payment.totalAmount,
+                        principalAmount: payment.principalAmount,
+                        interestAmount: payment.interestAmount,
+                        // Use outstandingAmount from API and make it positive
+                        outstandingAmount: Math.abs(payment.outstandingAmount || 0)
+                    };
+                });
+                
+                // Get loan details from cache or fetch
+                let loan = loansData.find(l => l.loanId === loanId);
+                if (!loan) {
+                    try {
+                        const loanResponse = await fetch(`/api/loans/${loanId}/details`);
+                        if (loanResponse.ok) {
+                            const loanData = await loanResponse.json();
+                            loan = loanData;
+                        }
+                    } catch (error) {
+                        console.error('Error fetching loan details:', error);
+                    }
+                }
+                
+                // Add total payments to loan object
+                if (loan) {
+                    loan.totalPayments = totalPayments;
+                }
+                
+                // Render the schedule and info
+                renderLoanSchedule(transformedSchedule, loan?.currency || 'USD');
+                renderLoanScheduleInfo(loan || { id: loanId, totalPayments: totalPayments }, transformedSchedule);
+            } else {
+                loanScheduleList.innerHTML = '<div class="text-center text-gray-500 py-4">No schedule data available</div>';
+                loanScheduleInfo.innerHTML = '<div class="text-center text-gray-500 py-4">No loan information available</div>';
+            }
+        } catch (error) {
+            console.error('Error fetching loan schedule:', error);
+            loanScheduleList.innerHTML = '<div class="text-center text-red-500 py-4">Error loading loan schedule</div>';
+            loanScheduleInfo.innerHTML = '<div class="text-center text-red-500 py-4">Error loading loan information</div>';
+        }
+    }
+
+    async function fetchProfile() {
+        console.log(`[fetchProfile] Attempting to fetch profile for party ID: ${partyId}`);
+        const { profileContent } = getElements();
+        
+        if (!profileContent) {
+            console.error("[fetchProfile] profileContent element not found in DOM!");
+            return null;
+        }
 
         try {
             // Show loading indicator
-            loanScheduleList.innerHTML = '<div class="text-center text-gray-500 py-4">Loading loan schedule...</div>';
+            profileContent.innerHTML = '<div class="text-center text-gray-500 py-2">Loading profile...</div>';
             
-            // Get the loan from our cached data
-            const loan = loansData.find(l => l.loanId === loanId);
-            if (!loan) {
-                throw new Error("Loan not found in cached data");
-            }
-            
-            // Use the new unified API endpoint for loan schedules
-            const apiUrl = `/api/loans/${loanId}/schedules?_=${Date.now()}`;
-            console.log("Fetching loan schedule from unified API:", apiUrl);
+            // Use the party details API endpoint
+            const apiUrl = `/api/parties/${partyId}?_=${Date.now()}`;
+            console.log("Fetching profile from API:", apiUrl);
             
             const response = await fetch(apiUrl);
             
@@ -567,50 +654,86 @@
                 throw new Error(`HTTP Error: ${response.status} - ${response.statusText}`);
             }
             
-            const scheduleData = await response.json();
-            console.log(`Schedule data for ${loanId}:`, scheduleData);
+            const profileData = await response.json();
+            console.log(`Profile data for ${partyId}:`, profileData);
             
-            // The unified API returns schedules with scheduleItems
-            if (!scheduleData || !scheduleData.schedules || !Array.isArray(scheduleData.schedules) || 
-                scheduleData.schedules.length === 0 || !scheduleData.schedules[0].scheduleItems) {
-                throw new Error("Invalid schedule data format");
-            }
+            // Render the profile
+            renderProfile(profileData, profileContent);
             
-            // Extract the schedule items from the first schedule
-            const scheduleItems = scheduleData.schedules[0].scheduleItems;
-            
-            // Transform the data to match what the rendering functions expect
-            const transformedScheduleData = {
-                loanId: scheduleData.loanId,
-                currency: scheduleData.currency,
-                payments: scheduleItems.map(item => ({
-                    dueDate: item.dueDate,
-                    principal: item.principal,
-                    interest: item.interest,
-                    totalAmount: item.totalAmount,
-                    status: item.status
-                }))
-            };
-            
-            console.log(`Processed payment schedule for ${loanId}:`, transformedScheduleData);
-            
-            // Find the loan details
-            const loanDetails = loansData.find(l => l.loanId === loanId);
-            if (!loanDetails) {
-                console.error(`Loan details not found for ${loanId} in`, loansData);
-                throw new Error(`Loan details not found for ${loanId}`);
-            }
-            
-            // Update the UI
-            renderLoanScheduleInfo(transformedScheduleData, loanDetails, loanScheduleInfo);
-            renderLoanSchedule(transformedScheduleData, loanScheduleList);
-            
-            return transformedScheduleData;
+            return profileData;
         } catch (error) {
-            console.error(`Error fetching payment schedule for ${loanId}:`, error);
-            loanScheduleList.innerHTML = `<div class="text-center text-red-500 py-4">Could not load payment schedule: ${error.message}</div>`;
+            console.error(`Error fetching profile for ${partyId}:`, error);
+            profileContent.innerHTML = `<div class="text-center text-red-500 py-2">Could not load profile: ${error.message}</div>`;
             return null;
         }
+    }
+
+    function renderProfile(profile, targetDiv) {
+        if (!targetDiv || !profile) return;
+        
+        // Extract email and phone from addresses array
+        let email = 'N/A';
+        let phone = 'N/A';
+        let address = 'N/A';
+        
+        if (profile.addresses && profile.addresses.length > 0) {
+            const firstAddress = profile.addresses[0];
+            if (firstAddress.electronicAddress) {
+                email = firstAddress.electronicAddress;
+            }
+            if (firstAddress.phoneNo) {
+                phone = firstAddress.phoneNo;
+            }
+            if (firstAddress.addressFreeFormat && firstAddress.addressFreeFormat.length > 0) {
+                address = firstAddress.addressFreeFormat[0].addressLine || 'N/A';
+            }
+        }
+        
+        // Extract nationality
+        let nationality = 'N/A';
+        if (profile.nationalities && profile.nationalities.length > 0) {
+            nationality = profile.nationalities[0].country || 'N/A';
+        }
+        
+        // Create profile information display
+        const profileInfo = `
+            <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm font-medium text-gray-600">Name:</span>
+                    <span class="text-sm text-gray-900">${profile.firstName || ''} ${profile.lastName || ''}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm font-medium text-gray-600">Customer ID:</span>
+                    <span class="text-sm text-gray-900">${profile.partyId || profile.customerId || 'N/A'}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm font-medium text-gray-600">Date of Birth:</span>
+                    <span class="text-sm text-gray-900">${profile.dateOfBirth || 'N/A'}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm font-medium text-gray-600">Email:</span>
+                    <span class="text-sm text-gray-900">${email}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm font-medium text-gray-600">Mobile:</span>
+                    <span class="text-sm text-gray-900">${phone}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm font-medium text-gray-600">Nationality:</span>
+                    <span class="text-sm text-gray-900">${nationality}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm font-medium text-gray-600">City of Birth:</span>
+                    <span class="text-sm text-gray-900">${profile.cityOfBirth || 'N/A'}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm font-medium text-gray-600">Address:</span>
+                    <span class="text-sm text-gray-900 text-right">${address}</span>
+                </div>
+            </div>
+        `;
+        
+        targetDiv.innerHTML = profileInfo;
     }
 
     // --- UI Interaction ---
@@ -624,12 +747,32 @@
         elements.transactionsSection.classList.add('hidden');
         elements.loanScheduleSection.classList.add('hidden');
         elements.transferSection.classList.add('hidden');
+        elements.profileSection.classList.add('hidden');
+        
+        // Also hide loan details section
+        document.getElementById('loan-details-section').classList.add('hidden');
         
         // Load data
         fetchAccounts();
         fetchLoans();
     }
     
+    function showProfile() {
+        console.log("Showing profile view");
+        
+        // Hide other sections, show profile
+        const elements = getElements();
+        elements.accountsSectionDiv.classList.add('hidden');
+        elements.loansSectionDiv.classList.add('hidden');
+        elements.transactionsSection.classList.add('hidden');
+        elements.loanScheduleSection.classList.add('hidden');
+        elements.transferSection.classList.add('hidden');
+        elements.profileSection.classList.remove('hidden');
+        
+        // Load profile data
+        fetchProfile();
+    }
+
     function showTransactions(id) {
         // Get the elements we need
         const { accountsSectionDiv, loansSectionDiv, transactionsSection, transferSection, loanScheduleSection } = getElements();
@@ -804,70 +947,30 @@
     }
 
     function showLoanSchedule(loanId) {
-        const loan = loansData.find(loan => loan.loanId === loanId);
-        if (!loan) return;
-
-        const { loansSectionDiv, loanScheduleSection, loanScheduleTitle } = getElements();
-        if(loansSectionDiv) loansSectionDiv.classList.add('hidden');
-        if(loanScheduleSection) loanScheduleSection.classList.remove('hidden');
+        console.log('Showing loan schedule for loan ID:', loanId);
         
-        // Get the schedule header element for adding back button
-        const scheduleHeader = document.querySelector('#loan-schedule-section .flex.justify-between.items-center');
+        // Hide other sections
+        document.getElementById('accounts-section').classList.add('hidden');
+        document.getElementById('loans-section').classList.add('hidden');
+        document.getElementById('transactions-section').classList.add('hidden');
+        document.getElementById('loan-details-section').classList.add('hidden');
         
-        // If there's no back button, create one
-        let backButton = document.getElementById('back-to-loans');
-        if (!backButton && scheduleHeader) {
-            // Create a back button if it doesn't exist
-            backButton = document.createElement('button');
-            backButton.id = 'back-to-loans';
-            backButton.className = 'text-blue-600 hover:underline';
-            backButton.innerHTML = '&larr; Back';
-            
-            // Add it to the header
-            scheduleHeader.insertBefore(backButton, scheduleHeader.firstChild);
-            
-            // Add click event - always go back to home
-            backButton.addEventListener('click', showHome);
-        }
+        // Show loan schedule section
+        document.getElementById('loan-schedule-section').classList.remove('hidden');
         
-        // Ensure loanScheduleList exists
-        let loanScheduleList = document.getElementById('loan-schedule-list');
-        if (!loanScheduleList && loanScheduleSection) {
-            // Create the loan schedule list
-            loanScheduleList = document.createElement('div');
-            loanScheduleList.id = 'loan-schedule-list';
-            loanScheduleList.className = 'space-y-2 max-h-96 overflow-y-auto p-2';
-            loanScheduleSection.appendChild(loanScheduleList);
-        }
-        
-        // Ensure loanScheduleInfo exists
-        let loanScheduleInfo = document.getElementById('loan-schedule-info');
-        if (!loanScheduleInfo && loanScheduleSection) {
-            // Create the loan schedule info
-            loanScheduleInfo = document.createElement('div');
-            loanScheduleInfo.id = 'loan-schedule-info';
-            loanScheduleInfo.className = 'bg-blue-50 p-4 border-b border-blue-100';
-            
-            // Add it before the schedule list
-            if (loanScheduleList) {
-                loanScheduleSection.insertBefore(loanScheduleInfo, loanScheduleList);
-            } else {
-                loanScheduleSection.appendChild(loanScheduleInfo);
-            }
-        }
-        
-        const loanDisplayName = `${loan.productName || 'Loan'} (${loan.loanId})`;
-        if(loanScheduleTitle) loanScheduleTitle.textContent = `Payment Schedule: ${loanDisplayName}`;
-        
-        console.log(`[showLoanSchedule] Showing schedule for loan: ${loan.loanId}`);
-        // Fetch the schedule, which will update the headless tab automatically
+        // Fetch and display loan schedule
         fetchLoanSchedule(loanId);
     }
 
     function showLoans() {
-        const { loansSectionDiv, loanScheduleSection } = getElements();
-         if(loansSectionDiv) loansSectionDiv.classList.remove('hidden');
-         if(loanScheduleSection) loanScheduleSection.classList.add('hidden');
+        // Hide other sections
+        document.getElementById('accounts-section').classList.add('hidden');
+        document.getElementById('transactions-section').classList.add('hidden');
+        document.getElementById('loan-details-section').classList.add('hidden');
+        document.getElementById('loan-schedule-section').classList.add('hidden');
+        
+        // Show loans section
+        document.getElementById('loans-section').classList.remove('hidden');
     }
 
     // --- Event Listener Management ---
@@ -921,25 +1024,31 @@
             eventHandlers.viewLoanTransactions = [];
         }
 
-        // Add handlers for schedule buttons
-        loansListDiv.querySelectorAll('.view-loan-details-btn').forEach(button => {
-             const handler = (e) => {
-                const loanId = e.target.getAttribute('data-loan-id');
-                showLoanSchedule(loanId);
-             };
-             button.addEventListener('click', handler);
-             eventHandlers.viewLoanDetails.push({ button, handler });
+        // Add event listeners for loan detail buttons
+        document.querySelectorAll('.view-loan-details-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const loanId = this.getAttribute('data-loan-id');
+                if (loanId) {
+                    showLoanDetails(loanId);
+                }
+            });
         });
-        
-        // Add handlers for transaction buttons
-        loansListDiv.querySelectorAll('.view-loan-transactions-btn').forEach(button => {
-             const handler = (e) => {
-                const loanId = e.target.getAttribute('data-loan-id');
-                showTransactions(loanId);
-             };
-             button.addEventListener('click', handler);
-             eventHandlers.viewLoanTransactions.push({ button, handler });
-        });
+
+        // Back button from loan details to loans
+        const backToLoansFromDetails = document.getElementById('back-to-loans-from-details');
+        if (backToLoansFromDetails) {
+            backToLoansFromDetails.addEventListener('click', showHome);
+        }
+
+        // Back button from loan schedule to loan details
+        const backToLoanDetails = document.getElementById('back-to-loan-details');
+        if (backToLoanDetails) {
+            backToLoanDetails.addEventListener('click', function() {
+                // Hide schedule section and show details section
+                document.getElementById('loan-schedule-section').classList.add('hidden');
+                document.getElementById('loan-details-section').classList.remove('hidden');
+            });
+        }
     }
 
     function addStaticListeners() {
@@ -953,6 +1062,11 @@
             transferForm,
             changePartyIdButton,
         } = getElements();
+
+        // Get profile-related buttons
+        const showProfileButton = document.getElementById('show-profile-button');
+        const closeProfileButton = document.getElementById('close-profile');
+        const homeButton = document.getElementById('home-button');
 
         // Hide the static back buttons since we're creating dynamic ones
         if (backToAccountsButton) {
@@ -971,6 +1085,21 @@
         if (closeTransferButton) {
             eventHandlers.closeTransfer = hideTransfer;
             closeTransferButton.addEventListener('click', eventHandlers.closeTransfer);
+        }
+        
+        if (showProfileButton) {
+            eventHandlers.showProfile = showProfile;
+            showProfileButton.addEventListener('click', eventHandlers.showProfile);
+        }
+        
+        if (closeProfileButton) {
+            eventHandlers.closeProfile = showHome;
+            closeProfileButton.addEventListener('click', eventHandlers.closeProfile);
+        }
+        
+        if (homeButton) {
+            eventHandlers.showHome = showHome;
+            homeButton.addEventListener('click', eventHandlers.showHome);
         }
         
         if (transferForm) {
@@ -1006,6 +1135,11 @@
             transferForm,
             changePartyIdButton,
         } = getElements();
+
+        // Get profile-related buttons
+        const showProfileButton = document.getElementById('show-profile-button');
+        const closeProfileButton = document.getElementById('close-profile');
+        const homeButton = document.getElementById('home-button');
 
         // Remove handlers for dynamic transaction buttons
         if (eventHandlers.viewTransaction.length > 0) {
@@ -1053,6 +1187,22 @@
             eventHandlers.closeTransfer = null;
         }
         
+        // Remove profile handlers
+        if (showProfileButton && eventHandlers.showProfile) {
+            showProfileButton.removeEventListener('click', eventHandlers.showProfile);
+            eventHandlers.showProfile = null;
+        }
+        
+        if (closeProfileButton && eventHandlers.closeProfile) {
+            closeProfileButton.removeEventListener('click', eventHandlers.closeProfile);
+            eventHandlers.closeProfile = null;
+        }
+        
+        if (homeButton && eventHandlers.showHome) {
+            homeButton.removeEventListener('click', eventHandlers.showHome);
+            eventHandlers.showHome = null;
+        }
+        
         // Remove transfer form submit handler
         if (transferForm && eventHandlers.submitTransferForm) {
             transferForm.removeEventListener('submit', eventHandlers.submitTransferForm);
@@ -1085,7 +1235,7 @@
     }
     
     function handlePartyIdChange() {
-        const { partyIdInput, accountsListDiv, loansListDiv } = getElements();
+        const { partyIdInput, accountsListDiv, loansListDiv, profileContent } = getElements();
         if (!partyIdInput) return;
         
         const newPartyId = partyIdInput.value.trim();
@@ -1102,6 +1252,9 @@
             loansData = [];
             
             // Show loading messages
+            if (profileContent) {
+                profileContent.innerHTML = '<div class="text-center text-gray-500 py-2">Loading profile...</div>';
+            }
             if (accountsListDiv) {
                 accountsListDiv.innerHTML = '<div class="text-center text-gray-500 py-4">Loading accounts...</div>';
             }
@@ -1109,7 +1262,8 @@
                 loansListDiv.innerHTML = '<div class="text-center text-gray-500 py-4">Loading loans...</div>';
             }
             
-            // Fetch both accounts and loans with the new party ID
+            // Fetch profile, accounts and loans with the new party ID
+            fetchProfile();
             fetchAccounts();
             fetchLoans();
         }
@@ -1170,6 +1324,101 @@
         if (loan) return { item: loan, type: 'loan' };
         
         return null;
+    }
+
+    // Show loan details (first level)
+    function showLoanDetails(loanId) {
+        console.log('Showing loan details for loan ID:', loanId);
+        
+        // Hide other sections
+        document.getElementById('accounts-section').classList.add('hidden');
+        document.getElementById('loans-section').classList.add('hidden');
+        document.getElementById('transactions-section').classList.add('hidden');
+        document.getElementById('loan-schedule-section').classList.add('hidden');
+        
+        // Show loan details section
+        document.getElementById('loan-details-section').classList.remove('hidden');
+        
+        // Fetch and display loan details
+        fetchLoanDetails(loanId);
+    }
+
+    // Fetch loan details from API
+    function fetchLoanDetails(loanId) {
+        console.log('Fetching loan details for loan ID:', loanId);
+        
+        const loanDetailsInfo = document.getElementById('loan-details-info');
+        loanDetailsInfo.innerHTML = '<div class="text-center text-gray-500 py-4">Loading loan details...</div>';
+        
+        // Fetch loan details from the enhanced API
+        fetch(`/api/loans/${loanId}/details`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Loan details fetched:', data);
+                renderLoanDetails(data);
+                
+                // Set up the view payment schedule button
+                const viewScheduleBtn = document.getElementById('view-payment-schedule-btn');
+                viewScheduleBtn.onclick = () => showLoanSchedule(loanId);
+            })
+            .catch(error => {
+                console.error('Error fetching loan details:', error);
+                loanDetailsInfo.innerHTML = `
+                    <div class="text-center text-red-500 py-4">
+                        <p>Failed to load loan details</p>
+                        <p class="text-sm text-gray-500 mt-1">${error.message}</p>
+                    </div>
+                `;
+            });
+    }
+
+    // Render loan details in the details section
+    function renderLoanDetails(loan) {
+        const loanDetailsInfo = document.getElementById('loan-details-info');
+        
+        const interestRate = loan.interestRate ? `${loan.interestRate}%` : 'N/A';
+        const startDate = loan.startDate ? formatDate(loan.startDate) : 'N/A';
+        const term = loan.term ? `${loan.term} months` : 'N/A';
+        const maturityDate = loan.maturityDate ? formatDate(loan.maturityDate) : 'N/A';
+        const nextPaymentDate = loan.nextPaymentDate ? formatDate(loan.nextPaymentDate) : 'N/A';
+        
+        loanDetailsInfo.innerHTML = `
+            <div class="space-y-4">
+                <div class="text-center border-b border-gray-100 pb-4">
+                    <h4 class="text-lg font-semibold text-gray-800">${loan.productName || 'Loan'}</h4>
+                    <p class="text-sm text-gray-600">ID: ${loan.loanId || 'N/A'}</p>
+                    <p class="text-sm text-gray-600">Status: ${loan.status || 'N/A'}</p>
+                </div>
+                
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center py-2 border-b border-gray-50">
+                        <span class="text-sm font-medium text-gray-600">Interest Rate</span>
+                        <span class="text-sm font-semibold text-gray-800">${interestRate}</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-gray-50">
+                        <span class="text-sm font-medium text-gray-600">Start Date</span>
+                        <span class="text-sm font-semibold text-gray-800">${startDate}</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-gray-50">
+                        <span class="text-sm font-medium text-gray-600">Term</span>
+                        <span class="text-sm font-semibold text-gray-800">${term}</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-gray-50">
+                        <span class="text-sm font-medium text-gray-600">Maturity Date</span>
+                        <span class="text-sm font-semibold text-gray-800">${maturityDate}</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2">
+                        <span class="text-sm font-medium text-gray-600">Next Payment Date</span>
+                        <span class="text-sm font-semibold text-gray-800">${nextPaymentDate}</span>
+                    </div>
+                </div>
+            </div>
+        `;
     }
 
 })(); // End of IIFE

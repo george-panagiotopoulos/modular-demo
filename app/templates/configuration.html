@@ -1,0 +1,109 @@
+<!-- Configuration Tab Content -->
+<div class="configuration-content">
+    <div class="text-center mb-8">
+        <h2 class="text-3xl font-bold text-gray-900">Configuration</h2>
+        <p class="mt-2 text-gray-600">Manage API endpoints and demo data settings</p>
+    </div>
+
+    <!-- API Endpoints Section -->
+    <div class="bg-white shadow rounded-lg p-6 mb-6">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-medium text-gray-900">API Endpoints</h3>
+            <div class="space-x-2">
+                <button id="toggle-endpoints-btn" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+                    Show Endpoints
+                </button>
+                <button id="edit-endpoints-btn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded hidden">
+                    Edit Endpoints
+                </button>
+                <button id="save-endpoints-btn" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded hidden">
+                    Save Changes
+                </button>
+                <button id="cancel-endpoints-btn" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded hidden">
+                    Cancel
+                </button>
+            </div>
+        </div>
+        
+        <div id="endpoints-section" class="hidden">
+            <div id="endpoints-display" class="space-y-2">
+                <p class="text-center text-gray-500">Loading endpoints...</p>
+            </div>
+            
+            <div id="endpoints-edit" class="space-y-4 hidden">
+                <!-- Edit form will be populated by JavaScript -->
+            </div>
+        </div>
+        
+        <div id="endpoints-collapsed" class="text-center text-gray-500 py-4">
+            Click "Show Endpoints" to view and manage API endpoint configurations
+        </div>
+    </div>
+
+    <!-- Demo Data Configuration Section -->
+    <div class="bg-white shadow rounded-lg p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Demo Data Configuration</h3>
+        
+        <div class="space-y-4">
+            <div class="flex items-center">
+                <input type="checkbox" id="create-current-account" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" checked>
+                <label for="create-current-account" class="ml-2 block text-sm text-gray-900">Create Current Account</label>
+            </div>
+            
+            <div class="flex items-center">
+                <input type="checkbox" id="create-mortgage" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" checked>
+                <label for="create-mortgage" class="ml-2 block text-sm text-gray-900">Create Mortgage Loan</label>
+            </div>
+            
+            <div class="flex items-center">
+                <input type="checkbox" id="create-consumer-loan" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                <label for="create-consumer-loan" class="ml-2 block text-sm text-gray-900">Create Consumer Loan</label>
+            </div>
+            
+            <div class="flex items-center">
+                <input type="checkbox" id="create-term-deposit" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                <label for="create-term-deposit" class="ml-2 block text-sm text-gray-900">Create Term Deposit</label>
+            </div>
+        </div>
+        
+        <div class="mt-6 flex justify-between items-center">
+            <div class="space-x-4">
+                <button id="create-demo-data-btn" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                    Create User and Products
+                </button>
+            </div>
+            <div id="demo-status" class="text-sm text-gray-600">
+                Ready to create demo data
+            </div>
+        </div>
+        
+        <div id="demo-progress" class="mt-4 hidden">
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div class="flex items-center">
+                    <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-3"></div>
+                    <div>
+                        <p class="text-blue-800 font-medium">Demo Data Creation in Progress</p>
+                        <p class="text-blue-600 text-sm">This process typically takes 1-2 minutes to complete. Please wait...</p>
+                        <p id="progress-text" class="text-sm text-blue-500 mt-1">Initializing...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="demo-results" class="mt-4 hidden">
+            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                <h4 class="text-green-800 font-medium mb-3">✅ Demo Data Created Successfully!</h4>
+                <div id="results-content" class="space-y-2 text-sm">
+                    <!-- Results will be populated here -->
+                </div>
+            </div>
+        </div>
+        
+        <div id="demo-error" class="mt-4 hidden">
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                <h4 class="text-red-800 font-medium mb-2">❌ Demo Data Creation Failed</h4>
+                <p id="error-text" class="text-red-600 text-sm"></p>
+            </div>
+        </div>
+    </div>
+</div> 

@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 import urllib3
 import ssl
 import threading
+import re
 
 # Store last 10 API calls for headless tab
 api_calls_history = deque(maxlen=10)
@@ -51,6 +52,9 @@ CONNECTION_STRING = os.getenv("CONNECTION_STRING")
 active_consumers = defaultdict(dict)
 consumer_lock = threading.Lock()
 consumer_timestamps = defaultdict(dict)  # Track when consumers were created
+
+# File to store demo status persistently
+DEMO_STATUS_FILE = 'demo_status.json'
 
 def track_api_call(uri, method, params=None, payload=None, response=None, error=None):
     """Records an API call for the headless tab to display"""
@@ -149,6 +153,12 @@ def tab_assistant():
     """Renders the assistant tab HTML fragment."""
     return render_template('assistant.html')
 
+@main_bp.route('/tab/configuration')
+def tab_configuration():
+    """Renders the configuration tab HTML fragment."""
+    return render_template('configuration.html')
+    return render_template('configuration.html')
+
 # --- Headless Tab API ---
 @main_bp.route('/api/headless/data', methods=['GET'])
 def get_headless_data():
@@ -237,31 +247,51 @@ def get_architecture_diagram_path():
 def get_loan_details(loan_id):
     """Provides detailed information for a specific loan."""
     try:
-        api_url = LOAN_STATUS_API_URI_TEMPLATE.format(loan_id=loan_id)
+        # First try the new lending container API for detailed loan information
+        lending_api_url = f"http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v1.0.0/holdings/loans/{loan_id}"
         
-        print(f"Fetching loan details for loan ID {loan_id}")
+        print(f"Fetching detailed loan information for loan ID {loan_id}")
         
-        response = requests.get(api_url, headers={"Accept": "application/json"})
+        response = requests.get(lending_api_url, headers={"Accept": "application/json"})
         
         if response.status_code == 200:
             loan_data = response.json()
             
-            track_api_call(api_url, "GET", response=loan_data)
+            track_api_call(lending_api_url, "GET", response=loan_data)
             
             if 'body' in loan_data and loan_data['body']:
                 raw_loan = loan_data['body'][0]
                 
+                # Extract interest rate information
+                interest_rate = "N/A"
+                if 'interests' in raw_loan and raw_loan['interests']:
+                    # Get the first interest rate (usually principal interest)
+                    first_interest = raw_loan['interests'][0]
+                    interest_rate = first_interest.get('interestRate', 'N/A')
+                    # Clean up the interest rate (remove extra rates if multiple)
+                    if '|' in interest_rate:
+                        interest_rate = interest_rate.split('|')[0]
+                
                 transformed_data = {
                     "id": loan_id,
+                    "loanId": loan_id,
                     "productDisplayName": raw_loan.get('productDescription', 'Loan Product'),
                     "productId": raw_loan.get('productDescription', 'LOAN_PRODUCT'),
                     "accountNumber": raw_loan.get('accountId', ''),
+                    "interestRate": interest_rate,
+                    "startDate": raw_loan.get('startDate', 'N/A'),
+                    "term": raw_loan.get('term', 'N/A'),
+                    "maturityDate": raw_loan.get('maturityDate', 'N/A'),
+                    "commitmentAmount": raw_loan.get('commitmentAmount', 0),
+                    "currency": raw_loan.get('currencyId', 'USD'),
+                    "nextPaymentDate": raw_loan.get('nextPaymentDate', 'N/A'),
+                    "totalDue": raw_loan.get('totalDue', 'N/A'),
                     "properties": {
                         "body": [{
-                            "arrangementStatus": raw_loan.get('arrangementStatus', 'Active'),
+                            "arrangementStatus": "Active",
                             "accountId": raw_loan.get('accountId', ''),
                             "customerId": raw_loan.get('customerId', ''),
-                            "arrangementStartDate": raw_loan.get('arrangementStartDate', ''),
+                            "arrangementStartDate": raw_loan.get('startDate', ''),
                             "productDescription": raw_loan.get('productDescription', '')
                         }]
                     }
@@ -271,21 +301,64 @@ def get_loan_details(loan_id):
             else:
                 return jsonify({"error": "No loan data found"}), 404
         else:
-            error = {"status": response.status_code, "message": f"Failed to fetch loan details: {response.text}"}
-            track_api_call(api_url, "GET", error=error)
-            print(f"ERROR: Failed to fetch loan details for {loan_id}: {error}")
-            return jsonify({"error": "Failed to fetch loan details"}), 500
+            # Fall back to the original API if the new one fails
+            print(f"Lending container API failed, falling back to original API for loan {loan_id}")
+            api_url = LOAN_STATUS_API_URI_TEMPLATE.format(loan_id=loan_id)
+            
+            response = requests.get(api_url, headers={"Accept": "application/json"})
+            
+            if response.status_code == 200:
+                loan_data = response.json()
+                
+                track_api_call(api_url, "GET", response=loan_data)
+                
+                if 'body' in loan_data and loan_data['body']:
+                    raw_loan = loan_data['body'][0]
+                    
+                    transformed_data = {
+                        "id": loan_id,
+                        "loanId": loan_id,
+                        "productDisplayName": raw_loan.get('productDescription', 'Loan Product'),
+                        "productId": raw_loan.get('productDescription', 'LOAN_PRODUCT'),
+                        "accountNumber": raw_loan.get('accountId', ''),
+                        "interestRate": "N/A",  # Not available in fallback API
+                        "startDate": raw_loan.get('arrangementStartDate', 'N/A'),
+                        "term": "N/A",  # Not available in fallback API
+                        "maturityDate": "N/A",  # Not available in fallback API
+                        "commitmentAmount": 0,  # Not available in fallback API
+                        "currency": "USD",  # Default
+                        "nextPaymentDate": "N/A",  # Not available in fallback API
+                        "totalDue": "N/A",  # Not available in fallback API
+                        "properties": {
+                            "body": [{
+                                "arrangementStatus": raw_loan.get('arrangementStatus', 'Active'),
+                                "accountId": raw_loan.get('accountId', ''),
+                                "customerId": raw_loan.get('customerId', ''),
+                                "arrangementStartDate": raw_loan.get('arrangementStartDate', ''),
+                                "productDescription": raw_loan.get('productDescription', '')
+                            }]
+                        }
+                    }
+                    
+                    return jsonify(transformed_data)
+                else:
+                    return jsonify({"error": "No loan data found"}), 404
+            else:
+                error = {"status": response.status_code, "message": f"Failed to fetch loan details: {response.text}"}
+                track_api_call(api_url, "GET", error=error)
+                print(f"ERROR: Failed to fetch loan details for {loan_id}: {error}")
+                return jsonify({"error": "Failed to fetch loan details"}), 500
     except Exception as e:
         print(f"ERROR: Failed to fetch loan details for {loan_id}: {str(e)}")
         return jsonify({"error": "Failed to fetch loan details"}), 500
 
-@main_bp.route('/api/loans/<string:loan_id>/schedules')
-def get_loan_schedules(loan_id):
-    """Provides payment schedules for a specific loan."""
+@main_bp.route('/api/loans/<string:loan_id>/schedule')
+def get_loan_schedule_unified(loan_id):
+    """Unified endpoint for loan schedules - works for both mobile and branch apps."""
     try:
         api_url = LOAN_SCHEDULES_API_URI_TEMPLATE.format(loan_id=loan_id)
         
-        print(f"Fetching loan schedules for loan ID {loan_id}")
+        print(f"Fetching loan schedule for loan ID {loan_id} (unified endpoint)")
         
         response = requests.get(api_url, headers={"Accept": "application/json"})
         
@@ -294,40 +367,61 @@ def get_loan_schedules(loan_id):
             
             track_api_call(api_url, "GET", response=schedules_data)
             
-            formatted_data = {
-                "loanId": loan_id,
-                "currency": "USD",
-                "schedules": []
-            }
+            # Detect client type from User-Agent or Accept headers
+            user_agent = request.headers.get('User-Agent', '').lower()
+            is_mobile_app = 'mobile' in user_agent or request.headers.get('X-Client-Type') == 'mobile'
             
             if isinstance(schedules_data, dict) and 'body' in schedules_data:
-                schedule = {
-                    "id": loan_id,
-                    "scheduleItems": []
-                }
-                
-                for payment in schedules_data['body']:
-                    payment_date = payment.get('paymentDate', '')
-                    schedule_item = {
-                        "dueDate": payment_date,
-                        "totalAmount": float(payment.get('totalAmount', 0)),
-                        "principal": float(payment.get("principalAmount", 0)),
-                        "interest": float(payment.get("interestAmount", 0)),
-                        "status": "Due" if payment.get("scheduleType") == "DUE" else "Pending"
+                if is_mobile_app:
+                    # Mobile app format: return header/body structure
+                    transformed_data = {
+                        "header": schedules_data.get("header", {}),
+                        "body": []
                     }
-                    schedule["scheduleItems"].append(schedule_item)
-                
-                formatted_data["schedules"].append(schedule)
-            
-            return jsonify(formatted_data)
+                    
+                    for payment in schedules_data['body']:
+                        payment_item = {
+                            "paymentDate": payment.get('paymentDate', ''),
+                            "paymentNumber": payment.get('paymentNumber', 1),
+                            "principalAmount": payment.get("principalAmount", 0),
+                            "interestAmount": payment.get("interestAmount", 0),
+                            "totalAmount": payment.get('totalAmount', 0),
+                            "outstandingAmount": payment.get('outstandingAmount', 0)
+                        }
+                        transformed_data["body"].append(payment_item)
+                    
+                    return jsonify(transformed_data)
+                else:
+                    # Branch app format: return schedules array
+                    formatted_data = {
+                        "loanId": loan_id,
+                        "currency": "USD",
+                        "schedules": []
+                    }
+                    
+                    schedule_items = []
+                    for payment in schedules_data['body']:
+                        schedule_item = {
+                            "dueDate": payment.get('paymentDate', ''),
+                            "principal": float(payment.get("principalAmount", 0)),
+                            "interest": float(payment.get("interestAmount", 0)),
+                            "totalAmount": float(payment.get('totalAmount', 0)),
+                            "status": "Pending"
+                        }
+                        schedule_items.append(schedule_item)
+                    
+                    formatted_data["schedules"] = schedule_items
+                    return jsonify(formatted_data)
+            else:
+                return jsonify(schedules_data)
         else:
-            error = {"status": response.status_code, "message": f"Failed to fetch loan schedules: {response.text}"}
+            error = {"status": response.status_code, "message": f"Failed to fetch loan schedule: {response.text}"}
             track_api_call(api_url, "GET", error=error)
             
             return jsonify(error), response.status_code
     except Exception as e:
-        print(f"ERROR: Failed to fetch loan schedules for {loan_id}: {str(e)}")
-        return jsonify({"error": "Failed to fetch loan schedules"}), 500
+        print(f"ERROR: Failed to fetch loan schedule for {loan_id}: {str(e)}")
+        return jsonify({"error": "Failed to fetch loan schedule"}), 500
 
 # --- ACCOUNT AND LOAN CREATION ---
 
@@ -818,30 +912,40 @@ def get_party_details(party_id):
             # Extract nationality from nationalities array
             nationality = ""
             if party_data.get('nationalities') and len(party_data['nationalities']) > 0:
-                nationality = party_data['nationalities'][0].get('nationality', '')
+                nationality = party_data['nationalities'][0].get('country', '')
             
-            # Extract contact information from contactReferences
+            # Extract contact information from addresses array (actual API structure)
             primary_email = ""
             mobile_phone = ""
-            home_phone = ""
+            address = ""
             
-            for contact in party_data.get('contactReferences', []):
-                contact_type = contact.get('contactType', '').upper()
-                contact_value = contact.get('contactValue', '')
-                contact_subtype = contact.get('contactSubType', '').upper()
-                
-                if contact_type == 'EMAIL' and not primary_email:
-                    primary_email = contact_value
-                elif contact_type == 'PHONE':
-                    if contact_subtype == 'MOBILE' and not mobile_phone:
-                        mobile_phone = contact_value
-                    elif contact_subtype == 'HOME' and not home_phone:
-                        home_phone = contact_value
-                    elif not mobile_phone and not home_phone:  # Fallback if no subtype specified
-                        mobile_phone = contact_value
+            addresses = party_data.get('addresses', [])
+            if addresses and len(addresses) > 0:
+                first_address = addresses[0]
+                mobile_phone = first_address.get('phoneNo', '')
+                primary_email = first_address.get('electronicAddress', '')
+                address_lines = first_address.get('addressFreeFormat', [])
+                if address_lines and len(address_lines) > 0:
+                    address = address_lines[0].get('addressLine', '')
+            
+            # Also check contactReferences as fallback (in case some responses use this structure)
+            if not primary_email or not mobile_phone:
+                for contact in party_data.get('contactReferences', []):
+                    contact_type = contact.get('contactType', '').upper()
+                    contact_value = contact.get('contactValue', '')
+                    contact_subtype = contact.get('contactSubType', '').upper()
+                    
+                    if contact_type == 'EMAIL' and not primary_email:
+                        primary_email = contact_value
+                    elif contact_type == 'PHONE':
+                        if contact_subtype == 'MOBILE' and not mobile_phone:
+                            mobile_phone = contact_value
+                        elif not mobile_phone:  # Fallback if no subtype specified
+                            mobile_phone = contact_value
             
             customer = {
                 "customerId": party_data.get('partyId', party_id),
+                "partyId": party_data.get('partyId', party_id),  # Add for mobile app compatibility
                 "firstName": party_data.get('firstName', ''),
                 "lastName": party_data.get('lastName', ''),
                 "dateOfBirth": party_data.get('dateOfBirth', ''),
@@ -849,9 +953,15 @@ def get_party_details(party_id):
                 "middleName": party_data.get('middleName', ''),
                 "nationality": nationality,
                 "primaryEmail": primary_email,
+                "email": primary_email,  # Add for mobile app compatibility
                 "mobilePhone": mobile_phone,
-                "homePhone": home_phone,
-                "status": "Active"
+                "phone": mobile_phone,  # Add for mobile app compatibility
+                "homePhone": "",
+                "address": address,
+                "status": "Active",
+                # Include the full addresses and nationalities arrays for mobile app
+                "addresses": party_data.get('addresses', []),
+                "nationalities": party_data.get('nationalities', [])
             }
             
             return jsonify(customer)
@@ -881,6 +991,12 @@ def get_party_accounts(party_id):
             # First pass: identify all loan accounts
             if 'arrangements' in arrangements_data and isinstance(arrangements_data['arrangements'], list):
                 for arrangement in arrangements_data['arrangements']:
+                    # EXPLICITLY EXCLUDE DEPOSITS from loan detection
+                    if (arrangement.get('productLine') == 'DEPOSITS' or 
+                        arrangement.get('systemReference') == 'deposits'):
+                        print(f"Skipping deposit arrangement in loan detection: {arrangement.get('arrangementId')}")
+                        continue
+                    
                     # Get the account ID for balance checking
                     account_id = None
                     contract_ref = arrangement.get('contractReference', '')
@@ -905,21 +1021,27 @@ def get_party_accounts(party_id):
                                         balance_item = balance_items[0]
                                         system_ref = balance_item.get('systemReference', '')
                                         
-                                        # If systemReference is 'lending', this is a loan account
-                                        if system_ref == 'lending':
+                                        # If systemReference is 'lending' AND NOT 'deposits', this is a loan account
+                                        if system_ref == 'lending' and system_ref != 'deposits':
                                             loan_ids.add(account_id)
+                                            print(f"Identified loan account: {account_id}")
+                                        elif system_ref == 'deposits':
+                                            print(f"Confirmed deposit account (not loan): {account_id}")
                         except Exception as e:
                             print(f"Error checking balance for account {account_id}: {str(e)}")
                     
-                    # Also check traditional lending arrangements
+                    # Also check traditional lending arrangements (but exclude deposits)
                     if (arrangement.get('productLine') == 'LENDING' and 
-                        arrangement.get('systemReference') == 'lending'):
+                        arrangement.get('systemReference') == 'lending' and
+                        arrangement.get('productLine') != 'DEPOSITS'):
                         if account_id:
                             loan_ids.add(account_id)
+                            print(f"Identified traditional lending arrangement: {account_id}")
 
             # Second pass: get all accounts from arrangements and filter out loans
             for arrangement in arrangements_data['arrangements']:
-                if arrangement.get('productLine') == 'ACCOUNTS':
+                # Include both ACCOUNTS and DEPOSITS productLines
+                if arrangement.get('productLine') in ['ACCOUNTS', 'DEPOSITS']:
                     contract_ref = arrangement.get('contractReference', '')
                     
                     # Get the Holdings account ID
@@ -956,17 +1078,23 @@ def get_party_accounts(party_id):
                     except Exception as balance_error:
                         print(f"Error fetching balance for account {holdings_account_id}: {str(balance_error)}")
                     
+                    # Determine account type based on productLine
+                    account_type = "deposit" if arrangement.get('productLine') == 'DEPOSITS' else "current"
+                    display_name = arrangement.get('arrangementName', 'Term Deposit' if account_type == "deposit" else 'Current Account')
+                    product_name = arrangement.get('productName', 'TERM_DEPOSIT' if account_type == "deposit" else 'CURRENT_ACCOUNT')
+                    
                     account = {
                         "accountId": holdings_account_id,
-                        "displayName": arrangement.get('arrangementName', 'Current Account'),
-                        "productName": arrangement.get('productName', 'CURRENT_ACCOUNT'),
-                        "type": "current",
+                        "displayName": display_name,
+                        "productName": product_name,
+                        "type": account_type,
                         "status": "active",
                         "currency": arrangement.get('currency', 'USD'),
                         "currentBalance": balance_data["balance"],
                         "availableBalance": balance_data["availableBalance"],
                         "openDate": arrangement.get('startDate', ''),
-                        "contractReference": contract_ref
+                        "contractReference": contract_ref,
+                        "productLine": arrangement.get('productLine', 'ACCOUNTS')  # Include productLine for frontend logic
                     }
                     accounts.append(account)
         
@@ -994,6 +1122,12 @@ def get_party_loans(party_id):
             
             if 'arrangements' in arrangements_data and isinstance(arrangements_data['arrangements'], list):
                 for arrangement in arrangements_data['arrangements']:
+                    # EXPLICITLY EXCLUDE DEPOSITS - Skip if this is a deposit arrangement
+                    if (arrangement.get('productLine') == 'DEPOSITS' or 
+                        arrangement.get('systemReference') == 'deposits'):
+                        print(f"Skipping deposit arrangement: {arrangement.get('arrangementId')}")
+                        continue
+                    
                     # Check both lending arrangements and accounts with lending systemReference
                     account_id = None
                     if 'alternateReferences' in arrangement:
@@ -1020,19 +1154,24 @@ def get_party_loans(party_id):
                                         balance_item = balance_items[0]
                                         system_ref = balance_item.get('systemReference', '')
                                         
-                                        # This is a loan if systemReference is 'lending'
+                                        # This is a loan ONLY if systemReference is 'lending' AND NOT 'deposits'
                                         if system_ref == 'lending':
                                             is_loan = True
                                             # For loans, balance is typically negative, convert to positive outstanding
                                             raw_balance = float(balance_item.get('onlineActualBalance', 0))
                                             outstanding_balance = abs(raw_balance) if raw_balance < 0 else raw_balance
                                             print(f"Loan {account_id}: Raw balance = {raw_balance}, Outstanding = {outstanding_balance}")
+                                        elif system_ref == 'deposits':
+                                            # Explicitly skip deposits even if they somehow got this far
+                                            print(f"Skipping deposit account in loan check: {account_id}")
+                                            continue
                         except Exception as e:
                             print(f"Error checking balance for potential loan {account_id}: {str(e)}")
                     
-                    # Also check traditional lending arrangements
+                    # Also check traditional lending arrangements (but exclude deposits)
                     if not is_loan and (arrangement.get('productLine') == 'LENDING' and 
-                        arrangement.get('systemReference') == 'lending'):
+                        arrangement.get('systemReference') == 'lending' and
+                        arrangement.get('productLine') != 'DEPOSITS'):
                         is_loan = True
                         # For traditional lending arrangements, try to get balance if we have account_id
                         if account_id:
@@ -1193,11 +1332,13 @@ def get_account_transactions(account_id):
 
 @main_bp.route('/api/parties/search')
 def search_parties():
-    """Search for parties/customers using various criteria."""
+    """Search for parties using various criteria."""
     try:
         party_id = request.args.get('partyId', '').strip()
         last_name = request.args.get('lastName', '').strip()
         date_of_birth = request.args.get('dateOfBirth', '').strip()
+        phone_number = request.args.get('phoneNumber', '').strip()
+        email = request.args.get('email', '').strip()
         
         api_url = None
         search_type = ""
@@ -1205,6 +1346,12 @@ def search_parties():
         if party_id:
             api_url = f"{PARTY_API_BASE_URI}/{party_id}"
             search_type = "party_id"
+        elif phone_number:
+            api_url = f"{PARTY_API_BASE_URI}?contactNumber={phone_number}"
+            search_type = "phone_number"
+        elif email:
+            api_url = f"{PARTY_API_BASE_URI}?emailId={email}"
+            search_type = "email"
         elif last_name and date_of_birth:
             api_url = f"{PARTY_API_BASE_URI}?lastName={last_name}&dateOfBirth={date_of_birth}"
             search_type = "last_name_and_dob"
@@ -1228,30 +1375,52 @@ def search_parties():
             
             customers = []
             
-            if search_type == "party_id":
-                customer = {
-                    "customerId": response_data.get('partyId', party_id),
-                    "firstName": response_data.get('firstName', ''),
-                    "lastName": response_data.get('lastName', ''),
-                    "dateOfBirth": response_data.get('dateOfBirth', ''),
-                    "cityOfBirth": response_data.get('cityOfBirth', ''),
-                    "middleName": response_data.get('middleName', ''),
+            def extract_customer_data(party_data):
+                """Extract customer data including new enhanced fields."""
+                # Extract phone and email from addresses
+                phone = ""
+                email_addr = ""
+                nationality = ""
+                address = ""
+                
+                addresses = party_data.get('addresses', [])
+                if addresses and len(addresses) > 0:
+                    first_address = addresses[0]
+                    phone = first_address.get('phoneNo', '')
+                    email_addr = first_address.get('electronicAddress', '')
+                    address_lines = first_address.get('addressFreeFormat', [])
+                    if address_lines and len(address_lines) > 0:
+                        address = address_lines[0].get('addressLine', '')
+                
+                nationalities = party_data.get('nationalities', [])
+                if nationalities and len(nationalities) > 0:
+                    nationality = nationalities[0].get('country', '')
+                
+                return {
+                    "customerId": party_data.get('partyId', ''),
+                    "firstName": party_data.get('firstName', ''),
+                    "lastName": party_data.get('lastName', ''),
+                    "dateOfBirth": party_data.get('dateOfBirth', ''),
+                    "cityOfBirth": party_data.get('cityOfBirth', ''),
+                    "middleName": party_data.get('middleName', ''),
+                    "phone": phone,
+                    "email": email_addr,
+                    "primaryEmail": email_addr,  # Add for compatibility with branch app
+                    "mobilePhone": phone,        # Add for compatibility with branch app
+                    "homePhone": "",             # Add for compatibility with branch app
+                    "nationality": nationality,
+                    "address": address,
                     "status": "Active"
                 }
+            
+            if search_type == "party_id":
+                customer = extract_customer_data(response_data)
                 customers.append(customer)
             else:
                 party_list = response_data.get('parties', [])
                 for party_data in party_list:
-                    party = {
-                        "customerId": party_data.get('partyId', ''),
-                        "firstName": party_data.get('firstName', ''),
-                        "lastName": party_data.get('lastName', ''),
-                        "dateOfBirth": party_data.get('dateOfBirth', ''),
-                        "cityOfBirth": party_data.get('cityOfBirth', ''),
-                        "middleName": party_data.get('middleName', ''),
-                        "status": "Active"
-                    }
-                    customers.append(party)
+                    customer = extract_customer_data(party_data)
+                    customers.append(customer)
             
             return jsonify({
                 "success": True,
@@ -1260,7 +1429,9 @@ def search_parties():
                 "searchParams": {
                     "partyId": party_id,
                     "lastName": last_name,
-                    "dateOfBirth": date_of_birth
+                    "dateOfBirth": date_of_birth,
+                    "phoneNumber": phone_number,
+                    "email": email
                 }
             })
         else:
@@ -1638,3 +1809,404 @@ def get_headless_v2_health():
             health_info['sessions'][session_id] = session_info
     
     return jsonify(health_info)
+
+# --- Configuration API ---
+@main_bp.route('/api/configuration/endpoints', methods=['GET'])
+def get_configuration_endpoints():
+    """Get current API endpoint configuration from environment variables."""
+    import os
+    
+    endpoints = {
+        'PARTY_API_BASE_URI': os.getenv('PARTY_API_BASE_URI', ''),
+        'CURRENT_ACCOUNT_API_URI': os.getenv('CURRENT_ACCOUNT_API_URI', ''),
+        'ACCOUNT_BALANCE_API_URI_TEMPLATE': os.getenv('ACCOUNT_BALANCE_API_URI_TEMPLATE', ''),
+        'LOAN_API_BASE_URI': os.getenv('LOAN_API_BASE_URI', ''),
+        'LOAN_STATUS_API_URI_TEMPLATE': os.getenv('LOAN_STATUS_API_URI_TEMPLATE', ''),
+        'LOAN_SCHEDULES_API_URI_TEMPLATE': os.getenv('LOAN_SCHEDULES_API_URI_TEMPLATE', ''),
+        'LOAN_DISBURSEMENT_API_URI_TEMPLATE': os.getenv('LOAN_DISBURSEMENT_API_URI_TEMPLATE', ''),
+        'CUSTOMER_ARRANGEMENTS_API_URI_TEMPLATE': os.getenv('CUSTOMER_ARRANGEMENTS_API_URI_TEMPLATE', ''),
+        'TERM_DEPOSIT_API_URI': os.getenv('TERM_DEPOSIT_API_URI', ''),
+        'DEBIT_ACCOUNT_API_URI': os.getenv('DEBIT_ACCOUNT_API_URI', ''),
+        'CREDIT_ACCOUNT_API_URI': os.getenv('CREDIT_ACCOUNT_API_URI', ''),
+        'HOLDINGS_PARTY_ARRANGEMENTS_API_URI_TEMPLATE': os.getenv('HOLDINGS_PARTY_ARRANGEMENTS_API_URI_TEMPLATE', ''),
+        'HOLDINGS_ACCOUNT_BALANCES_API_URI_TEMPLATE': os.getenv('HOLDINGS_ACCOUNT_BALANCES_API_URI_TEMPLATE', ''),
+        'HOLDINGS_ACCOUNT_TRANSACTIONS_API_URI_TEMPLATE': os.getenv('HOLDINGS_ACCOUNT_TRANSACTIONS_API_URI_TEMPLATE', '')
+    }
+    
+    return jsonify(endpoints)
+
+@main_bp.route('/api/configuration/endpoints', methods=['POST'])
+def update_configuration_endpoints():
+    """Update API endpoint configuration in .env file."""
+    import os
+    from pathlib import Path
+    
+    try:
+        data = request.get_json()
+        
+        # Read current .env file
+        env_path = Path('.env')
+        env_lines = []
+        
+        if env_path.exists():
+            with open(env_path, 'r') as f:
+                env_lines = f.readlines()
+        
+        # Update or add new values
+        updated_keys = set()
+        for i, line in enumerate(env_lines):
+            if '=' in line and not line.strip().startswith('#'):
+                key = line.split('=')[0].strip()
+                if key in data:
+                    env_lines[i] = f"{key}={data[key]}\n"
+                    updated_keys.add(key)
+        
+        # Add new keys that weren't found
+        for key, value in data.items():
+            if key not in updated_keys:
+                env_lines.append(f"{key}={value}\n")
+        
+        # Write back to .env file
+        with open(env_path, 'w') as f:
+            f.writelines(env_lines)
+        
+        return jsonify({"status": "success", "message": "Configuration updated successfully"})
+    
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@main_bp.route('/api/configuration/demo-config', methods=['GET'])
+def get_demo_configuration():
+    """Get current demo configuration from Demoflow.py."""
+    import re
+    
+    try:
+        with open('Demoflow.py', 'r') as f:
+            content = f.read()
+        
+        # Extract configuration values using regex
+        config = {}
+        patterns = {
+            'CREATE_CURRENT_ACCOUNT': r'CREATE_CURRENT_ACCOUNT\s*=\s*(True|False)',
+            'CREATE_MORTGAGE': r'CREATE_MORTGAGE\s*=\s*(True|False)',
+            'CREATE_CONSUMER_LOAN': r'CREATE_CONSUMER_LOAN\s*=\s*(True|False)',
+            'CREATE_TERM_DEPOSIT': r'CREATE_TERM_DEPOSIT\s*=\s*(True|False)'
+        }
+        
+        for key, pattern in patterns.items():
+            match = re.search(pattern, content)
+            if match:
+                config[key] = match.group(1) == 'True'
+            else:
+                config[key] = False
+        
+        return jsonify(config)
+    
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@main_bp.route('/api/configuration/demo-config', methods=['POST'])
+def update_demo_configuration():
+    """Update demo configuration in Demoflow.py."""
+    import re
+    
+    try:
+        data = request.get_json()
+        
+        # Validate that current account is selected if other products are selected
+        if not data.get('CREATE_CURRENT_ACCOUNT', False):
+            if (data.get('CREATE_MORTGAGE', False) or 
+                data.get('CREATE_CONSUMER_LOAN', False) or 
+                data.get('CREATE_TERM_DEPOSIT', False)):
+                return jsonify({
+                    "status": "error", 
+                    "message": "Current Account must be selected when other products are enabled"
+                }), 400
+        
+        # Read current Demoflow.py
+        with open('Demoflow.py', 'r') as f:
+            content = f.read()
+        
+        # Update configuration values
+        patterns = {
+            'CREATE_CURRENT_ACCOUNT': r'(CREATE_CURRENT_ACCOUNT\s*=\s*)(True|False)',
+            'CREATE_MORTGAGE': r'(CREATE_MORTGAGE\s*=\s*)(True|False)',
+            'CREATE_CONSUMER_LOAN': r'(CREATE_CONSUMER_LOAN\s*=\s*)(True|False)',
+            'CREATE_TERM_DEPOSIT': r'(CREATE_TERM_DEPOSIT\s*=\s*)(True|False)'
+        }
+        
+        for key, pattern in patterns.items():
+            if key in data:
+                new_value = 'True' if data[key] else 'False'
+                content = re.sub(pattern, f'\\g<1>{new_value}', content)
+        
+        # Write back to Demoflow.py
+        with open('Demoflow.py', 'w') as f:
+            f.write(content)
+        
+        return jsonify({"status": "success", "message": "Demo configuration updated successfully"})
+    
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@main_bp.route('/api/configuration/create-demo-data', methods=['POST'])
+def create_demo_data():
+    """Run Demoflow.py to create demo user and products."""
+    import subprocess
+    import threading
+    import time
+    import re
+    import os
+    
+    # Capture the app instance for the thread
+    app = current_app._get_current_object()
+    
+    def run_demoflow():
+        with app.app_context():
+            try:
+                # Set initial progress
+                save_demo_status('running', {}, '', 'Initializing Demoflow script...')
+                app.logger.info("Starting demo data creation process")
+                app.logger.info(f"Initial status set to: {app.config.get('DEMO_CREATION_STATUS')}")
+                
+                # Get the correct working directory (where the Flask app is running from)
+                import os
+                app_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                demoflow_path = os.path.join(app_root, 'Demoflow.py')
+                
+                app.logger.info(f"App root directory: {app_root}")
+                app.logger.info(f"Looking for Demoflow.py at: {demoflow_path}")
+                
+                # Check if Demoflow.py exists
+                if not os.path.exists(demoflow_path):
+                    raise FileNotFoundError(f"Demoflow.py script not found at {demoflow_path}")
+                
+                # Update progress
+                save_demo_status('running', {}, '', 'Starting Demoflow execution...')
+                app.logger.info("About to execute Demoflow.py with python3")
+                
+                # Run Demoflow.py with non-blocking approach
+                import subprocess
+                import os
+                
+                # Get current environment variables to pass to subprocess
+                env = os.environ.copy()
+                
+                process = subprocess.Popen(
+                    ['python3', 'Demoflow.py'], 
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    cwd=app_root,
+                    env=env,  # Pass environment variables
+                    bufsize=1,
+                    universal_newlines=True
+                )
+                
+                save_demo_status('running', {}, '', 'Demoflow script is running...')
+                app.logger.info("Demoflow.py process started")
+                app.logger.info(f"Status during execution: {app.config.get('DEMO_CREATION_STATUS')}")
+                
+                # Wait for completion with timeout
+                try:
+                    stdout, stderr = process.communicate(timeout=300)  # 5 minute timeout
+                    returncode = process.returncode
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    stdout, stderr = process.communicate()
+                    raise subprocess.TimeoutExpired(['python3', 'Demoflow.py'], 300)
+                
+                app.logger.info(f"Demoflow.py completed with return code: {returncode}")
+                if stdout:
+                    app.logger.info(f"Demoflow stdout: {stdout[:500]}...")  # Log first 500 chars
+                if stderr:
+                    app.logger.error(f"Demoflow stderr: {stderr}")
+                
+                # Update progress
+                save_demo_status('running', {}, '', 'Processing Demoflow output...')
+                app.logger.info(f"Status before parsing: {app.config.get('DEMO_CREATION_STATUS')}")
+                
+                # Check if the subprocess completed successfully
+                if returncode != 0:
+                    error_msg = f"Demoflow.py failed with return code {returncode}"
+                    if stderr:
+                        error_msg += f": {stderr}"
+                    raise RuntimeError(error_msg)
+                
+                # Parse the output file for results
+                try:
+                    save_demo_status('running', {}, '', 'Parsing results...')
+                    
+                    output_file_path = os.path.join(app_root, 'demooutput.txt')
+                    if not os.path.exists(output_file_path):
+                        raise FileNotFoundError(f"demooutput.txt not found at {output_file_path}")
+                    
+                    with open(output_file_path, 'r') as f:
+                        output_content = f.read()
+                    
+                    if not output_content.strip():
+                        raise ValueError("demooutput.txt is empty")
+                    
+                    # Extract IDs from the output
+                    results = {}
+                    
+                    # Extract Party ID from the first party creation response
+                    party_match = re.search(r'"id":\s*"(\d+)"', output_content)
+                    if party_match:
+                        results['party_id'] = party_match.group(1)
+                        app.logger.info(f"Extracted party_id: {results['party_id']}")
+                    
+                    # Extract Account Reference from current account creation
+                    account_match = re.search(r'"accountReference":\s*"(\d+)"', output_content)
+                    if account_match:
+                        results['account_id'] = account_match.group(1)
+                        app.logger.info(f"Extracted account_id: {results['account_id']}")
+                    
+                    # Extract Loan IDs from loan creation responses (look for arrangementId in loan responses)
+                    loan_ids = []
+                    
+                    # Look for loan IDs in the response - they start with exactly "AA" followed by alphanumeric characters
+                    # This regex specifically looks for "AA" followed by exactly 10 more characters (not AAA...)
+                    loan_matches = re.findall(r'"id":\s*"(AA[A-Z0-9]{10})"', output_content)
+                    if loan_matches:
+                        # Remove duplicates while preserving order
+                        seen = set()
+                        for loan_id in loan_matches:
+                            if loan_id not in seen:
+                                loan_ids.append(loan_id)
+                                seen.add(loan_id)
+                        app.logger.info(f"Extracted loan_ids: {loan_ids}")
+                    
+                    if loan_ids:
+                        results['loan_ids'] = loan_ids
+                    
+                    # Extract Term Deposit ID from term deposit creation
+                    term_deposit_match = re.search(r'holdings/deposits/termDeposits.*?"accountReference":\s*"(\d+)"', output_content, re.DOTALL)
+                    if term_deposit_match:
+                        results['term_deposit_id'] = term_deposit_match.group(1)
+                        app.logger.info(f"Extracted term_deposit_id: {results['term_deposit_id']}")
+                    
+                    # Store results and mark as completed
+                    save_demo_status('completed', results, '', 'Completed successfully!')
+                    
+                    # Log successful completion with detailed info
+                    app.logger.info(f"Demo data creation completed successfully!")
+                    app.logger.info(f"Final status: {app.config.get('DEMO_CREATION_STATUS')}")
+                    app.logger.info(f"Final results: {results}")
+                    app.logger.info(f"Results stored in config: {app.config.get('DEMO_CREATION_RESULTS')}")
+                    
+                except Exception as e:
+                    app.logger.error(f"Error parsing demo output: {str(e)}")
+                    save_demo_status('error', {}, f"Error parsing results: {str(e)}", '')
+                    
+            except subprocess.TimeoutExpired:
+                app.logger.error("Demo data creation timed out after 5 minutes")
+                save_demo_status('error', {}, "Demo creation timed out after 5 minutes", '')
+            except Exception as e:
+                app.logger.error(f"Error in demo data creation: {str(e)}")
+                save_demo_status('error', {}, str(e), '')
+    
+    # Check if demo creation is already running
+    current_status = app.config.get('DEMO_CREATION_STATUS', 'idle')
+    if current_status == 'running':
+        return jsonify({"status": "error", "message": "Demo data creation is already in progress"}), 400
+    
+    # Set status to running and clear previous results
+    save_demo_status('running', {}, '', 'Starting...')
+    
+    # Run in background thread
+    thread = threading.Thread(target=run_demoflow)
+    thread.daemon = True
+    thread.start()
+    
+    app.logger.info("Demo data creation started in background thread")
+    
+    return jsonify({"status": "success", "message": "Demo data creation started"})
+
+@main_bp.route('/api/configuration/demo-status', methods=['GET'])
+def get_demo_status():
+    """Get the status of demo data creation."""
+    # Load status from persistent file
+    status_data = load_demo_status()
+    
+    return jsonify({
+        "status": status_data['status'],
+        "results": status_data['results'],
+        "error": status_data['error'],
+        "progress": status_data['progress']
+    })
+
+def save_demo_status(status, results=None, error='', progress=''):
+    """Save demo status to a persistent file."""
+    try:
+        status_data = {
+            'status': status,
+            'results': results or {},
+            'error': error,
+            'progress': progress,
+            'timestamp': datetime.datetime.now().isoformat()
+        }
+        
+        # Get the app root directory (where the Flask app is running from)
+        app_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        status_file_path = os.path.join(app_root, DEMO_STATUS_FILE)
+        
+        with open(status_file_path, 'w') as f:
+            json.dump(status_data, f, indent=2)
+        
+        # Try to update Flask config if we have an app context, but don't fail if we don't
+        try:
+            current_app.config['DEMO_CREATION_STATUS'] = status
+            current_app.config['DEMO_CREATION_RESULTS'] = results or {}
+            current_app.config['DEMO_CREATION_ERROR'] = error
+            current_app.config['DEMO_CREATION_PROGRESS'] = progress
+            current_app.logger.info(f"Demo status saved to file: {status}")
+        except RuntimeError:
+            # No application context available (running in thread), just log to stdout
+            print(f"Demo status saved to file: {status}")
+        
+    except Exception as e:
+        try:
+            current_app.logger.error(f"Error saving demo status: {str(e)}")
+        except RuntimeError:
+            print(f"Error saving demo status: {str(e)}")
+
+def load_demo_status():
+    """Load demo status from persistent file."""
+    try:
+        # Get the app root directory
+        app_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        status_file_path = os.path.join(app_root, DEMO_STATUS_FILE)
+        
+        if not os.path.exists(status_file_path):
+            return {
+                'status': 'idle',
+                'results': {},
+                'error': '',
+                'progress': ''
+            }
+        
+        with open(status_file_path, 'r') as f:
+            status_data = json.load(f)
+        
+        # Update Flask config with loaded data
+        current_app.config['DEMO_CREATION_STATUS'] = status_data.get('status', 'idle')
+        current_app.config['DEMO_CREATION_RESULTS'] = status_data.get('results', {})
+        current_app.config['DEMO_CREATION_ERROR'] = status_data.get('error', '')
+        current_app.config['DEMO_CREATION_PROGRESS'] = status_data.get('progress', '')
+        
+        return {
+            'status': status_data.get('status', 'idle'),
+            'results': status_data.get('results', {}),
+            'error': status_data.get('error', ''),
+            'progress': status_data.get('progress', '')
+        }
+        
+    except Exception as e:
+        current_app.logger.error(f"Error loading demo status: {str(e)}")
+        return {
+            'status': 'idle',
+            'results': {},
+            'error': '',
+            'progress': ''
+        }

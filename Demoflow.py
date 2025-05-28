@@ -8,6 +8,7 @@ import os
 from dotenv import load_dotenv
 from confluent_kafka import Consumer, KafkaException, TopicPartition
 import uuid
+import re
 
 # Load environment variables from .env file
 load_dotenv()
@@ -17,11 +18,15 @@ load_dotenv()
 # =============================================================================
 # Set to True to enable creation of each product type
 CREATE_CURRENT_ACCOUNT = True      # Default: Create current account
-CREATE_MORTGAGE = True             # Default: Create mortgage loan
+CREATE_MORTGAGE = True           # Default: Create mortgage loan
 CREATE_CONSUMER_LOAN = True      # Optional: Create consumer loan (uncomment to enable)
+CREATE_TERM_DEPOSIT = False       # Optional: Create term deposit (uncomment to enable)
 
 # Uncomment the line below to enable consumer loan creation
 # CREATE_CONSUMER_LOAN = True
+
+# Uncomment the line below to enable term deposit creation
+# CREATE_TERM_DEPOSIT = False
 
 # =============================================================================
 
@@ -43,6 +48,9 @@ PARTY_ARRANGEMENTS_API_URI_TEMPLATE = "http://deposits-sandbox.northeurope.cloud
 DEBIT_ACCOUNT_API_URI = "http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v1.0.0/order/payments/debitAccount"
 CREDIT_ACCOUNT_API_URI = "http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v1.0.0/order/payments/creditAccount"
 
+# Term Deposit API Endpoint
+TERM_DEPOSIT_API_URI = "http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-deposits-container/api/v2.0.0/holdings/deposits/termDeposits"
+
 # New API Endpoints for Holdings Microservice
 HOLDINGS_PARTY_ARRANGEMENTS_API_URI_TEMPLATE = "http://modulardemo.northeurope.cloudapp.azure.com/ms-holdings-api/api/v1.0.0/holdings/parties/{party_id}/arrangements"
 HOLDINGS_ACCOUNT_BALANCES_API_URI_TEMPLATE = "http://modulardemo.northeurope.cloudapp.azure.com/ms-holdings-api/api/v3.0.0/holdings/accounts/{account_id}/balances"
@@ -60,10 +68,47 @@ CONNECTION_STRING = os.getenv("CONNECTION_STRING")
 HISTORY_COUNT = 13  # Increased to get more Kafka events
 
 # Sample data for randomization
-first_names = ["Alice", "Bob", "Charlie", "David", "Eve", "Fiona", "George", "Hannah", "Ian", "Julia"]
-last_names = ["Smith", "Jones", "Williams", "Brown", "Davis", "Miller", "Wilson", "Moore", "Taylor", "Anderson"]
-cities = ["New York", "London", "Paris", "Tokyo", "Berlin", "Moscow", "Rome", "Madrid", "Sydney", "Cairo"]
+first_names = ["Alice", "Bob", "Charlie", "David", "Eve", "Fiona", "George", "Hannah", "Ian", "Julia", "John", "Sarah", "Michael", "Emma", "William", "Olivia", "James", "Sophia", "Benjamin", "Isabella"]
+last_names = ["Smith", "Jones", "Williams", "Brown", "Davis", "Miller", "Wilson", "Moore", "Taylor", "Anderson", "Kennedy", "Johnson", "Garcia", "Martinez", "Rodriguez", "Lopez", "Gonzalez", "Wilson", "Anderson", "Thomas"]
+cities = ["New York", "London", "Paris", "Tokyo", "Berlin", "Moscow", "Rome", "Madrid", "Sydney", "Cairo", "Los Angeles", "Chicago", "Houston", "Phoenix", "Philadelphia", "San Antonio", "San Diego", "Dallas", "San Jose", "Austin"]
 suffixes = ["Jr.", "Sr.", "B.A.", "M.Sc.", "Ph.D.", "M.D."]
+
+# New data for enhanced payload
+email_domains = ["gmail.com", "yahoo.com"]
+street_addresses = [
+    "123 Main Street, Downtown",
+    "456 Oak Avenue, Midtown", 
+    "789 Pine Road, Uptown",
+    "321 Elm Street, Westside",
+    "654 Maple Drive, Eastside",
+    "987 Cedar Lane, Northside",
+    "147 Birch Boulevard, Southside",
+    "258 Walnut Way, Central",
+    "369 Cherry Circle, Riverside",
+    "741 Ash Avenue, Hillside",
+    "852 Spruce Street, Lakeside",
+    "963 Poplar Place, Parkside",
+    "159 Willow Walk, Seaside",
+    "357 Hickory Heights, Mountainside",
+    "486 Magnolia Manor, Countryside"
+]
+us_cities_states = [
+    "San Francisco, California",
+    "Los Angeles, California", 
+    "San Diego, California",
+    "San Jose, California",
+    "New York, New York",
+    "Chicago, Illinois",
+    "Houston, Texas",
+    "Phoenix, Arizona",
+    "Philadelphia, Pennsylvania",
+    "San Antonio, Texas",
+    "Dallas, Texas",
+    "Austin, Texas",
+    "Jacksonville, Florida",
+    "Miami, Florida",
+    "Seattle, Washington"
+]
 
 # Reasons for transactions
 DEBIT_REASONS = ["Utility Bill Payment", "Online Shopping", "Subscription Renewal", "Cash Withdrawal", "Outgoing Fund Transfer"]
@@ -213,20 +258,51 @@ def get_random_date_of_birth():
     return random_date.strftime("%Y-%m-%d")
 
 def generate_customer_payload():
-    """Generates a randomized customer payload."""
+    """Generates a randomized customer payload with enhanced structure including nationalities and addresses."""
     first_name = random.choice(first_names)
     last_name = random.choice(last_names)
-    middle_name_initial = random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+    
+    # Generate email based on name
+    email_domain = random.choice(email_domains)
+    email = f"{first_name.lower()}.{last_name.lower()}@{email_domain}"
+    
+    # Generate phone number (US format)
+    area_code = random.randint(200, 999)  # Valid US area codes start from 200
+    exchange = random.randint(200, 999)   # Exchange code
+    number = random.randint(1000, 9999)   # Last 4 digits
+    phone_number = f"{area_code}{exchange:03d}{number:04d}"
+    
+    # Generate address
+    street_address = random.choice(street_addresses)
+    city_state = random.choice(us_cities_states)
+    full_address = f"{street_address}, {city_state}"
     
     return {
         "dateOfBirth": get_random_date_of_birth(),
         "cityOfBirth": random.choice(cities),
         "firstName": first_name,
-        "middleName": middle_name_initial,
         "lastName": last_name,
         "nickName": first_name,
-        "suffix": random.choice(suffixes),
-        "alias": first_name,
+        "nationalities": [
+            {
+                "country": "US"
+            }
+        ],
+        "addresses": [
+            {
+                "communicationNature": "MailingAddress",
+                "communicationType": "Physical",
+                "electronicAddress": email,
+                "iddPrefixPhone": "1",
+                "phoneNo": phone_number,
+                "countryCode": "US",
+                "addressFreeFormat": [
+                    {
+                        "addressLine": full_address
+                    }
+                ]
+            }
+        ]
     }
 
 def log_api_call(uri, method, payload, response_status_code, response_body):
@@ -390,6 +466,60 @@ def get_party_by_id(party_id):
             return None
     except requests.exceptions.RequestException as e:
         print(f"Error during API call to get party by ID: {e}")
+        log_api_call(uri, "GET", None, "N/A (Request Failed)", {"error": str(e)})
+        return None
+
+def get_party_by_phone(phone_number):
+    """Gets parties by phone number via API call."""
+    uri = f"{PARTY_API_BASE_URI}?contactNumber={phone_number}"
+    print(f"Attempting to get parties by phone number {phone_number} from {uri}")
+    try:
+        start_time = time.time()
+        response = requests.get(uri, headers={'Accept': 'application/json'})
+        end_time = time.time()
+        response_time = end_time - start_time
+        
+        response_data = {}
+        try:
+            response_data = response.json()
+        except json.JSONDecodeError:
+            response_data = {"error": "Failed to decode JSON response", "content": response.text}
+        log_api_call(uri, "GET", None, response.status_code, response_data)
+        if response.status_code == 200:
+            print(f"Successfully fetched parties by phone number {phone_number}. Status: {response.status_code}, Response time: {response_time:.3f} seconds")
+            return response_data
+        else:
+            print(f"Failed to fetch parties by phone number {phone_number}. Status: {response.status_code}, Response time: {response_time:.3f} seconds")
+            return None
+    except requests.exceptions.RequestException as e:
+        print(f"Error during API call to get parties by phone number: {e}")
+        log_api_call(uri, "GET", None, "N/A (Request Failed)", {"error": str(e)})
+        return None
+
+def get_party_by_email(email):
+    """Gets parties by email address via API call."""
+    uri = f"{PARTY_API_BASE_URI}?emailId={email}"
+    print(f"Attempting to get parties by email {email} from {uri}")
+    try:
+        start_time = time.time()
+        response = requests.get(uri, headers={'Accept': 'application/json'})
+        end_time = time.time()
+        response_time = end_time - start_time
+        
+        response_data = {}
+        try:
+            response_data = response.json()
+        except json.JSONDecodeError:
+            response_data = {"error": "Failed to decode JSON response", "content": response.text}
+        log_api_call(uri, "GET", None, response.status_code, response_data)
+        if response.status_code == 200:
+            print(f"Successfully fetched parties by email {email}. Status: {response.status_code}, Response time: {response_time:.3f} seconds")
+            return response_data
+        else:
+            print(f"Failed to fetch parties by email {email}. Status: {response.status_code}, Response time: {response_time:.3f} seconds")
+            return None
+    except requests.exceptions.RequestException as e:
+        print(f"Error during API call to get parties by email: {e}")
         log_api_call(uri, "GET", None, "N/A (Request Failed)", {"error": str(e)})
         return None
 
@@ -1008,6 +1138,178 @@ def perform_account_transaction(api_uri, payload, transaction_type):
         log_api_call(api_uri, "POST", payload, "N/A (Request Failed)", {"error": str(e)})
         return None
 
+def generate_term_deposit_payload(party_id, account_reference, deposit_amount):
+    """Generates a payload for creating a term deposit."""
+    # Generate unique quotation reference
+    quotation_ref = f"QUOT{uuid.uuid4().hex[:6].upper()}"
+    
+    # Generate random term between 6 months and 5 years
+    term_options = ["6M", "1Y", "2Y", "3Y", "5Y"]
+    deposit_term = random.choice(term_options)
+    
+    return {
+        "parties": [
+            {
+                "partyId": str(party_id),
+                "partyRole": "OWNER"
+            }
+        ],
+        "accountName": "MyDepositAccount",
+        "productId": "TermDepositWor",
+        "openingDate": "20250314",
+        "currency": "USD",
+        "branchCode": "01123",
+        "quotationReference": quotation_ref,
+        "depositAmount": str(deposit_amount),
+        "depositTerm": deposit_term,
+        "interestPayoutOption": "Settle at Scheduled Frequency",
+        "interestPayoutFrequency": "Monthly",
+        "fundingAccount": account_reference,
+        "payoutAccount": account_reference
+    }
+
+def create_term_deposit(party_id, account_reference, deposit_amount):
+    """Creates a new term deposit for the given partyId via API call."""
+    uri = TERM_DEPOSIT_API_URI
+    payload = generate_term_deposit_payload(party_id, account_reference, deposit_amount)
+    print(f"Attempting to create term deposit for partyId {party_id} with deposit amount {deposit_amount} USD...")
+    try:
+        start_time = time.time()
+        response = requests.post(uri, json=payload, headers={'Content-Type': 'application/json'})
+        end_time = time.time()
+        response_time = end_time - start_time
+        
+        response_data = {}
+        try:
+            response_data = response.json()
+        except json.JSONDecodeError:
+            response_data = {"error": "Failed to decode JSON response", "content": response.text}
+        log_api_call(uri, "POST", payload, response.status_code, response_data)
+        if response.status_code >= 200 and response.status_code < 300:
+            print(f"Term deposit created successfully for partyId {party_id}. Status: {response.status_code}, Response time: {response_time:.3f} seconds")
+            return response_data
+        else:
+            print(f"Failed to create term deposit for partyId {party_id}. Status: {response.status_code}, Response time: {response_time:.3f} seconds")
+            return None
+    except requests.exceptions.RequestException as e:
+        print(f"Error during API call to create term deposit: {e}")
+        log_api_call(uri, "POST", payload, "N/A (Request Failed)", {"error": str(e)})
+        return None
+
+def get_account_balance_amount(account_reference):
+    """Gets the current balance amount from an account balance response."""
+    balance_response = get_account_balance(account_reference)
+    if balance_response and isinstance(balance_response, dict):
+        # Try to extract balance from different possible response structures
+        balance_amount = None
+        
+        # Check if it's in the body
+        body = balance_response.get("body")
+        if isinstance(body, dict):
+            balance_amount = body.get("workingBalance") or body.get("availableBalance") or body.get("currentBalance")
+        
+        # Check if it's directly in the response
+        if not balance_amount:
+            balance_amount = balance_response.get("workingBalance") or balance_response.get("availableBalance") or balance_response.get("currentBalance")
+        
+        # Check if it's in an items array (Holdings API format)
+        if not balance_amount:
+            items = balance_response.get("items", [])
+            if items and len(items) > 0 and isinstance(items[0], dict):
+                balance_amount = items[0].get("workingBalance") or items[0].get("availableBalance") or items[0].get("onlineActualBalance")
+        
+        if balance_amount:
+            try:
+                return float(balance_amount)
+            except (ValueError, TypeError):
+                print(f"Could not convert balance amount to float: {balance_amount}")
+                return None
+        else:
+            print("Could not extract balance amount from response")
+            return None
+    else:
+        print("Invalid or empty balance response")
+        return None
+
+def update_demo_status(status, results=None, error='', progress=''):
+    """Update the demo status file directly from Demoflow.py"""
+    try:
+        import datetime
+        
+        status_data = {
+            'status': status,
+            'results': results or {},
+            'error': error,
+            'progress': progress,
+            'timestamp': datetime.datetime.now().isoformat()
+        }
+        
+        # Write to demo_status.json in the current directory
+        with open('demo_status.json', 'w') as f:
+            json.dump(status_data, f, indent=2)
+        
+        print(f"Demo status updated to: {status}")
+        if results:
+            print(f"Results: {results}")
+        
+    except Exception as e:
+        print(f"Error updating demo status: {str(e)}")
+
+def extract_demo_results():
+    """Extract results from the demo output file"""
+    try:
+        if not os.path.exists(OUTPUT_FILE):
+            print(f"Output file {OUTPUT_FILE} not found")
+            return {}
+        
+        with open(OUTPUT_FILE, 'r') as f:
+            output_content = f.read()
+        
+        if not output_content.strip():
+            print("Output file is empty")
+            return {}
+        
+        results = {}
+        
+        # Extract Party ID from the first party creation response
+        party_match = re.search(r'"id":\s*"(\d+)"', output_content)
+        if party_match:
+            results['party_id'] = party_match.group(1)
+            print(f"Extracted party_id: {results['party_id']}")
+        
+        # Extract Account Reference from current account creation
+        account_match = re.search(r'"accountReference":\s*"(\d+)"', output_content)
+        if account_match:
+            results['account_id'] = account_match.group(1)
+            print(f"Extracted account_id: {results['account_id']}")
+        
+        # Extract Loan IDs from loan creation responses
+        loan_ids = []
+        loan_matches = re.findall(r'"id":\s*"(AA[A-Z0-9]{10})"', output_content)
+        if loan_matches:
+            # Remove duplicates while preserving order
+            seen = set()
+            for loan_id in loan_matches:
+                if loan_id not in seen:
+                    loan_ids.append(loan_id)
+                    seen.add(loan_id)
+            print(f"Extracted loan_ids: {loan_ids}")
+        
+        if loan_ids:
+            results['loan_ids'] = loan_ids
+        
+        # Extract Term Deposit ID from term deposit creation
+        term_deposit_match = re.search(r'holdings/deposits/termDeposits.*?"accountReference":\s*"(\d+)"', output_content, re.DOTALL)
+        if term_deposit_match:
+            results['term_deposit_id'] = term_deposit_match.group(1)
+            print(f"Extracted term_deposit_id: {results['term_deposit_id']}")
+        
+        return results
+        
+    except Exception as e:
+        print(f"Error extracting demo results: {str(e)}")
+        return {}
+
 if __name__ == "__main__":
     with open(OUTPUT_FILE, "w") as f:
         f.write("Demo Flow Output Log\n")
@@ -1018,6 +1320,7 @@ if __name__ == "__main__":
     print(f"Current Account Creation: {'ENABLED' if CREATE_CURRENT_ACCOUNT else 'DISABLED'}")
     print(f"Mortgage Loan Creation: {'ENABLED' if CREATE_MORTGAGE else 'DISABLED'}")
     print(f"Consumer Loan Creation: {'ENABLED' if CREATE_CONSUMER_LOAN else 'DISABLED'}")
+    print(f"Term Deposit Creation: {'ENABLED' if CREATE_TERM_DEPOSIT else 'DISABLED'}")
     print("=" * 30)
     
     print("\n--- Step 1: Create Customer ---")
@@ -1045,6 +1348,15 @@ if __name__ == "__main__":
             date_of_birth = customer_data.get("dateOfBirth")
             last_name = customer_data.get("lastName")
             
+            # Extract phone and email from the new enhanced structure
+            phone_number = None
+            email = None
+            addresses = customer_data.get("addresses", [])
+            if addresses and len(addresses) > 0:
+                first_address = addresses[0]
+                phone_number = first_address.get("phoneNo")
+                email = first_address.get("electronicAddress")
+            
             if date_of_birth:
                 print(f"\n--- Testing: Get Party by Date of Birth ({date_of_birth}) ---")
                 get_party_by_date_of_birth(date_of_birth)
@@ -1060,6 +1372,14 @@ if __name__ == "__main__":
             if customer_id:
                 print(f"\n--- Testing: Get Party by ID ({customer_id}) ---")
                 get_party_by_id(customer_id)
+            
+            if phone_number:
+                print(f"\n--- Testing: Get Party by Phone Number ({phone_number}) ---")
+                get_party_by_phone(phone_number)
+            
+            if email:
+                print(f"\n--- Testing: Get Party by Email ({email}) ---")
+                get_party_by_email(email)
             
             # Initialize variables for account reference and step counter
             account_reference = None
@@ -1287,6 +1607,55 @@ if __name__ == "__main__":
             else:
                 print(f"\n--- Consumer Loan Creation: SKIPPED (disabled in configuration) ---")
 
+            # Term deposit creation (after all loans)
+            if CREATE_TERM_DEPOSIT and account_reference:
+                print(f"\n--- Step {step_counter}: Create Term Deposit ---")
+                print("# Term deposit will use 80% of the current account balance as deposit amount")
+                
+                # Get current account balance to calculate 80% for term deposit
+                current_balance = get_account_balance_amount(account_reference)
+                
+                if current_balance and current_balance > 0:
+                    # Calculate 80% of current balance for term deposit
+                    deposit_amount = int(current_balance * 0.8)
+                    print(f"Current account balance: ${current_balance:.2f}")
+                    print(f"Term deposit amount (80%): ${deposit_amount:.2f}")
+                    
+                    if deposit_amount > 0:
+                        created_term_deposit_response = create_term_deposit(customer_id, account_reference, deposit_amount)
+                        
+                        if created_term_deposit_response:
+                            print("Term deposit creation step completed.")
+                            
+                            # Extract term deposit ID if needed for future operations
+                            term_deposit_id = None
+                            if isinstance(created_term_deposit_response, dict):
+                                body = created_term_deposit_response.get("body")
+                                if isinstance(body, dict):
+                                    term_deposit_id = body.get("arrangementId") or body.get("accountReference")
+                                if not term_deposit_id:
+                                    term_deposit_id = created_term_deposit_response.get("arrangementId") or created_term_deposit_response.get("accountReference")
+                            
+                            if term_deposit_id:
+                                print(f"Successfully created term deposit with ID: {term_deposit_id}")
+                            
+                            # Get updated account balance after term deposit creation
+                            step_counter += 1
+                            print(f"\n--- Step {step_counter}: Get Account Balance (after term deposit) ---")
+                            get_account_balance(account_reference)
+                        else:
+                            print("Term deposit creation step failed.")
+                    else:
+                        print("Deposit amount is 0 or negative. Skipping term deposit creation.")
+                else:
+                    print("Could not retrieve current account balance or balance is 0. Skipping term deposit creation.")
+                
+                step_counter += 1
+            elif CREATE_TERM_DEPOSIT and not account_reference:
+                print(f"\n--- Term Deposit Creation: SKIPPED (no account reference available) ---")
+            else:
+                print(f"\n--- Term Deposit Creation: SKIPPED (disabled in configuration) ---")
+
             # --- New Debit/Credit Transaction Steps ---
             if account_reference: # Only proceed if we have an account reference
                 print(f"\n--- Step {step_counter}: Perform Debit Transaction ---")
@@ -1379,4 +1748,14 @@ if __name__ == "__main__":
     else:
         print("Customer creation step failed. Skipping all subsequent steps.")
     
-    print(f"\nDemo flow finished. Check {OUTPUT_FILE} for details.") 
+    print(f"\nDemo flow finished. Check {OUTPUT_FILE} for details.")
+    
+    # Extract results and update demo status
+    print("\n--- Final Step: Updating Demo Status ---")
+    try:
+        results = extract_demo_results()
+        update_demo_status('completed', results, '', 'Completed successfully!')
+        print("Demo status updated to completed successfully!")
+    except Exception as e:
+        print(f"Error updating demo status: {str(e)}")
+        update_demo_status('error', {}, str(e), 'Failed to update status')
