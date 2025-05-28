@@ -2107,7 +2107,8 @@ def create_demo_data():
                 save_demo_status('error', {}, str(e), '')
     
     # Check if demo creation is already running
-    current_status = app.config.get('DEMO_CREATION_STATUS', 'idle')
+    status_data = load_demo_status()
+    current_status = status_data['status']
     if current_status == 'running':
         return jsonify({"status": "error", "message": "Demo data creation is already in progress"}), 400
     

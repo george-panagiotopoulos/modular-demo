@@ -234,47 +234,29 @@
     }
     
     function createDemoData() {
-        const config = getDemoConfig();
+        console.log('Creating demo data...');
         
-        // Validate current account dependency
-        if (!config.CREATE_CURRENT_ACCOUNT && 
-            (config.CREATE_MORTGAGE || config.CREATE_CONSUMER_LOAN || config.CREATE_TERM_DEPOSIT)) {
-            showNotification('Current Account must be selected when other products are enabled', 'error');
-            return;
-        }
+        // Reset demo status at the beginning of new demo creation
+        resetDemoStatus();
         
-        // Disable the button to prevent multiple clicks
-        const createBtn = document.getElementById('create-demo-data-btn');
-        if (createBtn) {
-            createBtn.disabled = true;
-            createBtn.textContent = 'Creating...';
-        }
+        // Disable the button and show progress
+        const createButton = document.getElementById('create-demo-data-btn');
+        createButton.disabled = true;
+        createButton.textContent = 'Creating...';
         
-        // Show the progress message
         showDemoProgress();
         
-        // Update demo configuration first
-        fetch('/api/configuration/demo-config', {
+        // Clear any previous results
+        const resultsDiv = document.getElementById('demo-results');
+        if (resultsDiv) {
+            resultsDiv.innerHTML = '';
+            resultsDiv.style.display = 'none';
+        }
+
+        fetch('/api/configuration/create-demo-data', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(config)
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(result => {
-            if (result.status === 'success') {
-                // Start demo data creation
-                return fetch('/api/configuration/create-demo-data', {
-                    method: 'POST'
-                });
-            } else {
-                throw new Error(result.message);
             }
         })
         .then(response => {
@@ -283,27 +265,29 @@
             }
             return response.json();
         })
-        .then(result => {
-            if (result.status === 'success') {
-                // Start polling for status
+        .then(data => {
+            console.log('Demo creation initiated:', data);
+            
+            if (data.status === 'success') {
+                console.log('Demo creation started, beginning polling...');
                 pollDemoStatus();
             } else {
-                throw new Error(result.message);
+                throw new Error(data.message || 'Failed to start demo creation');
             }
         })
         .catch(error => {
             console.error('Error creating demo data:', error);
-            showNotification('Error creating demo data: ' + error.message, 'error');
-            hideDemoProgress();
+            showDemoError('Failed to create demo data: ' + error.message);
             resetCreateButton();
+            hideDemoProgress();
         });
     }
     
     function resetCreateButton() {
-        const createBtn = document.getElementById('create-demo-data-btn');
-        if (createBtn) {
-            createBtn.disabled = false;
-            createBtn.textContent = 'Create User and Products';
+        const createButton = document.getElementById('create-demo-data-btn');
+        if (createButton) {
+            createButton.disabled = false;
+            createButton.textContent = 'Create Demo Data';
         }
     }
     
@@ -390,74 +374,47 @@
     }
     
     function displayDemoResults(results) {
-        console.log('=== displayDemoResults called ==='); // Debug log
-        console.log('displayDemoResults called with:', results); // Debug log
-        console.log('Type of results:', typeof results); // Debug log
-        console.log('Results keys:', Object.keys(results || {})); // Debug log
+        console.log('Displaying demo results:', results);
         
-        const resultsContainer = document.getElementById('demo-results');
-        const resultsContent = document.getElementById('results-content');
-        
-        console.log('Results container found:', !!resultsContainer); // Debug log
-        console.log('Results content found:', !!resultsContent); // Debug log
-        console.log('Results container element:', resultsContainer); // Debug log
-        console.log('Results content element:', resultsContent); // Debug log
-        
-        if (!resultsContainer) {
-            console.error('Results container not found!'); // Debug log
+        const resultsDiv = document.getElementById('demo-results');
+        if (!resultsDiv) {
+            console.error('Demo results div not found');
             return;
         }
-        
-        let html = '';
+
+        let html = '<div class="demo-results-content">';
+        html += '<h4><i class="fas fa-check-circle text-success"></i> Demo Data Created Successfully!</h4>';
         
         if (results.party_id) {
-            html += `<div class="mb-2"><strong>Party ID:</strong> ${results.party_id}</div>`;
-            console.log('Added party_id to HTML'); // Debug log
+            html += `<div class="result-item"><strong>Party ID:</strong> <span class="result-value">${results.party_id}</span></div>`;
         }
         
         if (results.account_id) {
-            html += `<div class="mb-2"><strong>Account ID:</strong> ${results.account_id}</div>`;
-            console.log('Added account_id to HTML'); // Debug log
+            html += `<div class="result-item"><strong>Account ID:</strong> <span class="result-value">${results.account_id}</span></div>`;
         }
         
         if (results.loan_ids && results.loan_ids.length > 0) {
-            html += `<div class="mb-2"><strong>Loan IDs:</strong></div>`;
-            results.loan_ids.forEach((id, index) => {
-                const loanType = index === 0 ? 'Mortgage' : 'Consumer Loan';
-                html += `<div class="ml-4">• ${loanType}: ${id}</div>`;
+            html += `<div class="result-item"><strong>Loan IDs:</strong>`;
+            results.loan_ids.forEach((loanId, index) => {
+                if (index > 0) html += '<br>'; // Add line break between loan IDs
+                html += `<span class="result-value loan-id">${loanId}</span>`;
             });
-            console.log('Added loan_ids to HTML'); // Debug log
+            html += `</div>`;
         }
         
         if (results.term_deposit_id) {
-            html += `<div class="mb-2"><strong>Term Deposit ID:</strong> ${results.term_deposit_id}</div>`;
-            console.log('Added term_deposit_id to HTML'); // Debug log
+            html += `<div class="result-item"><strong>Term Deposit ID:</strong> <span class="result-value">${results.term_deposit_id}</span></div>`;
         }
         
-        console.log('Generated HTML length:', html.length); // Debug log
-        console.log('Generated HTML:', html); // Debug log
+        html += '</div>';
         
-        // Populate the results content if it exists, otherwise use the container
-        if (resultsContent) {
-            console.log('Setting innerHTML on results-content'); // Debug log
-            resultsContent.innerHTML = html;
-            console.log('innerHTML set on results-content'); // Debug log
-        } else {
-            console.log('Setting innerHTML on results container'); // Debug log
-            resultsContainer.innerHTML = html;
-            console.log('innerHTML set on results container'); // Debug log
-        }
+        resultsDiv.innerHTML = html;
+        resultsDiv.style.display = 'block';
         
-        console.log('Removing hidden class from results container'); // Debug log
-        resultsContainer.classList.remove('hidden');
-        console.log('Hidden class removed, container should be visible'); // Debug log
-        console.log('Container classes after removal:', resultsContainer.className); // Debug log
-        console.log('Results container should now be visible'); // Debug log
-        showNotification('Demo data creation completed successfully!', 'success');
-        console.log('=== displayDemoResults completed ==='); // Debug log
+        // Show success notification
+        showNotification('Demo data created successfully!', 'success');
         
-        // Reset demo status after displaying results to prepare for next run
-        resetDemoStatus();
+        console.log('Demo results displayed successfully');
     }
     
     function resetDemoStatus() {
