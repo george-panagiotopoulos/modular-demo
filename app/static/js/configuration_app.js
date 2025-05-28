@@ -455,6 +455,36 @@
         console.log('Results container should now be visible'); // Debug log
         showNotification('Demo data creation completed successfully!', 'success');
         console.log('=== displayDemoResults completed ==='); // Debug log
+        
+        // Reset demo status after displaying results to prepare for next run
+        resetDemoStatus();
+    }
+    
+    function resetDemoStatus() {
+        console.log('Resetting demo status to idle for next run...'); // Debug log
+        
+        fetch('/api/configuration/demo-status/reset', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(result => {
+            if (result.status === 'success') {
+                console.log('Demo status reset successfully'); // Debug log
+            } else {
+                console.error('Error resetting demo status:', result.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error resetting demo status:', error);
+        });
     }
     
     function showDemoError(message) {

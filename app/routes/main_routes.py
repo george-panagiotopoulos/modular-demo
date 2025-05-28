@@ -2136,6 +2136,15 @@ def get_demo_status():
         "progress": status_data['progress']
     })
 
+@main_bp.route('/api/configuration/demo-status/reset', methods=['POST'])
+def reset_demo_status():
+    """Reset the demo status to idle after completion."""
+    try:
+        save_demo_status('idle', {}, '', '')
+        return jsonify({"status": "success", "message": "Demo status reset to idle"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"Failed to reset status: {str(e)}"}), 500
+
 def save_demo_status(status, results=None, error='', progress=''):
     """Save demo status to a persistent file."""
     try:
