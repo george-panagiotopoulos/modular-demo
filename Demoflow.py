@@ -12,6 +12,19 @@ import uuid
 # Load environment variables from .env file
 load_dotenv()
 
+# =============================================================================
+# DEMO CONFIGURATION - Customize which products to create
+# =============================================================================
+# Set to True to enable creation of each product type
+CREATE_CURRENT_ACCOUNT = True      # Default: Create current account
+CREATE_MORTGAGE = True             # Default: Create mortgage loan
+CREATE_CONSUMER_LOAN = True      # Optional: Create consumer loan (uncomment to enable)
+
+# Uncomment the line below to enable consumer loan creation
+# CREATE_CONSUMER_LOAN = True
+
+# =============================================================================
+
 OUTPUT_FILE = "demooutput.txt"
 # Load API endpoints from environment variables
 PARTY_API_BASE_URI = os.getenv("PARTY_API_BASE_URI")
@@ -568,6 +581,70 @@ def disburse_loan(loan_id, original_amount):
         log_api_call(uri, "PUT", payload, "N/A (Request Failed)", {"error": str(e)})
         return None
 
+def generate_consumer_loan_term():
+    """Generates a random consumer loan term between 6 months and 5 years."""
+    total_months = random.randint(6, 60)  # 6 months to 5 years
+    if total_months % 12 == 0:
+        years = total_months // 12
+        if years == 0:
+            return f"{total_months}M"
+        return f"{years}Y"
+    else:
+        return f"{total_months}M"
+
+def generate_consumer_loan_payload(party_id, account_reference="123456"):
+    """Generates a randomized consumer loan payload."""
+    # Generate amount as multiple of 100 between 1000 and 15000
+    amount_base = random.randint(10, 150)  # This will give us 10-150 when multiplied by 100
+    amount = str(amount_base * 100)  # Results in amounts like 1000, 1100, 1200, ..., 15000
+    term = generate_consumer_loan_term()
+    return {
+        "header": {},
+        "body": {
+            "partyIds": [{"partyId": str(party_id), "partyRole": "OWNER"}],
+            "productId": "GS.FIXED.LOAN",
+            "currency": "USD",
+            "arrangementEffectiveDate": "",
+            "commitment": [{"amount": amount, "term": term}],
+            "schedule": [{"payment": [{}, {"paymentFrequency": "e0Y e1M e0W e0D e0F"}]}],
+            "settlement": [{
+                "payout": [{"payoutSettlement": "YES", "property": [{"payoutAccount": f"DDAComposable|GB0010001|{account_reference}"}]}],
+                "assocSettlement": [
+                    {"payinSettlement": "YES", "reference": [{"payinAccount": f"DDAComposable|GB0010001|{account_reference}"}]},
+                    {"payinSettlement": "YES", "reference": [{"payinAccount": f"DDAComposable|GB0010001|{account_reference}"}]},
+                ]
+            }]
+        }
+    }
+
+def create_consumer_loan(party_id, account_reference="123456"):
+    """Creates a new consumer loan for the given partyId via API call."""
+    uri = LOAN_API_BASE_URI  # Same API endpoint as mortgage
+    payload = generate_consumer_loan_payload(party_id, account_reference)
+    print(f"Attempting to create consumer loan for partyId {party_id} with account reference {account_reference}...")
+    try:
+        start_time = time.time()
+        response = requests.post(uri, json=payload, headers={'Content-Type': 'application/json'})
+        end_time = time.time()
+        response_time = end_time - start_time
+        
+        response_data = {}
+        try:
+            response_data = response.json()
+        except json.JSONDecodeError:
+            response_data = {"error": "Failed to decode JSON response", "content": response.text}
+        log_api_call(uri, "POST", payload, response.status_code, response_data)
+        if response.status_code >= 200 and response.status_code < 300:
+            print(f"Consumer loan created successfully for partyId {party_id}. Status: {response.status_code}, Response time: {response_time:.3f} seconds")
+            return response_data
+        else:
+            print(f"Failed to create consumer loan for partyId {party_id}. Status: {response.status_code}, Response time: {response_time:.3f} seconds")
+            return None
+    except requests.exceptions.RequestException as e:
+        print(f"Error during API call to create consumer loan: {e}")
+        log_api_call(uri, "POST", payload, "N/A (Request Failed)", {"error": str(e)})
+        return None
+
 def generate_current_account_payload(party_id):
     """Generates a payload for creating a current account."""
     # Format today's date as YYYYMMDD dynamically
@@ -937,6 +1014,12 @@ if __name__ == "__main__":
         f.write("=" * 50 + "\n\n")
         
     print("Starting demo flow...")
+    print("\n=== DEMO CONFIGURATION ===")
+    print(f"Current Account Creation: {'ENABLED' if CREATE_CURRENT_ACCOUNT else 'DISABLED'}")
+    print(f"Mortgage Loan Creation: {'ENABLED' if CREATE_MORTGAGE else 'DISABLED'}")
+    print(f"Consumer Loan Creation: {'ENABLED' if CREATE_CONSUMER_LOAN else 'DISABLED'}")
+    print("=" * 30)
+    
     print("\n--- Step 1: Create Customer ---")
     created_customer_response = create_customer()
     
@@ -978,165 +1061,259 @@ if __name__ == "__main__":
                 print(f"\n--- Testing: Get Party by ID ({customer_id}) ---")
                 get_party_by_id(customer_id)
             
-            # Add new step for current account creation
-            print("\n--- Step 2: Create Current Account ---")
-            created_account_response = create_current_account(customer_id)
+            # Initialize variables for account reference and step counter
+            account_reference = None
+            step_counter = 2
             
-            if created_account_response:
-                print("Current account creation step completed.")
-                account_reference = None
+            # Conditional product creation based on configuration
+            if CREATE_CURRENT_ACCOUNT:
+                print(f"\n--- Step {step_counter}: Create Current Account ---")
+                created_account_response = create_current_account(customer_id)
                 
-                # Extract account reference from response
-                if isinstance(created_account_response, dict):
-                    body = created_account_response.get("body")
-                    if isinstance(body, dict):
-                        account_reference = body.get("accountReference")
-                    if not account_reference:
-                        account_reference = created_account_response.get("accountReference")
-                
-                if account_reference:
-                    print(f"Successfully created current account with reference: {account_reference}")
+                if created_account_response:
+                    print("Current account creation step completed.")
                     
-                    # Add step to get account balance
-                    print("\n--- Step 3: Get Account Balance ---")
-                    get_account_balance(account_reference)
+                    # Extract account reference from response
+                    if isinstance(created_account_response, dict):
+                        body = created_account_response.get("body")
+                        if isinstance(body, dict):
+                            account_reference = body.get("accountReference")
+                        if not account_reference:
+                            account_reference = created_account_response.get("accountReference")
                     
-                    # Add step to get party arrangements
-                    print("\n--- Step 4: Get Party Arrangements ---")
-                    arrangements_response = get_party_arrangements(customer_id)
-                    
-                    # Process arrangements and get balances for each
-                    if arrangements_response and isinstance(arrangements_response, dict):
-                        # Extract the arrangements array from the response
-                        arrangements = arrangements_response.get('arrangements', [])
-                        if arrangements and len(arrangements) > 0:
-                            print(f"Found {len(arrangements)} arrangements for partyId {customer_id}")
-                            
-                            print("\n--- Step 5: Get Balances for All Arrangements ---")
-                            # Iterate through arrangements and get balance for each arrangement ID
-                            for idx, arrangement in enumerate(arrangements):
-                                if isinstance(arrangement, dict) and 'arrangementId' in arrangement:
-                                    arrangement_id = arrangement.get('arrangementId')
-                                    print(f"Processing arrangement {idx+1}/{len(arrangements)}: {arrangement_id}")
-                                    
-                                    # Call the balance API using the arrangementId as alternative key
-                                    # Note: The same balance API can fetch balance using either account_reference or arrangementId
-                                    get_arrangement_balance(arrangement_id)
-                                else:
-                                    print(f"Skipping arrangement {idx+1}/{len(arrangements)}: Invalid format")
+                    if account_reference:
+                        print(f"Successfully created current account with reference: {account_reference}")
+                        
+                        # Add step to get account balance
+                        step_counter += 1
+                        print(f"\n--- Step {step_counter}: Get Account Balance ---")
+                        get_account_balance(account_reference)
+                        
+                        # Add step to get party arrangements
+                        step_counter += 1
+                        print(f"\n--- Step {step_counter}: Get Party Arrangements ---")
+                        arrangements_response = get_party_arrangements(customer_id)
+                        
+                        # Process arrangements and get balances for each
+                        if arrangements_response and isinstance(arrangements_response, dict):
+                            # Extract the arrangements array from the response
+                            arrangements = arrangements_response.get('arrangements', [])
+                            if arrangements and len(arrangements) > 0:
+                                print(f"Found {len(arrangements)} arrangements for partyId {customer_id}")
+                                
+                                step_counter += 1
+                                print(f"\n--- Step {step_counter}: Get Balances for All Arrangements ---")
+                                # Iterate through arrangements and get balance for each arrangement ID
+                                for idx, arrangement in enumerate(arrangements):
+                                    if isinstance(arrangement, dict) and 'arrangementId' in arrangement:
+                                        arrangement_id = arrangement.get('arrangementId')
+                                        print(f"Processing arrangement {idx+1}/{len(arrangements)}: {arrangement_id}")
+                                        
+                                        # Call the balance API using the arrangementId as alternative key
+                                        # Note: The same balance API can fetch balance using either account_reference or arrangementId
+                                        get_arrangement_balance(arrangement_id)
+                                    else:
+                                        print(f"Skipping arrangement {idx+1}/{len(arrangements)}: Invalid format")
+                            else:
+                                print("No arrangements found in the response for partyId. Skipping balances step.")
                         else:
-                            print("No arrangements found in the response for partyId. Skipping balances step.")
+                            print("Invalid response format or no response. Skipping balances step.")
                     else:
-                        print("Invalid response format or no response. Skipping balances step.")
+                        print("Could not extract account reference from account creation response.")
+                        account_reference = "123456"  # Use default if we couldn't get the real reference
                 else:
-                    print("Could not extract account reference from account creation response.")
-                    account_reference = "123456"  # Use default if we couldn't get the real reference
+                    print("Current account creation step failed.")
+                    account_reference = "123456"  # Use default if current account creation failed
+                
+                step_counter += 1
             else:
-                print("Current account creation step failed.")
-                account_reference = "123456"  # Use default if current account creation failed
+                print("\n--- Current Account Creation: SKIPPED (disabled in configuration) ---")
+                account_reference = "123456"  # Use default account reference
             
-            # Continue with loan creation (now step 6)
-            print("\n--- Step 6: Create Loan ---")
-            created_loan_response = create_loan(customer_id, account_reference)
-            
-            if created_loan_response:
-                print("Loan creation step completed.")
-                loan_id = None
-                aaa_id = None # Still try to extract aaa_id in case it's needed later or for other logging
+            # Mortgage loan creation
+            if CREATE_MORTGAGE:
+                print(f"\n--- Step {step_counter}: Create Mortgage Loan ---")
+                created_loan_response = create_loan(customer_id, account_reference)
+                
+                if created_loan_response:
+                    print("Mortgage loan creation step completed.")
+                    loan_id = None
+                    aaa_id = None # Still try to extract aaa_id in case it's needed later or for other logging
 
-                if isinstance(created_loan_response, dict):
-                    header = created_loan_response.get("header")
-                    if isinstance(header, dict):
-                        loan_id = header.get("id") 
-                        aaa_id = header.get("aaaId") 
+                    if isinstance(created_loan_response, dict):
+                        header = created_loan_response.get("header")
+                        if isinstance(header, dict):
+                            loan_id = header.get("id") 
+                            aaa_id = header.get("aaaId") 
 
-                    if not loan_id:
-                        loan_id = created_loan_response.get("arrangementId")
-                    if not loan_id:
-                        loan_id = created_loan_response.get("id")
-                    if not loan_id:
-                        body_for_loan_id_fallback = created_loan_response.get("body")
-                        if isinstance(body_for_loan_id_fallback, dict):
-                            loan_id = body_for_loan_id_fallback.get("arrangementId")
-                            if not loan_id:
-                                loan_id = body_for_loan_id_fallback.get("id")
-                        elif isinstance(body_for_loan_id_fallback, list) and body_for_loan_id_fallback:
-                            if isinstance(body_for_loan_id_fallback[0], dict):
-                                loan_id = body_for_loan_id_fallback[0].get("arrangementId")
+                        if not loan_id:
+                            loan_id = created_loan_response.get("arrangementId")
+                        if not loan_id:
+                            loan_id = created_loan_response.get("id")
+                        if not loan_id:
+                            body_for_loan_id_fallback = created_loan_response.get("body")
+                            if isinstance(body_for_loan_id_fallback, dict):
+                                loan_id = body_for_loan_id_fallback.get("arrangementId")
                                 if not loan_id:
-                                    loan_id = body_for_loan_id_fallback[0].get("id")
+                                    loan_id = body_for_loan_id_fallback.get("id")
+                            elif isinstance(body_for_loan_id_fallback, list) and body_for_loan_id_fallback:
+                                if isinstance(body_for_loan_id_fallback[0], dict):
+                                    loan_id = body_for_loan_id_fallback[0].get("arrangementId")
+                                    if not loan_id:
+                                        loan_id = body_for_loan_id_fallback[0].get("id")
 
-                # Renumber subsequent steps
-                print(f"\n--- Step 7: Capture 5 Kafka Events After Loan Creation ---")
-                initial_kafka_events = capture_kafka_events(KAFKA_LENDING_TOPIC, 5)  # Use 5 instead of HISTORY_COUNT
-                
-                if initial_kafka_events:
-                    print(f"Successfully captured {len(initial_kafka_events)} events from Kafka topic {KAFKA_LENDING_TOPIC} after loan creation.")
-                else:
-                    print(f"Failed to capture events from Kafka topic {KAFKA_LENDING_TOPIC} after loan creation.")
-
-                # Get the original amount used in loan creation for disbursement
-                original_amount = None
-                try:
-                    if isinstance(created_loan_response.get("body"), dict) and created_loan_response.get("body").get("commitment"):
-                        commitment = created_loan_response.get("body").get("commitment")
-                        if isinstance(commitment, list) and len(commitment) > 0:
-                            original_amount = commitment[0].get("amount")
+                    # Renumber subsequent steps
+                    step_counter += 1
+                    print(f"\n--- Step {step_counter}: Capture 5 Kafka Events After Mortgage Loan Creation ---")
+                    initial_kafka_events = capture_kafka_events(KAFKA_LENDING_TOPIC, 5)  # Use 5 instead of HISTORY_COUNT
                     
-                    # If we couldn't extract it from the response, use a default value
-                    if not original_amount:
-                        original_amount = "100000"  # Default to 100,000 if not found
-                except Exception as e:
-                    print(f"Error extracting original loan amount: {e}")
-                    original_amount = "100000"  # Default to 100,000 on error
-                
-                print(f"\n--- Step 8: Get Loan Status ---")
-                get_loan_status(loan_id)
-                
-                print(f"\n--- Step 9: Get Loan Schedules ---")
-                get_loan_schedules(loan_id)
+                    if initial_kafka_events:
+                        print(f"Successfully captured {len(initial_kafka_events)} events from Kafka topic {KAFKA_LENDING_TOPIC} after mortgage loan creation.")
+                    else:
+                        print(f"Failed to capture events from Kafka topic {KAFKA_LENDING_TOPIC} after mortgage loan creation.")
 
-                print(f"\n--- Step 10: Get Account Balance (after loan disbursement) ---")
-                if account_reference:
-                    get_account_balance(account_reference)
+                    # Get the original amount used in loan creation for disbursement
+                    original_amount = None
+                    try:
+                        if isinstance(created_loan_response.get("body"), dict) and created_loan_response.get("body").get("commitment"):
+                            commitment = created_loan_response.get("body").get("commitment")
+                            if isinstance(commitment, list) and len(commitment) > 0:
+                                original_amount = commitment[0].get("amount")
+                        
+                        # If we couldn't extract it from the response, use a default value
+                        if not original_amount:
+                            original_amount = "100000"  # Default to 100,000 if not found
+                    except Exception as e:
+                        print(f"Error extracting original loan amount: {e}")
+                        original_amount = "100000"  # Default to 100,000 on error
+                    
+                    step_counter += 1
+                    print(f"\n--- Step {step_counter}: Get Mortgage Loan Status ---")
+                    get_loan_status(loan_id)
+                    
+                    step_counter += 1
+                    print(f"\n--- Step {step_counter}: Get Mortgage Loan Schedules ---")
+                    get_loan_schedules(loan_id)
+
+                    step_counter += 1
+                    print(f"\n--- Step {step_counter}: Get Account Balance (after mortgage loan) ---")
+                    if account_reference:
+                        get_account_balance(account_reference)
+                    else:
+                        print("Skipping account balance check as account_reference is not available.")
+
+                    # aaa_id is not directly used by capture_kafka_events, but good to know if it was found
+                    if aaa_id:
+                        print(f"(Extracted aaaId from mortgage loan response for reference: {aaa_id})")
+                    else:
+                        print("(Could not extract aaaId from mortgage loan response for reference)")
+
+                    if loan_id:
+                        print(f"Successfully identified mortgage loanId for API calls: {loan_id}")
                 else:
-                    print("Skipping account balance check as account_reference is not available.")
+                    print("Mortgage loan creation step failed. Skipping subsequent mortgage loan-related steps.")
                 
-                # REMOVED Step 10: Disburse Loan and subsequent Kafka capture
-
-                # aaa_id is not directly used by capture_kafka_events, but good to know if it was found
-                if aaa_id:
-                    print(f"(Extracted aaaId from loan response for reference: {aaa_id})")
-                else:
-                    print("(Could not extract aaaId from loan response for reference)")
-
-                if loan_id:
-                    print(f"Successfully identified loanId for API calls: {loan_id}")
+                step_counter += 1
             else:
-                print("Loan creation step failed. Skipping subsequent loan-related steps.")
+                print(f"\n--- Mortgage Loan Creation: SKIPPED (disabled in configuration) ---")
+            
+            # Consumer loan creation
+            if CREATE_CONSUMER_LOAN:
+                print(f"\n--- Step {step_counter}: Create Consumer Loan ---")
+                created_consumer_loan_response = create_consumer_loan(customer_id, account_reference)
+                
+                if created_consumer_loan_response:
+                    print("Consumer loan creation step completed.")
+                    consumer_loan_id = None
+                    consumer_aaa_id = None
+
+                    if isinstance(created_consumer_loan_response, dict):
+                        header = created_consumer_loan_response.get("header")
+                        if isinstance(header, dict):
+                            consumer_loan_id = header.get("id") 
+                            consumer_aaa_id = header.get("aaaId") 
+
+                        if not consumer_loan_id:
+                            consumer_loan_id = created_consumer_loan_response.get("arrangementId")
+                        if not consumer_loan_id:
+                            consumer_loan_id = created_consumer_loan_response.get("id")
+                        if not consumer_loan_id:
+                            body_for_loan_id_fallback = created_consumer_loan_response.get("body")
+                            if isinstance(body_for_loan_id_fallback, dict):
+                                consumer_loan_id = body_for_loan_id_fallback.get("arrangementId")
+                                if not consumer_loan_id:
+                                    consumer_loan_id = body_for_loan_id_fallback.get("id")
+                            elif isinstance(body_for_loan_id_fallback, list) and body_for_loan_id_fallback:
+                                if isinstance(body_for_loan_id_fallback[0], dict):
+                                    consumer_loan_id = body_for_loan_id_fallback[0].get("arrangementId")
+                                    if not consumer_loan_id:
+                                        consumer_loan_id = body_for_loan_id_fallback[0].get("id")
+
+                    step_counter += 1
+                    print(f"\n--- Step {step_counter}: Capture 5 Kafka Events After Consumer Loan Creation ---")
+                    consumer_kafka_events = capture_kafka_events(KAFKA_LENDING_TOPIC, 5)
+                    
+                    if consumer_kafka_events:
+                        print(f"Successfully captured {len(consumer_kafka_events)} events from Kafka topic {KAFKA_LENDING_TOPIC} after consumer loan creation.")
+                    else:
+                        print(f"Failed to capture events from Kafka topic {KAFKA_LENDING_TOPIC} after consumer loan creation.")
+
+                    step_counter += 1
+                    print(f"\n--- Step {step_counter}: Get Consumer Loan Status ---")
+                    get_loan_status(consumer_loan_id)
+                    
+                    step_counter += 1
+                    print(f"\n--- Step {step_counter}: Get Consumer Loan Schedules ---")
+                    get_loan_schedules(consumer_loan_id)
+
+                    step_counter += 1
+                    print(f"\n--- Step {step_counter}: Get Account Balance (after consumer loan) ---")
+                    if account_reference:
+                        get_account_balance(account_reference)
+                    else:
+                        print("Skipping account balance check as account_reference is not available.")
+
+                    if consumer_aaa_id:
+                        print(f"(Extracted aaaId from consumer loan response for reference: {consumer_aaa_id})")
+                    else:
+                        print("(Could not extract aaaId from consumer loan response for reference)")
+
+                    if consumer_loan_id:
+                        print(f"Successfully identified consumer loanId for API calls: {consumer_loan_id}")
+                else:
+                    print("Consumer loan creation step failed. Skipping subsequent consumer loan-related steps.")
+                
+                step_counter += 1
+            else:
+                print(f"\n--- Consumer Loan Creation: SKIPPED (disabled in configuration) ---")
 
             # --- New Debit/Credit Transaction Steps ---
             if account_reference: # Only proceed if we have an account reference
-                print(f"\n--- Step 12: Perform Debit Transaction ---")
+                print(f"\n--- Step {step_counter}: Perform Debit Transaction ---")
                 debit_payload = generate_debit_payload(account_reference)
                 perform_account_transaction(DEBIT_ACCOUNT_API_URI, debit_payload, "debit")
 
-                print(f"\n--- Step 13: Perform First Credit Transaction ---")
+                step_counter += 1
+                print(f"\n--- Step {step_counter}: Perform First Credit Transaction ---")
                 credit_payload1 = generate_credit_payload(account_reference)
                 perform_account_transaction(CREDIT_ACCOUNT_API_URI, credit_payload1, "credit")
 
-                print(f"\n--- Step 14: Perform Second Credit Transaction ---")
+                step_counter += 1
+                print(f"\n--- Step {step_counter}: Perform Second Credit Transaction ---")
                 credit_payload2 = generate_credit_payload(account_reference)
                 perform_account_transaction(CREDIT_ACCOUNT_API_URI, credit_payload2, "credit")
 
-                print(f"\n--- Step 15: Get Account Balance (after transactions) ---")
+                step_counter += 1
+                print(f"\n--- Step {step_counter}: Get Account Balance (after transactions) ---")
                 get_account_balance(account_reference)
+                
+                step_counter += 1
             else:
                 print("Skipping debit/credit transactions and final balance check as account_reference is not available.")
             # --- End of New Debit/Credit Transaction Steps ---
 
             # --- Add Holdings Microservice API calls ---
-            print("\n--- Step 16: Get Holdings Party Arrangements ---")
+            print(f"\n--- Step {step_counter}: Get Holdings Party Arrangements ---")
             print("# The Holdings microservice provides a consolidated view of arrangements across all product lines")
             print("# It acts as an aggregator, connecting party IDs with their arrangements in different systems")
             holdings_arrangements = get_holdings_party_arrangements(customer_id)
@@ -1176,11 +1353,13 @@ if __name__ == "__main__":
                     
                     # If we found an account_id, use it for balance and transaction calls
                     if account_id:
-                        print(f"\n--- Step 17: Get Holdings Account Balances ---")
+                        step_counter += 1
+                        print(f"\n--- Step {step_counter}: Get Holdings Account Balances ---")
                         print(f"# Using account_id {account_id} from Holdings arrangement")
                         get_holdings_account_balances(account_id)
                         
-                        print(f"\n--- Step 18: Get Holdings Account Transactions ---")
+                        step_counter += 1
+                        print(f"\n--- Step {step_counter}: Get Holdings Account Transactions ---")
                         print(f"# Using account_id {account_id} from Holdings arrangement")
                         get_holdings_account_transactions(account_id)
                     else:
@@ -1191,7 +1370,8 @@ if __name__ == "__main__":
                 print("Failed to retrieve Holdings arrangements. Skipping additional Holdings API calls.")
             # --- End of Holdings Microservice API calls ---
 
-            print("\n--- Step 19: Get Customer Arrangements ---")
+            step_counter += 1
+            print(f"\n--- Step {step_counter}: Get Customer Arrangements ---")
             get_customer_arrangements(customer_id)
         else:
             print("Could not extract customer ID from customer creation response. Skipping subsequent steps.")

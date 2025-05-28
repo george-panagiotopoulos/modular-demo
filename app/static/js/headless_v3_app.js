@@ -1,241 +1,356 @@
-// Headless v3 App - Event streaming for Event Store, Adapter, and Holdings
-// Using identical functionality to headless_v2 but for different topics
+// Headless v3 App - Dynamic Component Selection with Event Streaming
 
-let eventstoreEventSource = null;
-let adapterEventSource = null;
-let holdingsEventSource = null;
+// Component configuration mapping
+const COMPONENT_CONFIG = {
+    'party': {
+        name: 'Party/Customer - R24 (proxy microservice)',
+        domain: 'party',
+        topic: 'ms-party-outbox'
+    },
+    'deposits': {
+        name: 'Deposits/Accounts Module R25',
+        domain: 'deposits',
+        topic: 'deposits-event-topic'
+    },
+    'lending': {
+        name: 'Lending Module R24',
+        domain: 'lending',
+        topic: 'lending-event-topic'
+    },
+    'eventstore': {
+        name: 'Event Store (R24)',
+        domain: 'eventstore',
+        topic: 'ms-eventstore-inbox-topic'
+    },
+    'adapter': {
+        name: 'Adapter (R24)',
+        domain: 'adapter',
+        topic: 'ms-adapterservice-event-topic'
+    },
+    'holdings': {
+        name: 'Holdings (R25)',
+        domain: 'holdings',
+        topic: 'ms-holdings-event-topic'
+    }
+};
 
-// Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('Headless v3 app initialized - DOM ready');
+// Connection management
+let activeConnections = {
+    component1: null,
+    component2: null,
+    component3: null
+};
+
+let selectedComponents = {
+    component1: 'eventstore',
+    component2: 'adapter',
+    component3: 'holdings'
+};
+
+// Session management for concurrent connections
+let sessionId = null;
+let isInitialized = false;
+
+// Global color mapping to ensure consistent colors across all streams
+let globalEventColorMap = {};
+let colorAssignmentIndex = 0; // Track next color to assign
+
+// Generate or retrieve session ID
+function getSessionId() {
+    if (!sessionId) {
+        sessionId = 'headless-v3-session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    }
+    return sessionId;
+}
+
+// Improved cleanup function with better error handling
+function cleanupEventSource(eventSource, domain, componentKey) {
+    if (eventSource) {
+        try {
+            console.log(`Cleaning up connection for ${domain} (${componentKey})`);
+            
+            // Send disconnect request to backend
+            fetch(`/api/headless-v2/events/${domain}/disconnect`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Session-ID': getSessionId()
+                },
+                body: JSON.stringify({ session_id: getSessionId() })
+            }).catch(err => console.log(`Disconnect request failed for ${domain}:`, err));
+            
+            // Close the EventSource
+            eventSource.close();
+            
+            // Clear from active connections
+            activeConnections[componentKey] = null;
+            
+            // Reset button states
+            updateButtonStates(componentKey, 'disconnected');
+            
+        } catch (e) {
+            console.error(`Error cleaning up EventSource for ${domain}:`, e);
+        }
+    }
+}
+
+// Update button states for connect/disconnect
+function updateButtonStates(componentKey, state) {
+    const connectBtn = document.getElementById(`${componentKey}-connect`);
+    const disconnectBtn = document.getElementById(`${componentKey}-disconnect`);
     
-    // Add a small delay to ensure DOM is fully rendered
-    setTimeout(() => {
-        console.log('Setting up event listeners for headless v3...');
-        
-        // Set up event listeners for each service
-        const eventstoreBtn = document.getElementById('eventstore-connect');
-        const adapterBtn = document.getElementById('adapter-connect');
-        const holdingsBtn = document.getElementById('holdings-connect');
-        
-        console.log('Found buttons:', {
-            eventstore: !!eventstoreBtn,
-            adapter: !!adapterBtn,
-            holdings: !!holdingsBtn
-        });
-        
-        if (eventstoreBtn) {
-            console.log('Adding click listener to eventstore button');
-            eventstoreBtn.addEventListener('click', function(e) {
-                console.log('Event Store button clicked!');
-                e.preventDefault();
-                connectToEventStore();
-            });
-        } else {
-            console.error('Event Store button not found!');
-        }
-        
-        if (adapterBtn) {
-            console.log('Adding click listener to adapter button');
-            adapterBtn.addEventListener('click', function(e) {
-                console.log('Adapter button clicked!');
-                e.preventDefault();
-                connectToAdapter();
-            });
-        } else {
-            console.error('Adapter button not found!');
-        }
-        
-        if (holdingsBtn) {
-            console.log('Adding click listener to holdings button');
-            holdingsBtn.addEventListener('click', function(e) {
-                console.log('Holdings button clicked!');
-                e.preventDefault();
-                connectToHoldings();
-            });
-        } else {
-            console.error('Holdings button not found!');
-        }
-        
-        console.log('Event listeners setup complete for headless v3');
-    }, 100);
-});
-
-function connectToEventStore() {
-    console.log('connectToEventStore called');
-    if (eventstoreEventSource) {
-        console.log('Already connected to Event Store');
+    if (!connectBtn || !disconnectBtn) {
+        console.error(`Buttons not found for ${componentKey}`);
         return;
     }
     
-    console.log('Connecting to Event Store events...');
-    const button = document.getElementById('eventstore-connect');
-    if (!button) {
-        console.error('EventStore button not found when trying to connect!');
+    switch (state) {
+        case 'connecting':
+            connectBtn.textContent = 'Connecting...';
+            connectBtn.disabled = true;
+            connectBtn.style.display = 'inline-block';
+            disconnectBtn.style.display = 'none';
+            break;
+        case 'connected':
+            connectBtn.style.display = 'none';
+            disconnectBtn.style.display = 'inline-block';
+            disconnectBtn.disabled = false;
+            break;
+        case 'disconnected':
+        case 'error':
+            connectBtn.textContent = state === 'error' ? 'Error - Retry' : 'Connect';
+            connectBtn.disabled = false;
+            connectBtn.style.backgroundColor = state === 'error' ? '#dc2626' : '';
+            connectBtn.style.display = 'inline-block';
+            disconnectBtn.style.display = 'none';
+            break;
+    }
+}
+
+// Global cleanup function for all connections
+function cleanupAllConnections() {
+    console.log('Cleaning up all headless v3 connections...');
+    
+    // Clean up individual connections
+    Object.keys(activeConnections).forEach(componentKey => {
+        if (activeConnections[componentKey]) {
+            const component = selectedComponents[componentKey];
+            const config = COMPONENT_CONFIG[component];
+            if (config) {
+                cleanupEventSource(activeConnections[componentKey], config.domain, componentKey);
+            }
+        }
+    });
+    
+    // Send global cleanup request
+    fetch('/api/headless-v2/cleanup', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Session-ID': getSessionId()
+        },
+        body: JSON.stringify({ session_id: getSessionId() })
+    }).catch(err => console.log('Global cleanup request failed:', err));
+}
+
+// Page visibility change handler to cleanup connections when tab becomes hidden
+function handleVisibilityChange() {
+    if (document.hidden) {
+        console.log('Page hidden, cleaning up connections...');
+        cleanupAllConnections();
+    }
+}
+
+// Beforeunload handler to cleanup connections when leaving page
+function handleBeforeUnload() {
+    console.log('Page unloading, cleaning up connections...');
+    cleanupAllConnections();
+}
+
+// Update component display
+function updateComponentDisplay(componentKey, componentValue) {
+    const config = COMPONENT_CONFIG[componentValue];
+    if (!config) {
+        console.error(`No config found for component: ${componentValue}`);
         return;
     }
     
-    button.textContent = 'Connecting...';
-    button.disabled = true;
+    // Update header
+    const header = document.getElementById(`${componentKey}-header`);
+    if (header) {
+        header.textContent = config.name;
+    } else {
+        console.error(`Header not found: ${componentKey}-header`);
+    }
     
-    eventstoreEventSource = new EventSource('/api/headless-v2/events/eventstore');
+    // Clear events display
+    const eventsContainer = document.getElementById(`${componentKey}-events`);
+    if (eventsContainer) {
+        eventsContainer.innerHTML = '<div class="text-sm text-gray-500">Click "Connect" to start streaming events...</div>';
+    } else {
+        console.error(`Events container not found: ${componentKey}-events`);
+    }
     
-    eventstoreEventSource.onopen = function() {
-        console.log('Connected to Event Store events');
-        button.textContent = 'Connected';
-        button.style.backgroundColor = '#059669'; // green
+    // Reset button states
+    updateButtonStates(componentKey, 'disconnected');
+}
+
+// Apply component selection
+function applyComponentSelection() {
+    console.log('Applying component selection...');
+    
+    // Clean up existing connections first
+    cleanupAllConnections();
+    
+    // Get selected values
+    const component1Select = document.getElementById('component-1-select');
+    const component2Select = document.getElementById('component-2-select');
+    const component3Select = document.getElementById('component-3-select');
+    
+    if (!component1Select || !component2Select || !component3Select) {
+        console.error('Selection dropdowns not found');
+        return;
+    }
+    
+    const component1 = component1Select.value;
+    const component2 = component2Select.value;
+    const component3 = component3Select.value;
+    
+    // Validate selection (no duplicates, all selected)
+    const selections = [component1, component2, component3].filter(v => v);
+    const uniqueSelections = [...new Set(selections)];
+    
+    if (selections.length !== 3) {
+        alert('Please select all three components.');
+        return;
+    }
+    
+    if (uniqueSelections.length !== 3) {
+        alert('Please select three different components.');
+        return;
+    }
+    
+    // Update selected components
+    selectedComponents.component1 = component1;
+    selectedComponents.component2 = component2;
+    selectedComponents.component3 = component3;
+    
+    // Update displays
+    updateComponentDisplay('component1', component1);
+    updateComponentDisplay('component2', component2);
+    updateComponentDisplay('component3', component3);
+    
+    console.log('Component selection applied successfully:', selectedComponents);
+}
+
+// Connect to a specific component
+function connectToComponent(componentKey) {
+    const componentValue = selectedComponents[componentKey];
+    const config = COMPONENT_CONFIG[componentValue];
+    
+    if (!config) {
+        console.error(`No configuration found for component: ${componentValue}`);
+        return;
+    }
+    
+    // Check if already connected
+    if (activeConnections[componentKey]) {
+        console.log(`Already connected to ${config.name}`);
+        return;
+    }
+    
+    console.log(`Connecting to ${config.name} (${config.domain})...`);
+    
+    // Update button state to connecting
+    updateButtonStates(componentKey, 'connecting');
+    
+    // Create EventSource with session ID
+    const eventSourceUrl = `/api/headless-v2/events/${config.domain}?session_id=${getSessionId()}`;
+    const eventSource = new EventSource(eventSourceUrl);
+    
+    eventSource.onopen = function() {
+        console.log(`Connected to ${config.name} events`);
+        activeConnections[componentKey] = eventSource;
+        updateButtonStates(componentKey, 'connected');
     };
     
-    eventstoreEventSource.onmessage = function(event) {
+    eventSource.onmessage = function(event) {
         try {
             const data = JSON.parse(event.data);
-            handleEventStoreEvent(data);
+            handleComponentEvent(componentKey, data);
         } catch (e) {
-            console.error('Error parsing Event Store event:', e);
+            console.error(`Error parsing ${config.name} event:`, e);
         }
     };
     
-    eventstoreEventSource.onerror = function(error) {
-        console.error('Event Store EventSource error:', error);
-        button.textContent = 'Error';
-        button.style.backgroundColor = '#dc2626'; // red
-        button.disabled = false;
-        if (eventstoreEventSource) {
-            eventstoreEventSource.close();
-            eventstoreEventSource = null;
-        }
+    eventSource.onerror = function(error) {
+        console.error(`${config.name} EventSource error:`, error);
+        updateButtonStates(componentKey, 'error');
+        cleanupEventSource(eventSource, config.domain, componentKey);
     };
 }
 
-function connectToAdapter() {
-    console.log('connectToAdapter called');
-    if (adapterEventSource) {
-        console.log('Already connected to Adapter');
+// Disconnect from a specific component
+function disconnectFromComponent(componentKey) {
+    const componentValue = selectedComponents[componentKey];
+    const config = COMPONENT_CONFIG[componentValue];
+    
+    if (!config) {
+        console.error(`No configuration found for component: ${componentValue}`);
         return;
     }
     
-    console.log('Connecting to Adapter events...');
-    const button = document.getElementById('adapter-connect');
-    if (!button) {
-        console.error('Adapter button not found when trying to connect!');
-        return;
+    if (activeConnections[componentKey]) {
+        cleanupEventSource(activeConnections[componentKey], config.domain, componentKey);
     }
-    
-    button.textContent = 'Connecting...';
-    button.disabled = true;
-    
-    adapterEventSource = new EventSource('/api/headless-v2/events/adapter');
-    
-    adapterEventSource.onopen = function() {
-        console.log('Connected to Adapter events');
-        button.textContent = 'Connected';
-        button.style.backgroundColor = '#059669'; // green
-    };
-    
-    adapterEventSource.onmessage = function(event) {
-        try {
-            const data = JSON.parse(event.data);
-            handleAdapterEvent(data);
-        } catch (e) {
-            console.error('Error parsing Adapter event:', e);
-        }
-    };
-    
-    adapterEventSource.onerror = function(error) {
-        console.error('Adapter EventSource error:', error);
-        button.textContent = 'Error';
-        button.style.backgroundColor = '#dc2626'; // red
-        button.disabled = false;
-        if (adapterEventSource) {
-            adapterEventSource.close();
-            adapterEventSource = null;
-        }
-    };
 }
 
-function connectToHoldings() {
-    console.log('connectToHoldings called');
-    if (holdingsEventSource) {
-        console.log('Already connected to Holdings');
+// Handle events for a specific component
+function handleComponentEvent(componentKey, data) {
+    const eventsContainer = document.getElementById(`${componentKey}-events`);
+    if (!eventsContainer) {
+        console.error(`Events container not found: ${componentKey}-events`);
         return;
     }
     
-    console.log('Connecting to Holdings events...');
-    const button = document.getElementById('holdings-connect');
-    if (!button) {
-        console.error('Holdings button not found when trying to connect!');
+    // Handle different event types
+    if (data.type === 'ping') {
+        return; // Ignore ping events
+    }
+    
+    if (data.type === 'info') {
+        // Display info message as simple text element (like headless v2)
+        const infoElement = document.createElement('div');
+        infoElement.className = 'mb-1 text-blue-600';
+        infoElement.textContent = data.message;
+        eventsContainer.insertBefore(infoElement, eventsContainer.firstChild);
         return;
     }
     
-    button.textContent = 'Connecting...';
-    button.disabled = true;
+    if (data.type === 'error') {
+        // Display error message as simple text element (like headless v2)
+        const errorElement = document.createElement('div');
+        errorElement.className = 'mb-1 text-red-600';
+        errorElement.textContent = data.message;
+        eventsContainer.insertBefore(errorElement, eventsContainer.firstChild);
+        return;
+    }
     
-    holdingsEventSource = new EventSource('/api/headless-v2/events/holdings');
-    
-    holdingsEventSource.onopen = function() {
-        console.log('Connected to Holdings events');
-        button.textContent = 'Connected';
-        button.style.backgroundColor = '#059669'; // green
-    };
-    
-    holdingsEventSource.onmessage = function(event) {
-        try {
-            const data = JSON.parse(event.data);
-            handleHoldingsEvent(data);
-        } catch (e) {
-            console.error('Error parsing Holdings event:', e);
-        }
-    };
-    
-    holdingsEventSource.onerror = function(error) {
-        console.error('Holdings EventSource error:', error);
-        button.textContent = 'Error';
-        button.style.backgroundColor = '#dc2626'; // red
-        button.disabled = false;
-        if (holdingsEventSource) {
-            holdingsEventSource.close();
-            holdingsEventSource = null;
-        }
-    };
-}
-
-function handleEventStoreEvent(data) {
+    // Handle actual Kafka events - the backend sends events with type 'event' and data in 'data' property
     if (data.type === 'event' && data.data) {
-        displayEventSummary('eventstore-events', data.data);
-    } else if (data.type === 'info') {
-        console.log('Event Store info:', data.message);
-    } else if (data.type === 'error') {
-        console.error('Event Store error:', data.message);
+        // Format and display event data using the colored summary cards
+        displayEventSummary(`${componentKey}-events`, data.data);
     }
 }
 
-function handleAdapterEvent(data) {
-    if (data.type === 'event' && data.data) {
-        displayEventSummary('adapter-events', data.data);
-    } else if (data.type === 'info') {
-        console.log('Adapter info:', data.message);
-    } else if (data.type === 'error') {
-        console.error('Adapter error:', data.message);
-    }
-}
-
-function handleHoldingsEvent(data) {
-    if (data.type === 'event' && data.data) {
-        displayEventSummary('holdings-events', data.data);
-    } else if (data.type === 'info') {
-        console.log('Holdings info:', data.message);
-    } else if (data.type === 'error') {
-        console.error('Holdings error:', data.message);
-    }
-}
-
+// Display event summary (copied exactly from headless v2 implementation)
 function displayEventSummary(containerId, eventData) {
     const eventsContainer = document.getElementById(containerId);
     if (!eventsContainer) return;
     
-    // Remove the initial message if it exists
+    // Remove initial message if it exists
     const initialMessage = eventsContainer.querySelector('.text-gray-500');
-    if (initialMessage) {
+    if (initialMessage && initialMessage.textContent.includes('Click "Connect"')) {
         initialMessage.remove();
     }
     
@@ -334,8 +449,14 @@ function displayEventSummary(containerId, eventData) {
     limitEventCount(eventsContainer, 25);
 }
 
+// Get color for event type (expanded palette with 30 colors)
 function getEventColor(eventType) {
-    // Generate consistent colors based on event type
+    // Check if we already have a color assigned to this event type
+    if (globalEventColorMap[eventType]) {
+        return globalEventColorMap[eventType];
+    }
+    
+    // Expanded color palette with 30 distinct colors for better event type differentiation
     const colors = [
         '#3B82F6', // Blue
         '#10B981', // Green
@@ -346,27 +467,52 @@ function getEventColor(eventType) {
         '#F97316', // Orange
         '#84CC16', // Lime
         '#EC4899', // Pink
-        '#6B7280'  // Gray
+        '#6B7280', // Gray
+        '#14B8A6', // Teal
+        '#F472B6', // Hot Pink
+        '#A855F7', // Violet
+        '#22C55E', // Emerald
+        '#FB923C', // Amber
+        '#38BDF8', // Sky Blue
+        '#FBBF24', // Golden Yellow
+        '#F87171', // Light Red
+        '#A78BFA', // Light Purple
+        '#34D399', // Light Green
+        '#60A5FA', // Light Blue
+        '#FBBF24', // Amber
+        '#FB7185', // Rose
+        '#C084FC', // Lavender
+        '#4ADE80', // Light Lime
+        '#FACC15', // Bright Yellow
+        '#F472B6', // Magenta
+        '#06B6D4', // Bright Cyan
+        '#8B5CF6', // Indigo
+        '#EAB308'  // Gold
     ];
     
-    // Simple hash function to get consistent color for same event type
-    let hash = 0;
-    for (let i = 0; i < eventType.length; i++) {
-        const char = eventType.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash; // Convert to 32-bit integer
-    }
+    // Sequential assignment - no collisions possible
+    const selectedColor = colors[colorAssignmentIndex % colors.length];
     
-    return colors[Math.abs(hash) % colors.length];
+    // Store the color mapping globally for this session
+    globalEventColorMap[eventType] = selectedColor;
+    
+    // Move to next color for the next new event type
+    colorAssignmentIndex++;
+    
+    console.log(`Event type: "${eventType}" -> Sequential Index: ${colorAssignmentIndex - 1} -> Color: ${selectedColor}`);
+    console.log(`Total unique event types seen: ${Object.keys(globalEventColorMap).length}`);
+    
+    return selectedColor;
 }
 
+// Limit event count in container (copied exactly from headless v2)
 function limitEventCount(eventsContainer, maxCount) {
     // Limit number of events shown to prevent browser performance issues
     const children = Array.from(eventsContainer.children);
     // Keep only the first maxCount real event elements (not info/error messages)
     const eventElements = children.filter(child => 
         child.classList.contains('mb-2') && 
-        child.querySelector('button')
+        (child.classList.contains('p-1') || child.querySelector('button'))
     );
     
     if (eventElements.length > maxCount) {
@@ -378,63 +524,106 @@ function limitEventCount(eventsContainer, maxCount) {
     }
 }
 
+// Format JSON for display
 function formatJSON(json) {
-    if (!json) return '';
-    
-    try {
-        if (typeof json === 'string') {
+    if (typeof json === 'string') {
+        try {
             json = JSON.parse(json);
+        } catch (e) {
+            return json; // Return as-is if not valid JSON
+        }
+    }
+    
+    if (typeof json === 'object' && json !== null) {
+        return JSON.stringify(json, null, 2);
+    }
+    
+    return String(json);
+}
+
+// Check if headless v3 content is loaded
+function isHeadlessV3ContentLoaded() {
+    const applyBtn = document.getElementById('apply-selection');
+    const header1 = document.getElementById('component1-header');
+    const connect1 = document.getElementById('component1-connect');
+    
+    return !!(applyBtn && header1 && connect1);
+}
+
+// Initialize headless v3 functionality
+function initializeHeadlessV3() {
+    if (isInitialized) {
+        return;
+    }
+    
+    // Apply selection button
+    const applyBtn = document.getElementById('apply-selection');
+    if (applyBtn) {
+        applyBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            applyComponentSelection();
+        });
+    }
+    
+    // Connect and disconnect buttons for each component
+    ['component1', 'component2', 'component3'].forEach(componentKey => {
+        const connectButton = document.getElementById(`${componentKey}-connect`);
+        const disconnectButton = document.getElementById(`${componentKey}-disconnect`);
+        
+        if (connectButton) {
+            connectButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                connectToComponent(componentKey);
+            });
         }
         
-        const formatted = JSON.stringify(json, null, 2)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, 
-                function (match) {
-                    let cls = 'text-blue-600'; // number
-                    if (/^"/.test(match)) {
-                        if (/:$/.test(match)) {
-                            cls = 'text-teal-700 font-medium'; // key
-                        } else {
-                            cls = 'text-green-600'; // string
-                        }
-                    } else if (/true|false/.test(match)) {
-                        cls = 'text-purple-600'; // boolean
-                    } else if (/null/.test(match)) {
-                        cls = 'text-red-600'; // null
-                    }
-                    return '<span class="' + cls + '">' + match + '</span>';
-                }
-            );
-            
-        return formatted;
-    } catch (e) {
-        console.error('Error formatting JSON:', e);
-        return String(json);
+        if (disconnectButton) {
+            disconnectButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                disconnectFromComponent(componentKey);
+            });
+        }
+    });
+    
+    // Initialize with default selection
+    applyComponentSelection();
+    
+    isInitialized = true;
+}
+
+// Polling function to check for content and initialize
+function pollForHeadlessV3Content() {
+    if (isHeadlessV3ContentLoaded()) {
+        initializeHeadlessV3();
+    } else {
+        setTimeout(pollForHeadlessV3Content, 100);
     }
 }
 
-// Cleanup function
-function cleanupHeadlessV3() {
-    if (eventstoreEventSource) {
-        eventstoreEventSource.close();
-        eventstoreEventSource = null;
-    }
-    if (adapterEventSource) {
-        adapterEventSource.close();
-        adapterEventSource = null;
-    }
-    if (holdingsEventSource) {
-        holdingsEventSource.close();
-        holdingsEventSource = null;
-    }
-}
+// Start polling immediately
+pollForHeadlessV3Content();
 
-// Register cleanup function
-window.cleanupCurrentTab = cleanupHeadlessV3;
+// Also try to initialize on DOMContentLoaded as backup
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(() => {
+        if (!isInitialized) {
+            if (isHeadlessV3ContentLoaded()) {
+                initializeHeadlessV3();
+            }
+        }
+    }, 100);
+});
 
-// Make functions globally available
-window.connectToEventStore = connectToEventStore;
-window.connectToAdapter = connectToAdapter;
-window.connectToHoldings = connectToHoldings; 
+// Add page visibility and unload handlers
+document.addEventListener('visibilitychange', handleVisibilityChange);
+window.addEventListener('beforeunload', handleBeforeUnload);
+
+// Add cleanup when navigating away from this tab
+window.addEventListener('hashchange', function() {
+    if (!window.location.hash.includes('headless-v3')) {
+        cleanupAllConnections();
+    }
+});
+
+// Global cleanup function for external access
+window.cleanupHeadlessV3 = cleanupAllConnections; 

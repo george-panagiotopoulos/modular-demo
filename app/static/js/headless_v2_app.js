@@ -11,6 +11,50 @@
     let partyEventSource = null;
     let depositsEventSource = null;
     let lendingEventSource = null;
+    
+    // Session management for concurrent connections
+    let sessionId = null;
+    
+    // Generate or retrieve session ID
+    function getSessionId() {
+        if (!sessionId) {
+            sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+        return sessionId;
+    }
+    
+    // Cleanup function for disconnecting from Event Hub
+    function cleanupEventSource(eventSource, domain) {
+        if (eventSource) {
+            try {
+                // Send disconnect request to backend
+                fetch(`/api/headless-v2/events/${domain}/disconnect`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Session-ID': getSessionId()
+                    },
+                    body: JSON.stringify({ session_id: getSessionId() })
+                }).catch(err => console.log('Disconnect request failed:', err));
+                
+                eventSource.close();
+            } catch (e) {
+                console.error('Error closing EventSource:', e);
+            }
+        }
+    }
+    
+    // Global cleanup function for all connections
+    function cleanupAllConnections() {
+        fetch('/api/headless-v2/cleanup', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Session-ID': getSessionId()
+            },
+            body: JSON.stringify({ session_id: getSessionId() })
+        }).catch(err => console.log('Cleanup request failed:', err));
+    }
 
     // API endpoints configuration
     const apiEndpoints = {
@@ -380,8 +424,9 @@
     }
     
     function createEventSource(domain, eventsContainer, connectButton) {
-        // Create new EventSource
-        const eventSource = new EventSource(`/api/headless-v2/events/${domain}`);
+        // Create new EventSource with session ID
+        const eventSourceUrl = `/api/headless-v2/events/${domain}?session_id=${getSessionId()}`;
+        const eventSource = new EventSource(eventSourceUrl);
         
         // Store the EventSource in the right variable
         if (domain === 'party') {
@@ -613,24 +658,25 @@
             lendingEventSource = null;
         }
         
-        // Close the EventSource if it exists
-        if (eventSource) {
-            eventSource.close();
-            console.log(`${domain} EventSource connection closed`);
-        }
+        // Clean up the EventSource using the new cleanup function
+        cleanupEventSource(eventSource, domain);
         
         // Update the button state
         const connectButton = document.getElementById(`${domain}-connect`);
-        connectButton.textContent = "Connect";
-        connectButton.classList.remove("bg-red-600");
-        connectButton.classList.add("bg-teal-600");
+        if (connectButton) {
+            connectButton.textContent = "Connect";
+            connectButton.classList.remove("bg-red-600");
+            connectButton.classList.add("bg-teal-600");
+        }
         
         // Inform the user
         const eventsContainer = document.getElementById(`${domain}-events`);
-        const infoElement = document.createElement('div');
-        infoElement.className = 'mb-1 text-gray-600';
-        infoElement.textContent = 'Event streaming disconnected';
-        eventsContainer.insertBefore(infoElement, eventsContainer.firstChild);
+        if (eventsContainer) {
+            const infoElement = document.createElement('div');
+            infoElement.className = 'mb-1 text-gray-600';
+            infoElement.textContent = 'Event streaming disconnected';
+            eventsContainer.insertBefore(infoElement, eventsContainer.firstChild);
+        }
     }
     
     function toggleEventStream(domain) {
@@ -780,10 +826,13 @@
     window.cleanupCurrentTab = function() {
         console.log("Running cleanup for Headless V2 Tab...");
         
-        // Close all EventSource connections
+        // Close all EventSource connections using the new cleanup mechanism
         stopEventStream('party');
         stopEventStream('deposits');
         stopEventStream('lending');
+        
+        // Send cleanup request to backend for all connections
+        cleanupAllConnections();
         
         // Remove event listeners dynamically if they were added
         const partyEndpoint = document.getElementById('party-endpoint');
@@ -816,6 +865,15 @@
         delete window.reloadHeadlessData;
         delete window.cleanupCurrentTab; // Self-remove after execution if desired, or manage centrally
     };
+    
+    // Add page unload cleanup
+    window.addEventListener('beforeunload', function() {
+        cleanupAllConnections();
+    });
+    
+    window.addEventListener('unload', function() {
+        cleanupAllConnections();
+    });
 
     // --- Initial Execution ---
     // Ensure DOM is fully loaded before initializing

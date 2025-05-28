@@ -6,58 +6,115 @@
     </div>
     
     <div class="flex justify-between items-center mb-2">
-        <h2 class="text-xl font-bold text-teal-800">Headless Demo #2</h2>
+        <h2 class="text-xl font-bold text-teal-800">Headless Demo #2 - Dynamic Component Selection</h2>
     </div>
     
-    <!-- Three-column layout for architecture-based event views -->
+    <!-- Component Selection Section -->
+    <div class="bg-white border border-teal-300 rounded-lg shadow p-4 mb-4">
+        <h3 class="text-lg font-semibold text-teal-800 mb-3">Select Components to Monitor</h3>
+        <div class="grid grid-cols-3 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-teal-700 mb-1">Component 1:</label>
+                <select id="component-1-select" class="w-full text-sm rounded border-gray-300 focus:border-teal-500 focus:ring-teal-500">
+                    <option value="">Select Component...</option>
+                    <option value="party">Party/Customer - R24 (proxy microservice)</option>
+                    <option value="deposits">Deposits/Accounts Module R25</option>
+                    <option value="lending">Lending Module R24</option>
+                    <option value="eventstore" selected>Event Store (R24)</option>
+                    <option value="adapter">Adapter (R24)</option>
+                    <option value="holdings">Holdings (R25)</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-teal-700 mb-1">Component 2:</label>
+                <select id="component-2-select" class="w-full text-sm rounded border-gray-300 focus:border-teal-500 focus:ring-teal-500">
+                    <option value="">Select Component...</option>
+                    <option value="party">Party/Customer - R24 (proxy microservice)</option>
+                    <option value="deposits">Deposits/Accounts Module R25</option>
+                    <option value="lending">Lending Module R24</option>
+                    <option value="eventstore">Event Store (R24)</option>
+                    <option value="adapter" selected>Adapter (R24)</option>
+                    <option value="holdings">Holdings (R25)</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-teal-700 mb-1">Component 3:</label>
+                <select id="component-3-select" class="w-full text-sm rounded border-gray-300 focus:border-teal-500 focus:ring-teal-500">
+                    <option value="">Select Component...</option>
+                    <option value="party">Party/Customer - R24 (proxy microservice)</option>
+                    <option value="deposits">Deposits/Accounts Module R25</option>
+                    <option value="lending">Lending Module R24</option>
+                    <option value="eventstore">Event Store (R24)</option>
+                    <option value="adapter">Adapter (R24)</option>
+                    <option value="holdings" selected>Holdings (R25)</option>
+                </select>
+            </div>
+        </div>
+        <div class="mt-3 flex justify-center">
+            <button id="apply-selection" class="px-4 py-2 bg-teal-600 text-white rounded hover:bg-teal-700 font-medium">
+                Apply Selection
+            </button>
+        </div>
+    </div>
+    
+    <!-- Three-column layout for selected components -->
     <div class="flex flex-row space-x-4 h-full">
-        <!-- Event Store Column (R24) -->
-        <div class="flex-1 flex flex-col bg-white border border-teal-300 rounded-lg shadow overflow-hidden">
-            <div class="bg-teal-700 text-white p-2 font-semibold">
+        <!-- Component 1 Column -->
+        <div id="component1-column" class="flex-1 flex flex-col bg-white border border-teal-300 rounded-lg shadow overflow-hidden">
+            <div id="component1-header" class="bg-teal-700 text-white p-2 font-semibold">
                 Event Store (R24)
             </div>
             <!-- Events Section Only -->
             <div class="p-3 flex flex-col h-full overflow-y-auto">
                 <div class="flex justify-between items-center mb-2">
                     <h4 class="text-sm font-semibold text-teal-800">Events:</h4>
-                    <button id="eventstore-connect" onclick="window.connectToEventStore && window.connectToEventStore(); console.log('EventStore button clicked via onclick');" class="px-2 py-0.5 bg-teal-600 text-white rounded text-xs hover:bg-teal-700 cursor-pointer">Connect</button>
+                    <div class="flex gap-1">
+                        <button id="component1-connect" class="px-2 py-0.5 bg-teal-600 text-white rounded text-xs hover:bg-teal-700 cursor-pointer">Connect</button>
+                        <button id="component1-disconnect" class="px-2 py-0.5 bg-red-600 text-white rounded text-xs hover:bg-red-700 cursor-pointer" style="display: none;">Disconnect</button>
+                    </div>
                 </div>
-                <div id="eventstore-events" class="h-full min-h-[400px] overflow-y-auto bg-gray-50 p-2 rounded border border-gray-200 text-xs font-mono resize-y">
-                    <div class="text-sm text-gray-500">Click "Connect" to start streaming Event Store events...</div>
+                <div id="component1-events" class="h-full min-h-[400px] overflow-y-auto bg-gray-50 p-2 rounded border border-gray-200 text-xs font-mono resize-y">
+                    <div class="text-sm text-gray-500">Click "Apply Selection" to configure components...</div>
                 </div>
             </div>
         </div>
         
-        <!-- Adapter Column (R24) -->
-        <div class="flex-1 flex flex-col bg-white border border-teal-300 rounded-lg shadow overflow-hidden">
-            <div class="bg-teal-700 text-white p-2 font-semibold">
+        <!-- Component 2 Column -->
+        <div id="component2-column" class="flex-1 flex flex-col bg-white border border-teal-300 rounded-lg shadow overflow-hidden">
+            <div id="component2-header" class="bg-teal-700 text-white p-2 font-semibold">
                 Adapter (R24)
             </div>
             <!-- Events Section Only -->
             <div class="p-3 flex flex-col h-full overflow-y-auto">
                 <div class="flex justify-between items-center mb-2">
                     <h4 class="text-sm font-semibold text-teal-800">Events:</h4>
-                    <button id="adapter-connect" onclick="window.connectToAdapter && window.connectToAdapter(); console.log('Adapter button clicked via onclick');" class="px-2 py-0.5 bg-teal-600 text-white rounded text-xs hover:bg-teal-700 cursor-pointer">Connect</button>
+                    <div class="flex gap-1">
+                        <button id="component2-connect" class="px-2 py-0.5 bg-teal-600 text-white rounded text-xs hover:bg-teal-700 cursor-pointer">Connect</button>
+                        <button id="component2-disconnect" class="px-2 py-0.5 bg-red-600 text-white rounded text-xs hover:bg-red-700 cursor-pointer" style="display: none;">Disconnect</button>
+                    </div>
                 </div>
-                <div id="adapter-events" class="h-full min-h-[400px] overflow-y-auto bg-gray-50 p-2 rounded border border-gray-200 text-xs font-mono resize-y">
-                    <div class="text-sm text-gray-500">Click "Connect" to start streaming Adapter events...</div>
+                <div id="component2-events" class="h-full min-h-[400px] overflow-y-auto bg-gray-50 p-2 rounded border border-gray-200 text-xs font-mono resize-y">
+                    <div class="text-sm text-gray-500">Click "Apply Selection" to configure components...</div>
                 </div>
             </div>
         </div>
         
-        <!-- Holdings Column (R25) -->
-        <div class="flex-1 flex flex-col bg-white border border-teal-300 rounded-lg shadow overflow-hidden">
-            <div class="bg-teal-700 text-white p-2 font-semibold">
+        <!-- Component 3 Column -->
+        <div id="component3-column" class="flex-1 flex flex-col bg-white border border-teal-300 rounded-lg shadow overflow-hidden">
+            <div id="component3-header" class="bg-teal-700 text-white p-2 font-semibold">
                 Holdings (R25)
             </div>
             <!-- Events Section Only -->
             <div class="p-3 flex flex-col h-full overflow-y-auto">
                 <div class="flex justify-between items-center mb-2">
                     <h4 class="text-sm font-semibold text-teal-800">Events:</h4>
-                    <button id="holdings-connect" onclick="window.connectToHoldings && window.connectToHoldings(); console.log('Holdings button clicked via onclick');" class="px-2 py-0.5 bg-teal-600 text-white rounded text-xs hover:bg-teal-700 cursor-pointer">Connect</button>
+                    <div class="flex gap-1">
+                        <button id="component3-connect" class="px-2 py-0.5 bg-teal-600 text-white rounded text-xs hover:bg-teal-700 cursor-pointer">Connect</button>
+                        <button id="component3-disconnect" class="px-2 py-0.5 bg-red-600 text-white rounded text-xs hover:bg-red-700 cursor-pointer" style="display: none;">Disconnect</button>
+                    </div>
                 </div>
-                <div id="holdings-events" class="h-full min-h-[400px] overflow-y-auto bg-gray-50 p-2 rounded border border-gray-200 text-xs font-mono resize-y">
-                    <div class="text-sm text-gray-500">Click "Connect" to start streaming Holdings events...</div>
+                <div id="component3-events" class="h-full min-h-[400px] overflow-y-auto bg-gray-50 p-2 rounded border border-gray-200 text-xs font-mono resize-y">
+                    <div class="text-sm text-gray-500">Click "Apply Selection" to configure components...</div>
                 </div>
             </div>
         </div>
@@ -71,13 +128,4 @@
 <script src="{{ url_for('static', filename='js/headless_v3_app.js') }}"></script>
 <script>
     console.log('Headless v3 JS file loaded');
-    // Fallback test
-    setTimeout(() => {
-        const btn = document.getElementById('eventstore-connect');
-        if (btn) {
-            console.log('EventStore button found in fallback test');
-        } else {
-            console.error('EventStore button NOT found in fallback test');
-        }
-    }, 200);
 </script> 
