@@ -199,48 +199,170 @@ function updateComponentDisplay(componentKey, componentValue) {
 function applyComponentSelection() {
     console.log('Applying component selection...');
     
-    // Clean up existing connections first
+    // First cleanup any existing connections
     cleanupAllConnections();
     
-    // Get selected values
-    const component1Select = document.getElementById('component-1-select');
-    const component2Select = document.getElementById('component-2-select');
-    const component3Select = document.getElementById('component-3-select');
+    // Update selected components from dropdowns
+    selectedComponents.component1 = document.getElementById('component1-select').value;
+    selectedComponents.component2 = document.getElementById('component2-select').value;
+    selectedComponents.component3 = document.getElementById('component3-select').value;
     
-    if (!component1Select || !component2Select || !component3Select) {
-        console.error('Selection dropdowns not found');
-        return;
+    // Update displays for all components
+    Object.keys(selectedComponents).forEach(componentKey => {
+        updateComponentDisplay(componentKey, selectedComponents[componentKey]);
+    });
+    
+    console.log('Component selection applied:', selectedComponents);
+}
+
+// Demo creation functionality
+let demoPollingInterval = null;
+
+function resetDemoStatus() {
+    return fetch('/api/configuration/demo-status/reset', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json());
+}
+
+function createDemoData() {
+    return fetch('/api/configuration/create-demo-data', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(err => {
+                throw new Error(err.message || `HTTP ${response.status}`);
+            });
+        }
+        return response.json();
+    });
+}
+
+function checkDemoStatus() {
+    return fetch('/api/configuration/demo-status')
+        .then(response => response.json())
+        .catch(error => {
+            console.error('Error checking demo status:', error);
+            throw error;
+        });
+}
+
+function startDemoPolling() {
+    if (demoPollingInterval) {
+        clearInterval(demoPollingInterval);
     }
     
-    const component1 = component1Select.value;
-    const component2 = component2Select.value;
-    const component3 = component3Select.value;
+    demoPollingInterval = setInterval(() => {
+        checkDemoStatus()
+            .then(data => {
+                if (data.status === 'completed') {
+                    clearInterval(demoPollingInterval);
+                    demoPollingInterval = null;
+                    displayDemoResults(data);
+                } else if (data.status === 'error') {
+                    clearInterval(demoPollingInterval);
+                    demoPollingInterval = null;
+                    displayDemoError(data);
+                }
+            })
+            .catch(error => {
+                console.error('Error polling demo status:', error);
+                clearInterval(demoPollingInterval);
+                demoPollingInterval = null;
+                displayDemoError({ error: error.message });
+            });
+    }, 2000);
+}
+
+function displayDemoResults(data) {
+    const button = document.getElementById('create-demo-data-v3');
+    button.textContent = 'Create Accounts & Loans';
+    button.disabled = false;
+    button.style.backgroundColor = '';
     
-    // Validate selection (no duplicates, all selected)
-    const selections = [component1, component2, component3].filter(v => v);
-    const uniqueSelections = [...new Set(selections)];
-    
-    if (selections.length !== 3) {
-        alert('Please select all three components.');
-        return;
+    if (data.results && data.results.length > 0) {
+        let resultHtml = '<div class="demo-results" style="margin-top: 10px; padding: 15px; background-color: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 8px;">';
+        resultHtml += '<h4 style="color: #0369a1; margin-bottom: 10px;">Demo Data Created Successfully!</h4>';
+        
+        data.results.forEach(result => {
+            resultHtml += '<div style="margin-bottom: 8px;">';
+            resultHtml += `<strong>Party ID:</strong> ${result.party_id}<br>`;
+            resultHtml += `<strong>Account ID:</strong> ${result.account_id}<br>`;
+            resultHtml += '<strong>Loan IDs:</strong><br>';
+            if (result.loan_ids && result.loan_ids.length > 0) {
+                result.loan_ids.forEach(loanId => {
+                    resultHtml += `&nbsp;&nbsp;• ${loanId}<br>`;
+                });
+            }
+            resultHtml += '</div>';
+        });
+        
+        resultHtml += '</div>';
+        
+        // Insert results after the button
+        const buttonContainer = button.parentElement;
+        const existingResults = buttonContainer.querySelector('.demo-results');
+        if (existingResults) {
+            existingResults.remove();
+        }
+        buttonContainer.insertAdjacentHTML('afterend', resultHtml);
     }
+}
+
+function displayDemoError(data) {
+    const button = document.getElementById('create-demo-data-v3');
+    button.textContent = 'Create Accounts & Loans';
+    button.disabled = false;
+    button.style.backgroundColor = '';
     
-    if (uniqueSelections.length !== 3) {
-        alert('Please select three different components.');
-        return;
+    let errorHtml = '<div class="demo-error" style="margin-top: 10px; padding: 15px; background-color: #fef2f2; border: 1px solid #ef4444; border-radius: 8px;">';
+    errorHtml += '<h4 style="color: #dc2626; margin-bottom: 10px;">Demo Creation Failed</h4>';
+    errorHtml += `<p style="color: #991b1b;">${data.error || 'Unknown error occurred'}</p>`;
+    errorHtml += '</div>';
+    
+    // Insert error after the button
+    const buttonContainer = button.parentElement;
+    const existingError = buttonContainer.querySelector('.demo-error');
+    if (existingError) {
+        existingError.remove();
     }
+    buttonContainer.insertAdjacentHTML('afterend', errorHtml);
+}
+
+function handleCreateDemoData() {
+    const button = document.getElementById('create-demo-data-v3');
+    button.textContent = 'Creating...';
+    button.disabled = true;
+    button.style.backgroundColor = '#6b7280';
     
-    // Update selected components
-    selectedComponents.component1 = component1;
-    selectedComponents.component2 = component2;
-    selectedComponents.component3 = component3;
+    // Clear any existing results or errors
+    const buttonContainer = button.parentElement;
+    const existingResults = buttonContainer.querySelector('.demo-results');
+    const existingError = buttonContainer.querySelector('.demo-error');
+    if (existingResults) existingResults.remove();
+    if (existingError) existingError.remove();
     
-    // Update displays
-    updateComponentDisplay('component1', component1);
-    updateComponentDisplay('component2', component2);
-    updateComponentDisplay('component3', component3);
-    
-    console.log('Component selection applied successfully:', selectedComponents);
+    // Reset status first, then create demo data
+    resetDemoStatus()
+        .then(() => createDemoData())
+        .then(data => {
+            if (data.status === 'success') {
+                startDemoPolling();
+            } else {
+                throw new Error(data.message || 'Failed to start demo creation');
+            }
+        })
+        .catch(error => {
+            console.error('Error creating demo data:', error);
+            displayDemoError({ error: error.message });
+        });
 }
 
 // Connect to a specific component
@@ -562,6 +684,15 @@ function initializeHeadlessV3() {
         applyBtn.addEventListener('click', function(e) {
             e.preventDefault();
             applyComponentSelection();
+        });
+    }
+    
+    // Demo creation button
+    const demoBtn = document.getElementById('create-demo-data-v3');
+    if (demoBtn) {
+        demoBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            handleCreateDemoData();
         });
     }
     

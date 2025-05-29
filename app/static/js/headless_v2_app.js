@@ -66,13 +66,30 @@
                 defaultMethod: "POST",
                 samplePayload: {
                     "dateOfBirth": "1990-05-15",
-                    "cityOfBirth": "London",
+                    "cityOfBirth": "New York",
                     "firstName": "Alice",
-                    "middleName": "M",
                     "lastName": "Smith",
                     "nickName": "Alice",
-                    "suffix": "B.A.",
-                    "alias": "Alice"
+                    "nationalities": [
+                        {
+                            "country": "US"
+                        }
+                    ],
+                    "addresses": [
+                        {
+                            "communicationNature": "MailingAddress",
+                            "communicationType": "Physical",
+                            "electronicAddress": "alice.smith@gmail.com",
+                            "iddPrefixPhone": "1",
+                            "phoneNo": "2125551234",
+                            "countryCode": "US",
+                            "addressFreeFormat": [
+                                {
+                                    "addressLine": "123 Main Street, Downtown, New York, New York"
+                                }
+                            ]
+                        }
+                    ]
                 }
             },
             getCustomerDetails: {
@@ -81,6 +98,41 @@
                 defaultMethod: "GET",
                 samplePayload: "",
                 params: ['customerId']
+            },
+            getPartyByDateOfBirth: {
+                label: "Get Party by Date of Birth",
+                template: "http://modulardemo.northeurope.cloudapp.azure.com/ms-party-api/api/v5.0.0/party/parties?dateOfBirth={dateOfBirth}",
+                defaultMethod: "GET",
+                samplePayload: "",
+                params: ['dateOfBirth']
+            },
+            getPartyByLastName: {
+                label: "Get Party by Last Name",
+                template: "http://modulardemo.northeurope.cloudapp.azure.com/ms-party-api/api/v5.0.0/party/parties?lastName={lastName}",
+                defaultMethod: "GET",
+                samplePayload: "",
+                params: ['lastName']
+            },
+            getPartyByPhone: {
+                label: "Get Party by Phone Number",
+                template: "http://modulardemo.northeurope.cloudapp.azure.com/ms-party-api/api/v5.0.0/party/parties?contactNumber={phoneNumber}",
+                defaultMethod: "GET",
+                samplePayload: "",
+                params: ['phoneNumber']
+            },
+            getPartyByEmail: {
+                label: "Get Party by Email",
+                template: "http://modulardemo.northeurope.cloudapp.azure.com/ms-party-api/api/v5.0.0/party/parties?emailId={email}",
+                defaultMethod: "GET",
+                samplePayload: "",
+                params: ['email']
+            },
+            getPartyByLastNameAndDOB: {
+                label: "Get Party by Last Name & DOB",
+                template: "http://modulardemo.northeurope.cloudapp.azure.com/ms-party-api/api/v5.0.0/party/parties?lastName={lastName}&dateOfBirth={dateOfBirth}",
+                defaultMethod: "GET",
+                samplePayload: "",
+                params: ['lastName', 'dateOfBirth']
             }
         },
         
@@ -119,6 +171,31 @@
                     "quotationReference": "QUOT246813"
                 }
             },
+            createTermDeposit: {
+                label: "Create Term Deposit",
+                template: "http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-deposits-container/api/v2.0.0/holdings/deposits/termDeposits",
+                defaultMethod: "POST",
+                samplePayload: {
+                    "parties": [
+                        {
+                            "partyId": "2513533518",
+                            "partyRole": "OWNER"
+                        }
+                    ],
+                    "accountName": "MyDepositAccount",
+                    "productId": "TermDepositWor",
+                    "openingDate": "20250314",
+                    "currency": "USD",
+                    "branchCode": "01123",
+                    "quotationReference": "QUOTABC123",
+                    "depositAmount": "5000",
+                    "depositTerm": "1Y",
+                    "interestPayoutOption": "Settle at Scheduled Frequency",
+                    "interestPayoutFrequency": "Monthly",
+                    "fundingAccount": "1013717563",
+                    "payoutAccount": "1013717563"
+                }
+            },
             debitAccount: {
                 label: "Debit Account",
                 template: "http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v1.0.0/order/payments/debitAccount",
@@ -126,11 +203,11 @@
                 samplePayload: {
                     "paymentTransactionReference": "DEBIT_UTILITYBIL_1234567890123_456",
                     "paymentReservationReference": "DEBIT_UTILITYBIL_1234567890123_456",
-                    "paymentValueDate": "20250314",
-                    "debitAccount": "DDAComposable|GB0010001|YOUR_ACCOUNT_NUMBER",
+                    "paymentValueDate": "20250415",
+                    "debitAccount": "1013717563",
                     "debitCurrency": "USD",
-                    "paymentAmount": "100.00",
-                    "paymentDescription": "Test debit transaction"
+                    "paymentAmount": "100",
+                    "paymentDescription": "Utility Bill Payment"
                 }
             },
             creditAccount: {
@@ -140,19 +217,19 @@
                 samplePayload: {
                     "paymentTransactionReference": "CREDIT_SALARY_1234567890123_789",
                     "paymentReservationReference": "CREDIT_SALARY_1234567890123_789",
-                    "paymentValueDate": "20250314",
-                    "creditAccount": "DDAComposable|GB0010001|YOUR_ACCOUNT_NUMBER",
+                    "paymentValueDate": "20250415",
+                    "creditAccount": "1013717563",
                     "creditCurrency": "USD",
-                    "paymentAmount": "100.00",
-                    "paymentDescription": "Test credit transaction"
+                    "paymentAmount": "1500",
+                    "paymentDescription": "Salary Deposit"
                 }
             }
         },
         
         // Lending APIs
         lending: {
-            createLoan: {
-                label: "Create & Disburse Loan",
+            createMortgageLoan: {
+                label: "Create Mortgage Loan",
                 template: "http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/personalLoans",
                 defaultMethod: "POST",
                 samplePayload: {
@@ -162,13 +239,36 @@
                         "productId": "MORTGAGE.PRODUCT",
                         "currency": "USD",
                         "arrangementEffectiveDate": "",
-                        "commitment": [{"amount": "10000.00", "term": "5Y"}],
+                        "commitment": [{"amount": "150000", "term": "10Y"}],
                         "schedule": [{"payment": [{}, {"paymentFrequency": "e0Y e1M e0W e0D e0F"}]}],
                         "settlement": [{
                             "payout": [{"payoutSettlement": "YES", "property": [{"payoutAccount": "DDAComposable|GB0010001|1013717563"}]}],
                             "assocSettlement": [
                                 {"payinSettlement": "YES", "reference": [{"payinAccount": "DDAComposable|GB0010001|1013717563"}]},
+                                {"payinSettlement": "YES", "reference": [{"payinAccount": "DDAComposable|GB0010001|1013717563"}]}
+                            ]
+                        }]
+                    }
+                }
+            },
+            createConsumerLoan: {
+                label: "Create Consumer Loan",
+                template: "http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/personalLoans",
+                defaultMethod: "POST",
+                samplePayload: {
+                    "header": {},
+                    "body": {
+                        "partyIds": [{"partyId": "2513533518", "partyRole": "OWNER"}],
+                        "productId": "GS.FIXED.LOAN",
+                        "currency": "USD",
+                        "arrangementEffectiveDate": "",
+                        "commitment": [{"amount": "5000", "term": "2Y"}],
+                        "schedule": [{"payment": [{}, {"paymentFrequency": "e0Y e1M e0W e0D e0F"}]}],
+                        "settlement": [{
+                            "payout": [{"payoutSettlement": "YES", "property": [{"payoutAccount": "DDAComposable|GB0010001|1013717563"}]}],
+                            "assocSettlement": [
                                 {"payinSettlement": "YES", "reference": [{"payinAccount": "DDAComposable|GB0010001|1013717563"}]},
+                                {"payinSettlement": "YES", "reference": [{"payinAccount": "DDAComposable|GB0010001|1013717563"}]}
                             ]
                         }]
                     }
@@ -187,6 +287,26 @@
                 defaultMethod: "GET",
                 samplePayload: "",
                 params: ['loanId']
+            },
+            disburseLoan: {
+                label: "Disburse Loan",
+                template: "http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/{loanId}/disbursement",
+                defaultMethod: "PUT",
+                samplePayload: {
+                    "body": {
+                        "currencyId": "USD",
+                        "effectiveDate": "20250314",
+                        "transactionAmount": 120000
+                    }
+                },
+                params: ['loanId']
+            },
+            getCustomerArrangements: {
+                label: "Get Customer Arrangements",
+                template: "http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/customers/{customerId}/arrangements",
+                defaultMethod: "GET",
+                samplePayload: "",
+                params: ['customerId']
             }
         }
     };

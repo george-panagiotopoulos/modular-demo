@@ -1,14 +1,7 @@
 {
-  "status": "completed",
-  "results": {
-    "party_id": "2514878072",
-    "account_id": "1013718397",
-    "loan_ids": [
-      "AA25073WSZ2Y",
-      "AA25073HL48S"
-    ]
-  },
+  "status": "running",
+  "results": {},
   "error": "",
-  "progress": "Completed successfully!",
-  "timestamp": "2025-05-29T00:42:30.695444"
+  "progress": "Demoflow script is running...",
+  "timestamp": "2025-05-29T09:16:06.268730"
 }
