@@ -4,40 +4,37 @@ console.log('[MobileAppModule] Script loaded and executing...');
 // This is a standalone, bulletproof Party ID handler that works independently
 const PartyIdHandler = {
     initialized: false,
+    mutationObserver: null,
     
     init() {
-        if (this.initialized) return;
         console.log('[PartyIdHandler] Initializing...');
         
-        // Wait for DOM to be ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => this.setup());
-        } else {
-            this.setup();
-        }
+        // Always try to setup, even if previously initialized
+        // This handles cases where DOM is replaced (tab switching)
+        this.setup();
     },
     
     setup() {
-        if (this.initialized) return;
+        console.log('[PartyIdHandler] Setting up...');
         
-        const applyBtn = document.getElementById('change-party-id') || 
-                        document.querySelector('[id*="party-id"]') ||
-                        document.querySelector('button[onclick*="party"]');
-        const partyInput = document.getElementById('party-id-input') ||
-                          document.querySelector('input[id*="party"]');
+        const applyBtn = document.getElementById('change-party-id');
+        const partyInput = document.getElementById('party-id-input');
         
         if (applyBtn && partyInput) {
+            console.log('[PartyIdHandler] Found elements, attaching listeners...');
             this.attachListeners(applyBtn, partyInput);
             this.initialized = true;
             console.log('[PartyIdHandler] Ready!');
         } else {
-            // Only set up mutation observer if not already initialized
+            console.log('[PartyIdHandler] Elements not found, setting up mutation observer...');
+            // Reset initialized flag since we couldn't find elements
+            this.initialized = false;
             this.setupMutationObserver();
         }
     },
     
     attachListeners(applyBtn, partyInput) {
-        // Remove any existing listeners first
+        // Remove any existing listeners first by cloning elements
         const newApplyBtn = applyBtn.cloneNode(true);
         const newPartyInput = partyInput.cloneNode(true);
         applyBtn.parentNode.replaceChild(newApplyBtn, applyBtn);
@@ -47,6 +44,7 @@ const PartyIdHandler = {
         newApplyBtn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
+            console.log('[PartyIdHandler] Apply button clicked!');
             this.handlePartyIdChange(newPartyInput);
         });
         
@@ -55,46 +53,65 @@ const PartyIdHandler = {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 e.stopPropagation();
+                console.log('[PartyIdHandler] Enter key pressed!');
                 this.handlePartyIdChange(newPartyInput);
             }
         });
         
-        this.initialized = true;
+        console.log('[PartyIdHandler] Event listeners attached successfully');
     },
     
     setupMutationObserver() {
-        if (this.initialized) return;
+        // Clean up existing observer
+        if (this.mutationObserver) {
+            this.mutationObserver.disconnect();
+            this.mutationObserver = null;
+        }
         
-        const observer = new MutationObserver((mutations) => {
-            if (this.initialized) {
-                observer.disconnect();
-                return;
-            }
-            
+        console.log('[PartyIdHandler] Setting up mutation observer...');
+        
+        this.mutationObserver = new MutationObserver((mutations) => {
             const applyBtn = document.getElementById('change-party-id');
             const partyInput = document.getElementById('party-id-input');
             
-            if (applyBtn && partyInput) {
-                observer.disconnect();
+            if (applyBtn && partyInput && !this.initialized) {
+                console.log('[PartyIdHandler] Elements found via mutation observer, attaching listeners...');
+                this.mutationObserver.disconnect();
+                this.mutationObserver = null;
                 this.attachListeners(applyBtn, partyInput);
+                this.initialized = true;
             }
         });
         
-        observer.observe(document.body, {
+        this.mutationObserver.observe(document.body, {
             childList: true,
             subtree: true
         });
         
         // Stop observing after 10 seconds
         setTimeout(() => {
-            if (!this.initialized) {
-                observer.disconnect();
+            if (this.mutationObserver && !this.initialized) {
+                console.log('[PartyIdHandler] Mutation observer timeout, disconnecting...');
+                this.mutationObserver.disconnect();
+                this.mutationObserver = null;
             }
         }, 10000);
     },
     
+    // Reset method to be called when DOM is replaced
+    reset() {
+        console.log('[PartyIdHandler] Resetting...');
+        this.initialized = false;
+        if (this.mutationObserver) {
+            this.mutationObserver.disconnect();
+            this.mutationObserver = null;
+        }
+    },
+    
     handlePartyIdChange(partyInput) {
+        console.log('[PartyIdHandler] handlePartyIdChange called with input:', partyInput);
         const newPartyId = partyInput.value.trim();
+        console.log('[PartyIdHandler] New Party ID:', newPartyId);
         
         if (!newPartyId) {
             alert('Please enter a Party ID');
@@ -102,14 +119,17 @@ const PartyIdHandler = {
         }
         
         const currentPartyId = localStorage.getItem('currentPartyId') || '';
+        console.log('[PartyIdHandler] Current Party ID from localStorage:', currentPartyId);
         
         if (newPartyId === currentPartyId) {
+            console.log('[PartyIdHandler] Party ID unchanged, showing success message');
             this.showSuccessMessage(newPartyId);
             return;
         }
         
         // Update party ID
         localStorage.setItem('currentPartyId', newPartyId);
+        console.log('[PartyIdHandler] Updated localStorage with new Party ID:', newPartyId);
         
         // Visual feedback
         partyInput.style.backgroundColor = '#dcfce7';
@@ -122,11 +142,14 @@ const PartyIdHandler = {
         // Refresh data if MobileAppModule is available
         if (window.MobileAppModule && typeof window.MobileAppModule._handlePartyIdChange === 'function') {
             try {
+                console.log('[PartyIdHandler] Calling MobileAppModule._handlePartyIdChange');
                 window.MobileAppModule._partyId = newPartyId;
                 window.MobileAppModule._showHome();
             } catch (error) {
                 console.error('[PartyIdHandler] Error refreshing data:', error);
             }
+        } else {
+            console.warn('[PartyIdHandler] MobileAppModule not available or _handlePartyIdChange method not found');
         }
     },
     
@@ -160,16 +183,6 @@ const PartyIdHandler = {
         }, 3000);
     }
 };
-
-// Initialize when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => PartyIdHandler.init());
-} else {
-    PartyIdHandler.init();
-}
-
-// Also initialize on window load as backup
-window.addEventListener('load', () => PartyIdHandler.init());
 
 // ===== END OF RADICAL PARTY ID HANDLER =====
 
@@ -1485,6 +1498,16 @@ const MobileAppModule = {
         this._log(`Activating mobile app (isRestoring: ${isRestoring})...`);
         this._isActivating = true;
         
+        // Reset and reinitialize PartyIdHandler to handle DOM replacement
+        if (window.PartyIdHandler) {
+            this._log('Resetting and reinitializing PartyIdHandler...');
+            window.PartyIdHandler.reset();
+            // Use a small delay to ensure DOM is ready
+            setTimeout(() => {
+                window.PartyIdHandler.init();
+            }, 100);
+        }
+        
         // Clear any existing polling interval
         if (this._pollIntervalId) {
             clearInterval(this._pollIntervalId);
@@ -1513,6 +1536,11 @@ const MobileAppModule = {
             this._log('Mobile DOM polling stopped due to deactivation.');
         }
         
+        // Reset flags so listeners are re-added on next activation
+        this._staticListenersAdded = false;
+        this._domReady = false;
+        this._domElements = null;
+        
         this._log('Mobile app cleanup completed.');
     },
 
@@ -1523,7 +1551,12 @@ const MobileAppModule = {
             clearInterval(this._pollIntervalId);
             this._pollIntervalId = null;
         }
+        
+        // Reset all flags for complete cleanup
+        this._staticListenersAdded = false;
         this._domReady = false;
+        this._domElements = null;
+        
         this._log('Mobile app destroyed.');
     }
 };
@@ -1568,4 +1601,5 @@ if (!registerMobileApp()) {
 
 // Expose MobileAppModule globally for the PartyIdHandler
 window.MobileAppModule = MobileAppModule;
+window.PartyIdHandler = PartyIdHandler;
 console.log('[MobileAppModule] Exposed to global window object for PartyIdHandler access');
