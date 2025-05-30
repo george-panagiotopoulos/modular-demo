@@ -17,30 +17,68 @@
     }
     
     function setupEventListeners() {
+        console.log('Setting up configuration event listeners...');
+        
         // Endpoints management
         const toggleBtn = document.getElementById('toggle-endpoints-btn');
         const editBtn = document.getElementById('edit-endpoints-btn');
         const saveBtn = document.getElementById('save-endpoints-btn');
         const cancelBtn = document.getElementById('cancel-endpoints-btn');
         
-        if (toggleBtn) toggleBtn.addEventListener('click', toggleEndpointsSection);
-        if (editBtn) editBtn.addEventListener('click', showEndpointsEdit);
-        if (saveBtn) saveBtn.addEventListener('click', saveEndpoints);
-        if (cancelBtn) cancelBtn.addEventListener('click', hideEndpointsEdit);
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', toggleEndpointsSection);
+            console.log('Toggle endpoints button listener added');
+        }
+        if (editBtn) {
+            editBtn.addEventListener('click', showEndpointsEdit);
+            console.log('Edit endpoints button listener added');
+        }
+        if (saveBtn) {
+            saveBtn.addEventListener('click', saveEndpoints);
+            console.log('Save endpoints button listener added');
+        }
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', hideEndpointsEdit);
+            console.log('Cancel endpoints button listener added');
+        }
         
         // Demo data management
         const createDemoDataBtn = document.getElementById('create-demo-data-btn');
         
-        if (createDemoDataBtn) createDemoDataBtn.addEventListener('click', createDemoData);
+        if (createDemoDataBtn) {
+            createDemoDataBtn.addEventListener('click', createDemoData);
+            console.log('Create demo data button listener added');
+        } else {
+            console.warn('Create demo data button not found');
+        }
         
         // Add validation for current account dependency
         const productCheckboxes = ['create-mortgage', 'create-consumer-loan', 'create-term-deposit'];
         productCheckboxes.forEach(id => {
             const element = document.getElementById(id);
             if (element) {
-                element.addEventListener('change', validateCurrentAccountDependency);
+                element.addEventListener('change', (e) => {
+                    console.log(`Checkbox ${id} changed to:`, e.target.checked);
+                    validateCurrentAccountDependency();
+                });
+                console.log(`Checkbox listener added for: ${id}`);
+            } else {
+                console.warn(`Checkbox not found: ${id}`);
             }
         });
+        
+        // Also add listener for current account checkbox
+        const currentAccountEl = document.getElementById('create-current-account');
+        if (currentAccountEl) {
+            currentAccountEl.addEventListener('change', (e) => {
+                console.log('Current account checkbox changed to:', e.target.checked);
+            });
+            console.log('Current account checkbox listener added');
+        } else {
+            console.warn('Current account checkbox not found');
+        }
+        
+        console.log('Configuration event listeners setup complete');
     }
     
     function toggleEndpointsSection() {
@@ -219,15 +257,28 @@
     }
     
     function validateCurrentAccountDependency() {
+        console.log('Validating current account dependency...');
+        
         const currentAccount = document.getElementById('create-current-account');
         const productCheckboxes = ['create-mortgage', 'create-consumer-loan', 'create-term-deposit'];
         
+        if (!currentAccount) {
+            console.warn('Current account checkbox not found');
+            return;
+        }
+        
         const otherProducts = productCheckboxes.some(id => {
             const element = document.getElementById(id);
-            return element && element.checked;
+            const isChecked = element && element.checked;
+            console.log(`Product ${id}: ${isChecked ? 'checked' : 'unchecked'}`);
+            return isChecked;
         });
         
-        if (otherProducts && currentAccount && !currentAccount.checked) {
+        console.log(`Other products selected: ${otherProducts}`);
+        console.log(`Current account checked: ${currentAccount.checked}`);
+        
+        if (otherProducts && !currentAccount.checked) {
+            console.log('Auto-checking current account because other products are selected');
             currentAccount.checked = true;
             showNotification('Current Account is required when other products are selected', 'warning');
         }
@@ -253,11 +304,33 @@
             resultsDiv.style.display = 'none';
         }
 
-        fetch('/api/configuration/create-demo-data', {
+        // First, save the demo configuration (checkbox values) to the backend
+        const demoConfig = getDemoConfig();
+        console.log('Saving demo configuration before creating data:', demoConfig);
+        
+        fetch('/api/configuration/demo-config', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(demoConfig)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
+            return response.json();
+        })
+        .then(configResult => {
+            console.log('Demo configuration saved successfully:', configResult);
+            
+            // Now create the demo data with the saved configuration
+            return fetch('/api/configuration/create-demo-data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
         })
         .then(response => {
             if (!response.ok) {
@@ -500,7 +573,66 @@
     // Export cleanup function to global scope for dashboard.js
     window.cleanupCurrentTab = cleanupConfiguration;
     
-    // Initialize when script loads
-    initializeConfiguration();
-    
+    // Don't initialize immediately - wait for tab activation
+    // initializeConfiguration();
+
+    // Create module object for TabManager registration with correct method names
+    const ConfigurationModule = {
+        onInit: function() {
+            console.log('[ConfigurationModule] Initializing...');
+            // Initialization logic if needed
+        },
+        
+        onActivate: function(isRestoring = false) {
+            console.log('[ConfigurationModule] Activating...', isRestoring ? '(restoring)' : '');
+            // Wait a bit for DOM to be ready, then initialize
+            setTimeout(() => {
+                if (document.getElementById('configuration-content')) {
+                    console.log('[ConfigurationModule] DOM ready, initializing configuration...');
+                    initializeConfiguration();
+                } else {
+                    console.warn('[ConfigurationModule] Configuration content not found in DOM');
+                }
+            }, 100);
+        },
+        
+        onDeactivate: function(isUnloading = false) {
+            console.log('[ConfigurationModule] Deactivating...', isUnloading ? '(unloading)' : '');
+            cleanupConfiguration();
+        },
+        
+        onDestroy: function(isUnloading = false) {
+            console.log('[ConfigurationModule] Destroying...', isUnloading ? '(unloading)' : '');
+            cleanupConfiguration();
+        }
+    };
+
+    // Register with TabManager if available
+    function registerConfigurationApp() {
+        if (window.TabManager) {
+            window.TabManager.registerTab('configuration', ConfigurationModule);
+            console.log('[ConfigurationModule] Successfully registered with TabManager');
+            return true;
+        } else {
+            console.warn('[ConfigurationModule] TabManager not found yet. Will retry...');
+            return false;
+        }
+    }
+
+    // Try to register immediately
+    if (!registerConfigurationApp()) {
+        // If TabManager not ready, wait and retry
+        let retryCount = 0;
+        const maxRetries = 50; // 5 seconds max
+        const retryInterval = setInterval(() => {
+            retryCount++;
+            if (registerConfigurationApp()) {
+                clearInterval(retryInterval);
+            } else if (retryCount >= maxRetries) {
+                clearInterval(retryInterval);
+                console.error('[ConfigurationModule] TabManager not found after maximum retries. Ensure tab-manager.js is loaded first.');
+            }
+        }, 100);
+    }
+
 })(); 

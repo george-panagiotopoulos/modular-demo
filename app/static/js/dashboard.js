@@ -1,55 +1,27 @@
 document.addEventListener('DOMContentLoaded', () => {
     const tabContentArea = document.getElementById('tab-content-area');
-    let currentTab = null;
+    let currentTabName = null; // Renamed for clarity, will store the name like 'headless-v3'
     let currentTabCSS = null;
-    let currentTabJS = null;
+    // let currentTabJS = null; // No longer needed as JS is included directly
 
-    // Function to load tab content and assets
+    // Function to load tab content via HTMX-style fetch
     async function loadTab(tabName) {
-        if (currentTab === tabName) return; // Do nothing if already active
-
-        console.log(`Loading tab: ${tabName}`);
-        tabContentArea.innerHTML = '<p>Loading...</p>'; // Show loading indicator
-
-        // --- Asset Management --- 
-        // Remove previous tab's assets
-        if (currentTabCSS) {
-            currentTabCSS.remove();
-            currentTabCSS = null;
-            console.log(`Removed CSS for tab: ${currentTab}`);
+        console.log(`Loading tab content for: ${tabName}`);
+        
+        // Deactivate current tab first
+        if (window.TabManager) {
+            console.log(`Deactivating current tab via TabManager`);
+            TabManager.deactivateCurrentTab();
+        }
+        
+        const tabContentArea = document.getElementById('tab-content-area');
+        if (!tabContentArea) {
+            console.error('Tab content area not found');
+            return;
         }
 
-        // *** Call cleanup function before removing JS ***
-        if (typeof window.cleanupCurrentTab === 'function') {
-            try {
-                window.cleanupCurrentTab();
-                console.log(`Executed cleanup for tab: ${currentTab}`);
-            } catch (e) {
-                console.error(`Error during cleanup for tab ${currentTab}:`, e);
-            }
-             // Remove the cleanup function itself from global scope
-             try { delete window.cleanupCurrentTab; } catch (e) { window.cleanupCurrentTab = undefined; }
-        }
-
-        if (currentTabJS) {
-            currentTabJS.remove();
-            currentTabJS = null;
-            console.log(`Removed JS for tab: ${currentTab}`);
-        }
-
-        currentTab = tabName;
-
-        // Load new tab's CSS
-        const cssLink = document.createElement('link');
-        cssLink.id = `tab-css-${tabName}`;
-        cssLink.rel = 'stylesheet';
-        cssLink.href = `/static/css/${tabName.replace('-', '_')}_app.css`; // Assuming pattern like mobile_app.css
-        document.head.appendChild(cssLink);
-        currentTabCSS = cssLink;
-        console.log(`Loaded CSS for tab: ${tabName}`);
-
-        // --- Content Loading --- 
         try {
+            // Fetch the tab content
             const response = await fetch(`/tab/${tabName}`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -58,50 +30,50 @@ document.addEventListener('DOMContentLoaded', () => {
             tabContentArea.innerHTML = html;
             console.log(`Loaded HTML content for tab: ${tabName}`);
 
-            // --- Load new tab's JS --- 
-            // Load JS *after* content is in the DOM
-            const jsScript = document.createElement('script');
-            jsScript.id = `tab-js-${tabName}`;
-            jsScript.src = `/static/js/${tabName.replace('-', '_')}_app.js`; // Assuming pattern like mobile_app.js
-            jsScript.async = false; // Ensure it loads and executes in order if needed
-            document.body.appendChild(jsScript); // Append to body to ensure DOM is ready
-            currentTabJS = jsScript;
-            console.log(`Loaded JS for tab: ${tabName}`);
-            
-            // Special handling for headless tab
-            if (tabName === 'headless') {
-                // Wait a moment for the script to load and execute
-                setTimeout(() => {
-                    if (typeof window.reloadHeadlessData === 'function') {
-                        console.log("Refreshing headless data for tab");
-                        window.reloadHeadlessData();
-                    }
-                }, 500);
-            }
+            // Wait for the DOM to be ready before activating the tab
+            // Use requestAnimationFrame to ensure the DOM is fully rendered
+            await new Promise(resolve => {
+                requestAnimationFrame(() => {
+                    // Double requestAnimationFrame to ensure DOM is fully rendered
+                    requestAnimationFrame(() => {
+                        resolve();
+                    });
+                });
+            });
 
-            // Update active tab styling
-            updateActiveTab(tabName);
+            // Activate the new tab using TabManager
+            // This should trigger onActivate for the newly loaded tab's JS
+            if (window.TabManager) {
+                console.log(`Activating tab: ${tabName} via TabManager`);
+                TabManager.activateTab(tabName);
+            }
+            
+            // Update active tab visual styling in the navigation
+            updateActiveTabVisuals(tabName);
 
         } catch (error) {
-            console.error('Error loading tab content:', error);
+            console.error(`Error loading tab content for ${tabName}:`, error);
             tabContentArea.innerHTML = `<p style="color: red;">Error loading content for ${tabName}.</p>`;
         }
     }
 
-    // Function to update active tab styling
-    function updateActiveTab(activeTabName) {
+    // Function to update active tab styling in the navigation
+    function updateActiveTabVisuals(activeTabName) {
         const tabLinks = document.querySelectorAll('nav a.tab-link');
         tabLinks.forEach(link => {
             link.classList.remove('border-indigo-500', 'text-indigo-600');
             link.classList.add('border-transparent', 'text-gray-500');
         });
         
-        // Find and activate the current tab
         tabLinks.forEach(link => {
-            const onclick = link.getAttribute('onclick');
-            if (onclick && onclick.includes(`'${activeTabName}'`)) {
-                link.classList.remove('border-transparent', 'text-gray-500');
-                link.classList.add('border-indigo-500', 'text-indigo-600');
+            // Extract tab name from onclick attribute more robustly
+            const onclickAttr = link.getAttribute('onclick');
+            if (onclickAttr) {
+                const match = onclickAttr.match(/loadTab\('([^']+)'\)/);
+                if (match && match[1] === activeTabName) {
+                    link.classList.remove('border-transparent', 'text-gray-500');
+                    link.classList.add('border-indigo-500', 'text-indigo-600');
+                }
             }
         });
     }
@@ -109,6 +81,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // Make loadTab function globally available for onclick handlers
     window.loadTab = loadTab;
 
-    // Load the initial tab (mobile by default)
-    loadTab('mobile');
+    // Initialize TabManager after all scripts are loaded and DOM is ready
+    if (window.TabManager) {
+        console.log("Initializing TabManager...");
+        TabManager.init();
+        // Optionally, load an initial tab. The previously used 'mobile' can be the default.
+        // TabManager.init() will call onActivate for the default active tab if one is set during registration.
+        // Or, explicitly load and activate a default tab here:
+        const initialTab = 'mobile'; // Or your desired default tab
+        console.log(`Loading initial tab: ${initialTab}`);
+        loadTab(initialTab); 
+    } else {
+        console.error("TabManager is not defined. Ensure tab-manager.js is loaded correctly.");
+    }
 }); 

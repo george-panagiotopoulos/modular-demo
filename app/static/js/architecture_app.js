@@ -1,39 +1,36 @@
 (function() {
-    // Architecture Tab specific JavaScript
-    console.log("architecture_app.js loaded and executing");
-
-    // --- Diagram Loading --- 
+    'use strict';
+    
+    // --- Architecture Tab Logic ---
     function loadArchitectureDiagram() {
         const diagramContainer = document.getElementById('architecture-diagram');
         if (!diagramContainer) {
-            console.error("Architecture diagram container not found.");
+            console.warn('Architecture diagram container not found');
             return;
         }
-
-        diagramContainer.innerHTML = '<p>Loading architecture diagram...</p>'; // Show loading message
-        console.log("Fetching architecture diagram path...");
-
+        
+        diagramContainer.innerHTML = '<div class="text-center text-gray-500 py-4">Loading architecture diagram...</div>';
+        
         fetch(`/api/architecture/diagram_path?_=${Date.now()}`)
             .then(response => {
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                return response.json(); // Expecting JSON like {"diagram_url": "/static/images/....png"}
+                return response.json();
             })
             .then(data => {
-                if (data.diagram_url) {
-                    console.log("Diagram path received:", data.diagram_url);
-                    // Create and append the image tag
-                    const img = document.createElement('img');
-                    img.src = data.diagram_url;
-                    img.alt = "Architecture Diagram";
-                    // Apply styling via CSS (architecture_app.css) instead of inline
-                    // img.style.maxWidth = "90%";
-                    // img.style.height = "auto";
-                    diagramContainer.innerHTML = ''; // Clear loading message
-                    diagramContainer.appendChild(img);
-                } else {
-                    throw new Error(data.error || "Diagram URL not found in response.");
+                // Check if container still exists before updating
+                const currentContainer = document.getElementById('architecture-diagram');
+                if (currentContainer) {
+                    if (data.diagram_path) {
+                        currentContainer.innerHTML = `
+                            <div class="text-center">
+                                <img src="${data.diagram_path}" alt="Architecture Diagram" class="mx-auto max-w-full h-auto">
+                            </div>
+                        `;
+                    } else {
+                        currentContainer.innerHTML = '<p class="text-center text-gray-500">No architecture diagram available.</p>';
+                    }
                 }
             })
             .catch(error => {
@@ -46,24 +43,62 @@
             });
     }
 
-    // --- Initialization ---
-    function initArchitectureTab() {
-        console.log("Initializing Architecture Tab...");
-        loadArchitectureDiagram();
-    }
-
-    // --- Global Cleanup Function --- 
-    window.cleanupCurrentTab = function() {
-        console.log("Running cleanup for Architecture Tab...");
-        // No specific listeners or intervals to clear in this simple version
+    // --- Architecture Module for TabManager ---
+    const ArchitectureModule = {
+        onInit: function() {
+            console.log('[ArchitectureModule] Initializing...');
+        },
+        
+        onActivate: function(isRestoring = false) {
+            console.log('[ArchitectureModule] Activating...', isRestoring ? '(restoring)' : '');
+            // Wait a bit for DOM to be ready, then load diagram
+            setTimeout(() => {
+                if (document.getElementById('architecture-diagram')) {
+                    console.log('[ArchitectureModule] DOM ready, loading architecture diagram...');
+                    loadArchitectureDiagram();
+                } else {
+                    console.warn('[ArchitectureModule] Architecture diagram container not found in DOM');
+                }
+            }, 100);
+        },
+        
+        onDeactivate: function(isUnloading = false) {
+            console.log('[ArchitectureModule] Deactivating...', isUnloading ? '(unloading)' : '');
+            // No specific cleanup needed for architecture tab
+        },
+        
+        onDestroy: function(isUnloading = false) {
+            console.log('[ArchitectureModule] Destroying...', isUnloading ? '(unloading)' : '');
+            // No specific cleanup needed for architecture tab
+        }
     };
 
-    // --- Initial Execution ---
-    initArchitectureTab();
+    // Register with TabManager
+    function registerArchitectureApp() {
+        if (window.TabManager) {
+            window.TabManager.registerTab('architecture', ArchitectureModule);
+            console.log('[ArchitectureModule] Successfully registered with TabManager');
+            return true;
+        } else {
+            console.warn('[ArchitectureModule] TabManager not found yet. Will retry...');
+            return false;
+        }
+    }
 
-})(); // End of IIFE
+    // Try to register immediately
+    if (!registerArchitectureApp()) {
+        // If TabManager not ready, wait and retry
+        let retryCount = 0;
+        const maxRetries = 50; // 5 seconds max
+        const retryInterval = setInterval(() => {
+            retryCount++;
+            if (registerArchitectureApp()) {
+                clearInterval(retryInterval);
+            } else if (retryCount >= maxRetries) {
+                clearInterval(retryInterval);
+                console.error('[ArchitectureModule] TabManager not found after maximum retries. Ensure tab-manager.js is loaded first.');
+            }
+        }, 100);
+    }
 
-// Optional: Cleanup function
-// function cleanupArchitectureTab() { ... }
-// window.tabCleanupFunctions = window.tabCleanupFunctions || {};
-// window.tabCleanupFunctions.architecture = cleanupArchitectureTab; 
+})(); 

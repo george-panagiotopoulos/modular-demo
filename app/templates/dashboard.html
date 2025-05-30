@@ -51,7 +51,25 @@
 
     <!-- Include HTMX? Decide if needed based on how tab JS is implemented -->
     <!-- <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script> -->
+    
+    <!-- Core Framework Scripts -->
+    <script src="{{ url_for('static', filename='js/tab-manager.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/state-manager.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/backend-connector.js') }}"></script>
+
+    <!-- Main Dashboard Logic (loads tab HTML, initializes TabManager) -->
     <script id="dashboard-js" src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
-    <!-- Tab-specific JS will be loaded dynamically here -->
+
+    <!-- Tab-Specific Scripts (loaded after framework and dashboard logic) -->
+    <!-- Ensure these files exist and paths are correct -->
+    <script src="{{ url_for('static', filename='js/headless_v2_app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/headless_v3_app.js') }}"></script>
+    <!-- Add other tab-specific JS files here as needed, e.g.: -->
+    <script src="{{ url_for('static', filename='js/mobile_app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/branch_app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/architecture_app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/assistant_app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/configuration_app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/headless_app.js') }}"></script>
 </body>
 </html> 

@@ -1,3 +1,5 @@
+console.log('[BranchAppModule] Script loaded and executing...');
+
 (function() {
     // Branch App specific JavaScript
     console.log("branch_app.js loaded and executing");
@@ -88,6 +90,9 @@
             
             // Update the display with search results
             displaySearchResults(data.customers || []);
+            
+            // Update headless tab if available
+            updateHeadlessTab();
             
         } catch (error) {
             console.error('Error performing customer search:', error);
@@ -766,6 +771,9 @@
             // Extract customers from the response (data is already an array)
             customersData = Array.isArray(data) ? data : [];
             populateCustomerSelect(customersData);
+
+            // Update headless tab if available
+            updateHeadlessTab();
         } catch (error) {
             console.error("Error fetching customers:", error);
             // Maybe show error near dropdown
@@ -831,6 +839,9 @@
             if (actionButtonsDiv && customerAccounts.length > 0) {
                 actionButtonsDiv.classList.remove('hidden');
             }
+
+            // Update headless tab if available
+            updateHeadlessTab();
             
         } catch (error) {
             console.error('Error fetching customer data:', error);
@@ -897,6 +908,9 @@
             
             // Hide loading state
             if (transactionsLoadingDiv) transactionsLoadingDiv.style.display = 'none';
+
+            // Update headless tab if available
+            updateHeadlessTab();
             
         } catch (error) {
             console.error('Error fetching transactions:', error);
@@ -1014,6 +1028,10 @@
                 
                 // Render loan details in the transactions list area
                 renderLoanDetailsInTransactionArea(combinedData);
+
+                // Update headless tab if available
+                updateHeadlessTab();
+                
             } else {
                 // Fall back to just unified API data
                 const fallbackData = {
@@ -1033,6 +1051,9 @@
                 };
                 
                 renderLoanDetailsInTransactionArea(fallbackData);
+
+                // Update headless tab if available
+                updateHeadlessTab();
             }
             
         } catch (error) {
@@ -1163,6 +1184,10 @@
             if (response.ok) {
                 const scheduleData = await response.json();
                 renderLoanScheduleInTransactionArea(scheduleData);
+
+                // Update headless tab to show the loan schedule API call
+                showLoanScheduleInHeadless();
+                
             } else {
                 throw new Error(`Failed to fetch loan schedules: ${response.status}`);
             }
@@ -1899,6 +1924,9 @@
                         
                         // Reset form
                         form.reset();
+
+                        // Update headless tab if available
+                        updateHeadlessTab();
                     } else {
                         resultDiv.className = 'mt-4 p-4 rounded-md bg-red-100 border border-red-200';
                         messageDiv.innerHTML = `
@@ -1963,6 +1991,9 @@
                         form.reset();
                         // Clear the disbursement dropdown since form.reset() might not clear it
                         document.getElementById('loan-disburse-account').innerHTML = '<option value="">Select disbursement account...</option>';
+
+                        // Update headless tab if available
+                        updateHeadlessTab();
                     } else {
                         resultDiv.className = 'mt-4 p-4 rounded-md bg-red-100 border border-red-200';
                         messageDiv.innerHTML = `
@@ -1986,4 +2017,210 @@
         }
     }
 
-})(); // End of IIFE 
+    // Add DOM checking functionality for branch app
+    let _isActivating = false;
+    let _domReady = false;
+    let _pollIntervalId = null;
+
+    // Key elements that must be present for branch app to function
+    const _KEY_ELEMENT_IDS = [
+        'search-party-id',
+        'search-customers-btn',
+        'search-results-area',
+        'selected-customer-area',
+        'customer-details-area'
+    ];
+
+    function _checkBranchDOMReady() {
+        const missingElements = [];
+        for (const elementId of _KEY_ELEMENT_IDS) {
+            const element = document.getElementById(elementId);
+            if (!element) {
+                missingElements.push(elementId);
+            }
+        }
+        
+        if (missingElements.length > 0) {
+            console.log(`Branch DOM check: Missing elements: ${missingElements.join(', ')}`);
+            return false;
+        }
+        
+        console.log('Branch DOM check: All key elements found');
+        return true;
+    }
+
+    function _waitForBranchDOM() {
+        if (_domReady && _isActivating) {
+            console.log('_waitForBranchDOM: DOM already ready and still activating.');
+            _initializeBranchView();
+            return;
+        }
+        if (!_isActivating) {
+            console.log('_waitForBranchDOM: Not activating. Aborting DOM poll.');
+            if (_pollIntervalId) clearInterval(_pollIntervalId);
+            _pollIntervalId = null;
+            return;
+        }
+
+        console.log('_waitForBranchDOM: Starting to poll for DOM elements...');
+        
+        if (_pollIntervalId) clearInterval(_pollIntervalId);
+
+        let pollCount = 0;
+        const maxPolls = 80; // 20 seconds
+        const pollInterval = 250; // 250ms intervals
+
+        _pollIntervalId = setInterval(() => {
+            if (!_isActivating) { 
+                clearInterval(_pollIntervalId);
+                _pollIntervalId = null;
+                console.log('Polling stopped (Branch): Tab deactivated during DOM check.');
+                return;
+            }
+            pollCount++;
+            console.log(`Branch DOM check attempt ${pollCount}/${maxPolls}`);
+            
+            if (_checkBranchDOMReady()) { 
+                clearInterval(_pollIntervalId);
+                _pollIntervalId = null;
+                console.log('Branch DOM ready! Initializing view...');
+                _domReady = true;
+                _initializeBranchView(); 
+            } else if (pollCount >= maxPolls) {
+                clearInterval(_pollIntervalId);
+                _pollIntervalId = null;
+                console.log('Failed to find all Branch DOM elements after timeout.');
+                const tabContentArea = document.getElementById('branch-content-area') || document.getElementById('tab-content-area'); 
+                if (tabContentArea && _isActivating) { 
+                    tabContentArea.innerHTML = '<div class="p-4 text-red-500">Error: Branch interface failed to load. Key elements missing.</div>';
+                }
+            }
+        }, pollInterval);
+    }
+
+    function _initializeBranchView() {
+        console.log('Initializing Branch view...');
+        if (typeof initBranchAppTab === 'function') {
+            initBranchAppTab();
+        }
+    }
+
+    // Create BranchAppModule for TabManager (moved inside IIFE to access variables)
+    const BranchAppModule = {
+        onInit() {
+            console.log('[BranchAppModule] onInit called');
+            // Initialize any module-level state here
+        },
+
+        onActivate(isRestoring) {
+            console.log('[BranchAppModule] onActivate called. isRestoring:', isRestoring);
+            _isActivating = true;
+            
+            // Clear any existing polling intervals
+            if (_pollIntervalId) {
+                clearInterval(_pollIntervalId);
+                _pollIntervalId = null;
+            }
+            
+            // Check if DOM is already ready
+            if (_checkBranchDOMReady()) {
+                console.log('Branch DOM already ready on activation.');
+                _domReady = true;
+                _initializeBranchView();
+            } else {
+                console.log('Branch DOM not ready on activation. Starting polling...');
+                _domReady = false;
+                _waitForBranchDOM();
+            }
+        },
+
+        onDeactivate(isUnloading) {
+            console.log('[BranchAppModule] onDeactivate called. isUnloading:', isUnloading);
+            _isActivating = false;
+            
+            // Clear any polling intervals immediately
+            if (_pollIntervalId) {
+                clearInterval(_pollIntervalId);
+                _pollIntervalId = null;
+                console.log('Branch DOM polling stopped due to deactivation.');
+            }
+            
+            // Clean up event listeners
+            if (typeof removeAllListeners === 'function') {
+                removeAllListeners();
+            }
+            
+            console.log('Branch app cleanup completed.');
+        },
+
+        onDestroy() {
+            console.log('[BranchAppModule] onDestroy called');
+            // Final cleanup
+        }
+    };
+
+    // Register with TabManager
+    function registerBranchApp() {
+        console.log('[BranchAppModule] Attempting registration...');
+        console.log('[BranchAppModule] window.TabManager exists:', !!window.TabManager);
+        if (window.TabManager) {
+            console.log('[BranchAppModule] TabManager found, registering tab "branch"');
+            window.TabManager.registerTab('branch', BranchAppModule);
+            console.log('[BranchAppModule] Successfully registered with TabManager');
+            return true;
+        } else {
+            console.warn('[BranchAppModule] TabManager not found yet. Will retry...');
+            return false;
+        }
+    }
+
+    console.log('[BranchAppModule] About to start registration process...');
+
+    // Try to register immediately
+    if (!registerBranchApp()) {
+        console.log('[BranchAppModule] Initial registration failed, starting retry loop...');
+        // If TabManager not ready, wait and retry
+        let retryCount = 0;
+        const maxRetries = 50; // 5 seconds max
+        const retryInterval = setInterval(() => {
+            retryCount++;
+            console.log(`[BranchAppModule] Retry attempt ${retryCount}/${maxRetries}`);
+            if (registerBranchApp()) {
+                console.log('[BranchAppModule] Registration successful on retry!');
+                clearInterval(retryInterval);
+            } else if (retryCount >= maxRetries) {
+                clearInterval(retryInterval);
+                console.error('[BranchAppModule] TabManager not found after maximum retries. Ensure tab-manager.js is loaded first.');
+            }
+        }, 100);
+    } else {
+        console.log('[BranchAppModule] Registration successful on first attempt!');
+    }
+
+    // --- Headless Integration Functions ---
+    function updateHeadlessTab() {
+        console.log("[BranchApp] updateHeadlessTab() called");
+        try {
+            if (window.reloadHeadlessData) {
+                console.log("[BranchApp] Calling window.reloadHeadlessData()");
+                window.reloadHeadlessData();
+            } else {
+                console.log("[BranchApp] window.reloadHeadlessData not available");
+            }
+        } catch (e) {
+            console.log("[BranchApp] Error calling headless tab:", e);
+        }
+    }
+
+    function showLoanScheduleInHeadless() {
+        try {
+            if (window.showLoanSchedulesApiCall) {
+                console.log("Showing loan schedules API call in headless tab");
+                window.showLoanSchedulesApiCall();
+            }
+        } catch (e) {
+            console.log("Headless tab loan schedule function not available:", e);
+        }
+    }
+
+})(); // End of IIFE

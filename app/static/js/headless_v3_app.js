@@ -6,6 +6,11 @@
         return;
     }
 
+    // Debug: Check BackendConnector availability at script load time
+    console.log('[HeadlessV3] Script loading...');
+    console.log('[HeadlessV3] BackendConnector available at load time:', !!window.BackendConnector);
+    console.log('[HeadlessV3] Window keys containing "Backend":', Object.keys(window).filter(key => key.includes('Backend')));
+
     // Headless v3 App - Dynamic Component Selection with Event Streaming
 
     // Component configuration mapping
@@ -120,19 +125,28 @@
             case 'connecting':
                 connectBtn.textContent = 'Connecting...';
                 connectBtn.disabled = true;
+                connectBtn.className = 'px-2 py-0.5 bg-gray-500 text-white rounded text-xs cursor-not-allowed';
                 connectBtn.style.display = 'inline-block';
                 disconnectBtn.style.display = 'none';
                 break;
             case 'connected':
                 connectBtn.style.display = 'none';
-                disconnectBtn.style.display = 'inline-block';
+                disconnectBtn.textContent = 'Disconnect';
                 disconnectBtn.disabled = false;
+                disconnectBtn.className = 'px-2 py-0.5 bg-red-600 text-white rounded text-xs hover:bg-red-700 cursor-pointer';
+                disconnectBtn.style.display = 'inline-block';
                 break;
             case 'disconnected':
-            case 'error':
-                connectBtn.textContent = state === 'error' ? 'Error - Retry' : 'Connect';
+                connectBtn.textContent = 'Connect';
                 connectBtn.disabled = false;
-                connectBtn.style.backgroundColor = state === 'error' ? '#dc2626' : '';
+                connectBtn.className = 'px-2 py-0.5 bg-teal-600 text-white rounded text-xs hover:bg-teal-700 cursor-pointer';
+                connectBtn.style.display = 'inline-block';
+                disconnectBtn.style.display = 'none';
+                break;
+            case 'error':
+                connectBtn.textContent = 'Error - Retry';
+                connectBtn.disabled = false;
+                connectBtn.className = 'px-2 py-0.5 bg-red-600 text-white rounded text-xs hover:bg-red-700 cursor-pointer';
                 connectBtn.style.display = 'inline-block';
                 disconnectBtn.style.display = 'none';
                 break;
@@ -387,7 +401,7 @@
             });
     }
 
-    // Connect to a specific component
+    // Connect to a specific component using BackendConnector
     function connectToComponent(componentKey) {
         const componentValue = selectedComponents[componentKey];
         const config = COMPONENT_CONFIG[componentValue];
@@ -403,35 +417,39 @@
             return;
         }
         
-        console.log(`Connecting to ${config.name} (${config.domain})...`);
+        // Simple check for BackendConnector (should be available after initialization)
+        if (!window.BackendConnector) {
+            console.error('BackendConnector not available. This should not happen after proper initialization.');
+            updateButtonStates(componentKey, 'error');
+            return;
+        }
+        
+        console.log(`BackendConnector found! Connecting to ${config.name} (${config.domain})...`);
         
         // Update button state to connecting
         updateButtonStates(componentKey, 'connecting');
         
-        // Create EventSource with session ID
-        const eventSourceUrl = `/api/headless-v2/events/${config.domain}?session_id=${getSessionId()}`;
-        const eventSource = new EventSource(eventSourceUrl);
+        // Use BackendConnector to create event stream with proper TabManager integration
+        const eventSource = window.BackendConnector.createEventStream(
+            `/api/headless-v2/events/${config.domain}`,
+            (eventData) => {
+                handleComponentEvent(componentKey, eventData);
+            },
+            (error) => {
+                console.error(`${config.name} EventSource error:`, error);
+                updateButtonStates(componentKey, 'error');
+                cleanupEventSource(activeConnections[componentKey], config.domain, componentKey);
+            },
+            'headless-v3' // Pass tabName for TabManager registration
+        );
         
-        eventSource.onopen = function() {
-            console.log(`Connected to ${config.name} events`);
-            activeConnections[componentKey] = eventSource;
-            updateButtonStates(componentKey, 'connected');
-        };
+        // Store the connection
+        activeConnections[componentKey] = eventSource;
         
-        eventSource.onmessage = function(event) {
-            try {
-                const data = JSON.parse(event.data);
-                handleComponentEvent(componentKey, data);
-            } catch (e) {
-                console.error(`Error parsing ${config.name} event:`, e);
-            }
-        };
+        // Update button state to connected
+        updateButtonStates(componentKey, 'connected');
         
-        eventSource.onerror = function(error) {
-            console.error(`${config.name} EventSource error:`, error);
-            updateButtonStates(componentKey, 'error');
-            cleanupEventSource(eventSource, config.domain, componentKey);
-        };
+        console.log(`Connected to ${config.name} events`);
     }
 
     // Disconnect from a specific component
@@ -691,6 +709,32 @@
         return String(json);
     }
 
+    // Function to wait for BackendConnector to be available
+    function waitForBackendConnector(callback, maxAttempts = 100) {
+        let attempts = 0;
+        
+        function checkBackendConnector() {
+            attempts++;
+            console.log(`[HeadlessV3] Checking for BackendConnector (attempt ${attempts}/${maxAttempts})`);
+            
+            if (window.BackendConnector && typeof window.BackendConnector.createEventStream === 'function') {
+                console.log('[HeadlessV3] BackendConnector is available!');
+                callback();
+                return;
+            }
+            
+            if (attempts >= maxAttempts) {
+                console.error('[HeadlessV3] BackendConnector not available after maximum attempts');
+                console.error('[HeadlessV3] Available window properties:', Object.keys(window).filter(key => key.toLowerCase().includes('backend')));
+                return;
+            }
+            
+            setTimeout(checkBackendConnector, 100);
+        }
+        
+        checkBackendConnector();
+    }
+
     // Check if headless v3 content is loaded
     function isHeadlessV3ContentLoaded() {
         const applyBtn = document.getElementById('apply-selection');
@@ -709,49 +753,54 @@
         
         console.log('Initializing headless v3...');
         
-        // Apply selection button
-        const applyBtn = document.getElementById('apply-selection');
-        if (applyBtn) {
-            applyBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                applyComponentSelection();
-            });
-        }
-        
-        // Demo creation button
-        const demoBtn = document.getElementById('create-demo-data-v3');
-        if (demoBtn) {
-            demoBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                handleCreateDemoData();
-            });
-        }
-        
-        // Connect and disconnect buttons for each component
-        ['component1', 'component2', 'component3'].forEach(componentKey => {
-            const connectButton = document.getElementById(`${componentKey}-connect`);
-            const disconnectButton = document.getElementById(`${componentKey}-disconnect`);
+        // Wait for BackendConnector before proceeding
+        waitForBackendConnector(() => {
+            console.log('[HeadlessV3] BackendConnector confirmed available, proceeding with initialization...');
             
-            if (connectButton) {
-                connectButton.addEventListener('click', function(e) {
+            // Apply selection button
+            const applyBtn = document.getElementById('apply-selection');
+            if (applyBtn) {
+                applyBtn.addEventListener('click', function(e) {
                     e.preventDefault();
-                    connectToComponent(componentKey);
+                    applyComponentSelection();
                 });
             }
             
-            if (disconnectButton) {
-                disconnectButton.addEventListener('click', function(e) {
+            // Demo creation button
+            const demoBtn = document.getElementById('create-demo-data-v3');
+            if (demoBtn) {
+                demoBtn.addEventListener('click', function(e) {
                     e.preventDefault();
-                    disconnectFromComponent(componentKey);
+                    handleCreateDemoData();
                 });
             }
+            
+            // Connect and disconnect buttons for each component
+            ['component1', 'component2', 'component3'].forEach(componentKey => {
+                const connectButton = document.getElementById(`${componentKey}-connect`);
+                const disconnectButton = document.getElementById(`${componentKey}-disconnect`);
+                
+                if (connectButton) {
+                    connectButton.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        connectToComponent(componentKey);
+                    });
+                }
+                
+                if (disconnectButton) {
+                    disconnectButton.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        disconnectFromComponent(componentKey);
+                    });
+                }
+            });
+            
+            // Initialize with default selection
+            applyComponentSelection();
+            
+            isInitialized = true;
+            console.log('Headless v3 initialization complete');
         });
-        
-        // Initialize with default selection
-        applyComponentSelection();
-        
-        isInitialized = true;
-        console.log('Headless v3 initialization complete');
     }
 
     // Polling function to check for content and initialize
@@ -800,4 +849,37 @@
 
     // Mark as initialized at the end
     window.headlessV3Initialized = true;
-})(); 
+
+    // Create module object for TabManager registration with correct method names
+    const HeadlessV3Module = {
+        onInit: function() {
+            console.log('[HeadlessV3Module] Initializing...');
+            // Initialization logic if needed
+        },
+        
+        onActivate: function(isRestoring = false) {
+            console.log('[HeadlessV3Module] Activating...', isRestoring ? '(restoring)' : '');
+            if (!isInitialized && isHeadlessV3ContentLoaded()) {
+                initializeHeadlessV3();
+            }
+        },
+        
+        onDeactivate: function(isUnloading = false) {
+            console.log('[HeadlessV3Module] Deactivating...', isUnloading ? '(unloading)' : '');
+            cleanupAllConnections();
+        },
+        
+        onDestroy: function(isUnloading = false) {
+            console.log('[HeadlessV3Module] Destroying...', isUnloading ? '(unloading)' : '');
+            cleanupAllConnections();
+        }
+    };
+
+    // Register with TabManager if available
+    if (window.TabManager) {
+        TabManager.registerTab('headless-v3', HeadlessV3Module);
+        console.log('[HeadlessV3Module] Successfully registered with TabManager');
+    } else {
+        console.error('[HeadlessV3Module] TabManager not found. Ensure tab-manager.js is loaded first and correctly.');
+    }
+})();

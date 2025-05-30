@@ -1,9 +1,22 @@
-(function() {
-    // Headless Tab specific JavaScript
-    console.log("headless_app.js loaded and executing");
+console.log('[HeadlessModule] Script loaded and executing...');
 
+const HeadlessModule = (() => {
+    // Private properties
     let apiCalls = [];
     let apiCallFormListener = null;
+    let _domElements = null;
+    let _domReady = false;
+    let _pollIntervalId = null;
+    let _isActivating = false;
+
+    // Key element IDs to check for DOM readiness
+    const _KEY_ELEMENT_IDS = [
+        'api-uri', 'api-method', 'api-endpoint', 
+        'api-request-payload', 'api-response-payload', 
+        'event-list', 'api-call-form'
+    ];
+
+    const LOG_PREFIX = '[HeadlessModule]';
 
     // API endpoints configuration
     const apiEndpoints = {
@@ -188,40 +201,71 @@
         }
     };
 
+    // --- Logging ---
+    function _log(message, type = 'info', data = null) {
+        const LOG_LEVELS = { 'info': '#1abc9c', 'warn': '#f1c40f', 'error': '#e74c3c' };
+        const timestamp = new Date().toISOString();
+        const consoleMethod = console[type] || console.log;
+        const styleHeader = `color: ${LOG_LEVELS[type] || '#1abc9c'}; font-weight: bold;`;
+        const styleTimestamp = 'color: #7f8c8d; font-weight: normal;';
+
+        if (data) {
+            consoleMethod(
+                `%c${LOG_PREFIX}%c [${timestamp}] ${message}`,
+                styleHeader,
+                styleTimestamp,
+                data
+            );
+        } else {
+            consoleMethod(
+                `%c${LOG_PREFIX}%c [${timestamp}] ${message}`,
+                styleHeader,
+                styleTimestamp
+            );
+        }
+    }
+
     // --- DOM Elements ---
     function getElements() {
-        return {
-             uriInput: document.getElementById('api-uri'),
-             methodSelect: document.getElementById('api-method'),
-             endpointSelect: document.getElementById('api-endpoint'),
-             requestPayloadTextarea: document.getElementById('api-request-payload'),
-             responsePayloadTextarea: document.getElementById('api-response-payload'),
-             eventList: document.getElementById('event-list'),
-             apiCallForm: document.getElementById('api-call-form')
+        if (!_domElements) {
+            _domElements = {
+                uriInput: document.getElementById('api-uri'),
+                methodSelect: document.getElementById('api-method'),
+                endpointSelect: document.getElementById('api-endpoint'),
+                requestPayloadTextarea: document.getElementById('api-request-payload'),
+                responsePayloadTextarea: document.getElementById('api-response-payload'),
+                eventList: document.getElementById('event-list'),
+                apiCallForm: document.getElementById('api-call-form')
+            };
         }
+        return _domElements;
     }
 
     // --- Data Loading Functions --- 
     function loadHeadlessData() {
-        console.log("Fetching headless data...");
+        _log("Fetching headless data...");
         fetch(`/api/headless/data?_=${Date.now()}`)
             .then(response => response.ok ? response.json() : Promise.reject(`HTTP error! status: ${response.status}`))
             .then(data => {
-                console.log("Headless data received:", data);
+                _log("Headless data received:", 'info', data);
+                _log(`Found ${data.api_calls ? data.api_calls.length : 0} API calls in history`, 'info');
                 apiCalls = data.api_calls || [];
                 const events = data.events || [];
                 
                 // Display all API calls or the first one if multiple exist
                 if (apiCalls.length > 0) {
-                    // By default show the first API call (loans listing)
+                    _log(`Displaying most recent API call: ${apiCalls[0].uri}`, 'info');
+                    // By default show the first API call (most recent)
                     displayApiCall(apiCalls[0]);
+                } else {
+                    _log("No API calls found in history", 'info');
                 }
                 
                 // Display ALL events from history
                 displayEvents(events);
             })
             .catch(error => {
-                console.error('Error loading headless data:', error);
+                _log('Error loading headless data:', 'error', error);
                 const { responsePayloadTextarea, eventList } = getElements();
                 if(responsePayloadTextarea) responsePayloadTextarea.value = `Error loading data: ${error}`;
                 if(eventList) eventList.innerHTML = `<li class="text-red-500">Error loading events: ${error}</li>`;
@@ -230,10 +274,10 @@
 
     // Function to show a specific API call (used when viewing loan schedules)
     function showLoanSchedulesApiCall() {
-        console.log("Showing loan schedules API call");
+        _log("Showing loan schedules API call");
         // Look for the loan schedules API in our cached API calls
         if (!apiCalls || apiCalls.length === 0) {
-            console.log("No API calls found in history");
+            _log("No API calls found in history");
             return false;
         }
         
@@ -243,11 +287,11 @@
         );
         
         if (schedulesApiCall) {
-            console.log("Found loan schedules API call:", schedulesApiCall);
+            _log("Found loan schedules API call:", 'info', schedulesApiCall);
             displayApiCall(schedulesApiCall);
             return true;
         } else {
-            console.log("No loan schedules API call found in history");
+            _log("No loan schedules API call found in history");
             
             // If no schedules API call found but we have loan API calls, 
             // find the first loan API call to display as a fallback
@@ -256,19 +300,19 @@
             );
             
             if (loanApiCall) {
-                console.log("Displaying loan API call as fallback:", loanApiCall);
+                _log("Displaying loan API call as fallback:", 'info', loanApiCall);
                 displayApiCall(loanApiCall);
                 return true;
             }
         }
         
-        console.log("No relevant API calls found");
+        _log("No relevant API calls found");
         return false;
     }
 
     // --- Display Functions ---
     function displayApiCall(callData) {
-        console.log("Displaying API call:", callData);
+        _log("Displaying API call:", 'info', callData);
         const { uriInput, methodSelect, requestPayloadTextarea, responsePayloadTextarea, endpointSelect } = getElements();
 
         if (callData && uriInput && methodSelect && requestPayloadTextarea && responsePayloadTextarea) {
@@ -309,7 +353,7 @@
                         : '// Enter your JSON payload here';
                 }
             } catch (error) {
-                console.error("Error formatting request payload:", error);
+                _log("Error formatting request payload:", 'error', error);
                 requestPayloadTextarea.value = '// Error formatting request payload';
             }
             
@@ -324,7 +368,7 @@
                     responsePayloadTextarea.value = '// No response data available';
                 }
             } catch (error) {
-                console.error("Error formatting response payload:", error);
+                _log("Error formatting response payload:", 'error', error);
                 responsePayloadTextarea.value = '// Error formatting response payload';
             }
         } else {
@@ -337,7 +381,7 @@
     }
 
     function displayEvents(eventsToDisplay) {
-        console.log("Displaying events:", eventsToDisplay);
+        _log("Displaying events:", 'info', eventsToDisplay);
         const { eventList } = getElements();
         if (!eventList) return;
 
@@ -437,7 +481,7 @@
             }
             
             // Make the actual API request
-            console.log(`Making ${method} request to ${uri}`);
+            _log(`Making ${method} request to ${uri}`);
             const response = await fetch(uri, requestOptions);
             
             // Handle the response
@@ -468,7 +512,7 @@
                 responsePayloadTextarea.value = text;
             }
         } catch (error) {
-            console.error("API request error:", error);
+            _log("API request error:", 'error', error);
             responsePayloadTextarea.value = `Error making API request: ${error.message}`;
         }
     }
@@ -488,16 +532,30 @@
             });
             
             if (!response.ok) {
-                console.warn('Failed to track API call on server');
+                _log('Failed to track API call on server', 'warn');
             }
         } catch (error) {
-            console.error('Error tracking API call:', error);
+            _log('Error tracking API call:', 'error', error);
         }
     }
 
-    // --- Initialization ---
-    function initHeadlessTab() {
-        console.log("Initializing Headless Tab...");
+    // --- DOM Checking Functions ---
+    function _checkDOMReady() {
+        for (const id of _KEY_ELEMENT_IDS) {
+            if (!document.getElementById(id)) {
+                _log(`Element ${id} not found yet...`, 'info'); 
+                return false;
+            }
+        }
+        _log('All key DOM elements for Headless found!', 'info');
+        return true;
+    }
+
+    function _initializeHeadlessView() {
+        _log('Initializing Headless View (DOM is ready)...');
+        _domReady = true;
+        
+        // Initialize the headless tab
         loadHeadlessData(); // Load initial data (all events/calls)
 
         const { apiCallForm, endpointSelect } = getElements();
@@ -516,30 +574,169 @@
         
         // Make the function to show loan schedules API call available globally
         window.showLoanSchedulesApiCall = showLoanSchedulesApiCall;
+        
+        _log('Headless View setup complete.');
     }
 
-    // --- Global Cleanup Function --- 
-    window.cleanupCurrentTab = function() {
-        console.log("Running cleanup for Headless Tab...");
+    function _waitForHeadlessDOM() {
+        if (_domReady && _isActivating) {
+            _log('_waitForHeadlessDOM: DOM already ready and still activating.', 'info');
+            _initializeHeadlessView();
+            return;
+        }
+        if (!_isActivating) {
+             _log('_waitForHeadlessDOM: Not activating. Aborting DOM poll.', 'warn');
+             if (_pollIntervalId) clearInterval(_pollIntervalId);
+             _pollIntervalId = null;
+             return;
+        }
+
+        _log('_waitForHeadlessDOM: Starting to poll for DOM elements...');
+        
+        if (_pollIntervalId) clearInterval(_pollIntervalId);
+
+        let pollCount = 0;
+        const maxPolls = 80; // 20 seconds
+        const pollInterval = 250; // 250ms intervals
+
+        _pollIntervalId = setInterval(() => {
+            if (!_isActivating) { 
+                clearInterval(_pollIntervalId);
+                _pollIntervalId = null;
+                _log('Polling stopped (Headless): Tab deactivated during DOM check.', 'warn');
+                return;
+            }
+            pollCount++;
+            _log(`Headless DOM check attempt ${pollCount}/${maxPolls}`, 'info');
+            
+            if (_checkDOMReady()) { 
+                clearInterval(_pollIntervalId);
+                _pollIntervalId = null;
+                _log('Headless DOM ready! Initializing view...', 'info');
+                _initializeHeadlessView(); 
+            } else if (pollCount >= maxPolls) {
+                clearInterval(_pollIntervalId);
+                _pollIntervalId = null;
+                _log('Failed to find all Headless DOM elements after timeout.', 'error');
+                const tabContentArea = document.getElementById('headless-content-area') || document.getElementById('tab-content-area'); 
+                if (tabContentArea && _isActivating) { 
+                    tabContentArea.innerHTML = '<div class="p-4 text-red-500">Error: Headless interface failed to load. Key elements missing.</div>';
+                }
+            }
+        }, pollInterval);
+    }
+
+    // --- Cleanup Functions ---
+    function _cleanupEventListeners() {
+        _log('Running cleanup for Headless Tab...');
         const { apiCallForm, endpointSelect } = getElements();
         
         if (endpointSelect) {
             endpointSelect.removeEventListener('change', handleEndpointChange);
-            console.log("Removed endpoint select listener.");
+            _log("Removed endpoint select listener.");
         }
         
         if (apiCallForm && apiCallFormListener) {
             apiCallForm.removeEventListener('submit', apiCallFormListener);
             apiCallFormListener = null;
-            console.log("Removed API call form listener.");
+            _log("Removed API call form listener.");
         }
         
         // Remove the global functions
-        delete window.reloadHeadlessData;
-        delete window.showLoanSchedulesApiCall;
+        if (window.reloadHeadlessData) delete window.reloadHeadlessData;
+        if (window.showLoanSchedulesApiCall) delete window.showLoanSchedulesApiCall;
+    }
+
+    // --- TabManager Interface ---
+    return {
+        onInit() {
+            _log('onInit called');
+            _domReady = false;
+            _domElements = null;
+            apiCalls = [];
+        },
+
+        onActivate(isRestoring) {
+            _log(`Activating headless app (isRestoring: ${isRestoring})...`);
+            _isActivating = true;
+            
+            // Clear any existing polling interval
+            if (_pollIntervalId) {
+                clearInterval(_pollIntervalId);
+                _pollIntervalId = null;
+            }
+
+            if (_domReady && _domElements) {
+                _log('DOM already ready, re-initializing view...', 'info');
+                _initializeHeadlessView();
+                // Always refresh data when tab is activated to show latest API calls
+                _log('Refreshing headless data on activation...', 'info');
+                loadHeadlessData();
+            } else {
+                _log('DOM not ready, starting DOM polling...', 'info');
+                _waitForHeadlessDOM();
+            }
+            
+            _log('Headless app activation process initiated.');
+        },
+
+        onDeactivate(isUnloading) {
+            _log('Headless app deactivated.');
+            _isActivating = false;
+            
+            // Clear any polling intervals immediately
+            if (_pollIntervalId) {
+                clearInterval(_pollIntervalId);
+                _pollIntervalId = null;
+                _log('Headless DOM polling stopped due to deactivation.');
+            }
+            
+            // Clean up event listeners
+            _cleanupEventListeners();
+            
+            _log('Headless app cleanup completed.');
+        },
+
+        onDestroy(isUnloading) {
+            _log(`Destroying headless app (isUnloading: ${isUnloading})...`);
+            _isActivating = false;
+            if (_pollIntervalId) {
+                clearInterval(_pollIntervalId);
+                _pollIntervalId = null;
+            }
+            _domReady = false;
+            _domElements = null;
+            apiCalls = [];
+            _cleanupEventListeners();
+            _log('Headless app destroyed.');
+        }
     };
+})();
 
-    // --- Initial Execution ---
-    initHeadlessTab();
+// Register with TabManager
+function registerHeadlessApp() {
+    if (window.TabManager) {
+        window.TabManager.registerTab('headless', HeadlessModule);
+        console.log('[HeadlessModule] Successfully registered with TabManager');
+        return true;
+    } else {
+        console.warn('[HeadlessModule] TabManager not found yet. Will retry...');
+        return false;
+    }
+}
 
-})(); // End of IIFE 
+// Try to register immediately
+if (!registerHeadlessApp()) {
+    // If TabManager not ready, wait and retry
+    let retryCount = 0;
+    const maxRetries = 50; // 5 seconds max
+    const retryInterval = setInterval(() => {
+        retryCount++;
+        if (registerHeadlessApp()) {
+            clearInterval(retryInterval);
+        } else if (retryCount >= maxRetries) {
+            clearInterval(retryInterval);
+            console.error('[HeadlessModule] TabManager not found after maximum retries. Ensure tab-manager.js is loaded first.');
+        }
+    }, 100);
+} 

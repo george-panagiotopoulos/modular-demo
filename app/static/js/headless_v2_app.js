@@ -1,69 +1,55 @@
-(function() {
-    // Headless V2 Tab specific JavaScript
-    console.log("headless_v2_app.js loaded and executing");
+const HeadlessV2Module = (() => {
+    // Constants for DOM element IDs to avoid magic strings
+    const API_CONTROLS_IDS = {
+        party: {
+            select: 'party-endpoint',
+            uriInput: 'party-uri',
+            methodSelect: 'party-method',
+            payloadInput: 'party-request-payload',
+            responseOutput: 'party-response',
+            sendButton: 'party-send',
+            eventsContainer: 'party-events',
+            connectButton: 'party-connect'
+        },
+        deposits: {
+            select: 'deposits-endpoint',
+            uriInput: 'deposits-uri',
+            methodSelect: 'deposits-method',
+            payloadInput: 'deposits-request-payload',
+            responseOutput: 'deposits-response',
+            sendButton: 'deposits-send',
+            eventsContainer: 'deposits-events',
+            connectButton: 'deposits-connect'
+        },
+        lending: {
+            select: 'lending-endpoint',
+            uriInput: 'lending-uri',
+            methodSelect: 'lending-method',
+            payloadInput: 'lending-request-payload',
+            responseOutput: 'lending-response',
+            sendButton: 'lending-send',
+            eventsContainer: 'lending-events',
+            connectButton: 'lending-connect'
+        }
+    };
+    const LOG_PREFIX = '[HeadlessV2Module]';
 
-    // Store API calls history for each domain
+    // Store API calls history for each domain - these are not persisted by TabManager
     let partyApiCalls = [];
     let depositsApiCalls = [];
     let lendingApiCalls = [];
     
-    // Store EventSource objects for Kafka event streaming
-    let partyEventSource = null;
-    let depositsEventSource = null;
-    let lendingEventSource = null;
-    
-    // Session management for concurrent connections
-    let sessionId = null;
-    
-    // Generate or retrieve session ID
-    function getSessionId() {
-        if (!sessionId) {
-            sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        }
-        return sessionId;
-    }
-    
-    // Cleanup function for disconnecting from Event Hub
-    function cleanupEventSource(eventSource, domain) {
-        if (eventSource) {
-            try {
-                // Send disconnect request to backend
-                fetch(`/api/headless-v2/events/${domain}/disconnect`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Session-ID': getSessionId()
-                    },
-                    body: JSON.stringify({ session_id: getSessionId() })
-                }).catch(err => console.log('Disconnect request failed:', err));
-                
-                eventSource.close();
-            } catch (e) {
-                console.error('Error closing EventSource:', e);
-            }
-        }
-    }
-    
-    // Global cleanup function for all connections
-    function cleanupAllConnections() {
-        fetch('/api/headless-v2/cleanup', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Session-ID': getSessionId()
-            },
-            body: JSON.stringify({ session_id: getSessionId() })
-        }).catch(err => console.log('Cleanup request failed:', err));
-    }
+    // Session management for concurrent connections - BackendConnector handles this now.
+    // let sessionId = null; // Replaced by BackendConnector.getSessionId()
 
     // API endpoints configuration
     const apiEndpoints = {
-        // Party/Customer APIs
         party: {
             createCustomer: {
                 label: "Create Customer", 
                 template: "http://modulardemo.northeurope.cloudapp.azure.com/ms-party-api/api/v5.0.0/party/parties",
                 defaultMethod: "POST",
+                params: [],
                 samplePayload: {
                     "dateOfBirth": "1990-05-15",
                     "cityOfBirth": "New York",
@@ -156,6 +142,7 @@
                 label: "Create Current Account", 
                 template: "http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v2.0.0/holdings/accounts/currentAccounts",
                 defaultMethod: "POST",
+                params: [],
                 samplePayload: {
                     "parties": [
                         {
@@ -175,6 +162,7 @@
                 label: "Create Term Deposit",
                 template: "http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-deposits-container/api/v2.0.0/holdings/deposits/termDeposits",
                 defaultMethod: "POST",
+                params: [],
                 samplePayload: {
                     "parties": [
                         {
@@ -200,6 +188,7 @@
                 label: "Debit Account",
                 template: "http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v1.0.0/order/payments/debitAccount",
                 defaultMethod: "POST",
+                params: [],
                 samplePayload: {
                     "paymentTransactionReference": "DEBIT_UTILITYBIL_1234567890123_456",
                     "paymentReservationReference": "DEBIT_UTILITYBIL_1234567890123_456",
@@ -214,6 +203,7 @@
                 label: "Credit Account",
                 template: "http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v1.0.0/order/payments/creditAccount",
                 defaultMethod: "POST",
+                params: [],
                 samplePayload: {
                     "paymentTransactionReference": "CREDIT_SALARY_1234567890123_789",
                     "paymentReservationReference": "CREDIT_SALARY_1234567890123_789",
@@ -232,6 +222,7 @@
                 label: "Create Mortgage Loan",
                 template: "http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/personalLoans",
                 defaultMethod: "POST",
+                params: [],
                 samplePayload: {
                     "header": {},
                     "body": {
@@ -255,6 +246,7 @@
                 label: "Create Consumer Loan",
                 template: "http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/personalLoans",
                 defaultMethod: "POST",
+                params: [],
                 samplePayload: {
                     "header": {},
                     "body": {
@@ -311,130 +303,200 @@
         }
     };
 
-    // --- Helper Functions ---
-    function formatJSON(json) {
-        if (!json) return '';
+    // Global color mapping to ensure consistent colors across all streams
+    let globalEventColorMap = {};
+    let colorAssignmentIndex = 0; // Track next color to assign
+
+    function getEventColor(eventType) {
+        // Check if we already have a color assigned to this event type
+        if (globalEventColorMap[eventType]) {
+            return globalEventColorMap[eventType];
+        }
         
-        try {
-            if (typeof json === 'string') {
-                json = JSON.parse(json);
-            }
-            
-            const formatted = JSON.stringify(json, null, 2)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, 
-                    function (match) {
-                        let cls = 'text-blue-600'; // number
-                        if (/^"/.test(match)) {
-                            if (/:$/.test(match)) {
-                                cls = 'text-teal-700 font-medium'; // key
+        // Expanded color palette with 30 distinct colors for better event type differentiation
+        const colors = [
+            '#3B82F6', // Blue
+            '#10B981', // Green
+            '#F59E0B', // Yellow
+            '#EF4444', // Red
+            '#8B5CF6', // Purple
+            '#06B6D4', // Cyan
+            '#F97316', // Orange
+            '#84CC16', // Lime
+            '#EC4899', // Pink
+            '#6B7280', // Gray
+            '#14B8A6', // Teal
+            '#F472B6', // Hot Pink
+            '#A855F7', // Violet
+            '#22C55E', // Emerald
+            '#FB923C', // Amber
+            '#38BDF8', // Sky Blue
+            '#FBBF24', // Golden Yellow
+            '#F87171', // Light Red
+            '#A78BFA', // Light Purple
+            '#34D399', // Light Green
+            '#60A5FA', // Light Blue
+            '#FBBF24', // Amber
+            '#FB7185', // Rose
+            '#C084FC', // Lavender
+            '#4ADE80', // Light Lime
+            '#FACC15', // Bright Yellow
+            '#F472B6', // Magenta
+            '#06B6D4', // Bright Cyan
+            '#8B5CF6', // Indigo
+            '#EAB308'  // Gold
+        ];
+        
+        // Sequential assignment - no collisions possible
+        const selectedColor = colors[colorAssignmentIndex % colors.length];
+        
+        // Store the color mapping globally for this session
+        globalEventColorMap[eventType] = selectedColor;
+        
+        // Move to next color for the next new event type
+        colorAssignmentIndex++;
+        
+        console.log(`Event type: "${eventType}" -> Sequential Index: ${colorAssignmentIndex - 1} -> Color: ${selectedColor}`);
+        console.log(`Total unique event types seen: ${Object.keys(globalEventColorMap).length}`);
+        
+        return selectedColor;
+    }
+
+    // --- Utility Functions ---
+    function _log(message, type = 'info', data = null) {
+        const LOG_LEVELS = { 'info': '#1abc9c', 'warn': '#f1c40f', 'error': '#e74c3c' }; // Teal, Yellow, Red
+        const timestamp = new Date().toISOString();
+        const consoleMethod = console[type] || console.log;
+        const styleHeader = `color: ${LOG_LEVELS[type] || '#1abc9c'}; font-weight: bold;`;
+        const styleTimestamp = 'color: #7f8c8d; font-weight: normal;';
+
+        if (data) {
+            consoleMethod(
+                `%c${LOG_PREFIX}%c [${timestamp}] ${message}`,
+                styleHeader,
+                styleTimestamp,
+                data
+            );
                             } else {
-                                cls = 'text-green-600'; // string
-                            }
-                        } else if (/true|false/.test(match)) {
-                            cls = 'text-purple-600'; // boolean
-                        } else if (/null/.test(match)) {
-                            cls = 'text-red-600'; // null
-                        }
-                        return '<span class="' + cls + '">' + match + '</span>';
-                    }
-                );
-                
-            return formatted;
-        } catch (e) {
-            console.error('Error formatting JSON:', e);
-            return String(json);
+            consoleMethod(
+                `%c${LOG_PREFIX}%c [${timestamp}] ${message}`,
+                styleHeader,
+                styleTimestamp
+            );
         }
     }
 
-    function populateApiDropdowns() {
-        const columns = ['party', 'deposits', 'lending'];
-        columns.forEach(column => {
-            const selectElement = document.getElementById(`${column}-endpoint`);
-            if (selectElement) {
-                // Clear existing options except for the first "Choose an API" placeholder
-                while (selectElement.options.length > 1) {
-                    selectElement.remove(1);
-                }
-                // Repopulate based on the apiEndpoints structure
-                for (const apiKey in apiEndpoints[column]) {
-                    if (apiEndpoints[column].hasOwnProperty(apiKey)) {
-                        const option = document.createElement('option');
-                        option.value = apiKey; // e.g., createCustomer, getPartyArrangements
-                        option.textContent = apiEndpoints[column][apiKey].label; // e.g., "Create Customer"
-                        selectElement.appendChild(option);
-                    }
-                }
-            }
-        });
+    function formatJSON(json) {
+        if (typeof json === 'string') {
+            try {
+                json = JSON.parse(json);
+        } catch (e) {
+                return json; // Return as is if not valid JSON string
+        }
+        }
+        return JSON.stringify(json, null, 2);
     }
 
-    function updateUri(column, endpointKey) {
-        const uriField = document.getElementById(`${column}-uri`);
-        const payloadField = document.getElementById(`${column}-request-payload`);
-        const methodSelect = document.getElementById(`${column}-method`);
+    // --- API Call UI Functions ---
+    function populateApiDropdowns() {
+        _log('Populating API dropdowns...');
+        Object.keys(API_CONTROLS_IDS).forEach(domain => {
+            const selectElement = document.getElementById(API_CONTROLS_IDS[domain].select);
+            if (!selectElement) {
+                _log(`API select dropdown not found for domain: ${domain}`, 'warn');
+                return;
+            }
+            selectElement.innerHTML = '<option value="">Select API...</option>'; // Clear existing
+            if (apiEndpoints[domain]) {
+                Object.keys(apiEndpoints[domain]).forEach(apiKey => {
+                        const option = document.createElement('option');
+                    option.value = apiKey;
+                    option.textContent = apiEndpoints[domain][apiKey].label || apiKey;
+                        selectElement.appendChild(option);
+                });
+            }
+        });
+        _log('API dropdowns populated.');
+    }
 
-        if (!apiEndpoints[column] || !apiEndpoints[column][endpointKey]) {
-            uriField.value = '';
-            payloadField.value = '';
+    function updateUri(domain, endpointKey) {
+        const ids = API_CONTROLS_IDS[domain];
+        const endpoint = apiEndpoints[domain]?.[endpointKey];
+        const uriInput = document.getElementById(ids.uriInput);
+        const methodSelect = document.getElementById(ids.methodSelect);
+        const payloadInput = document.getElementById(ids.payloadInput);
+
+        if (!uriInput || !methodSelect || !payloadInput) {
+             _log(`DOM elements for URI/Method/Payload not found for domain: ${domain}`, 'error');
             return;
         }
 
-        const selectedApi = apiEndpoints[column][endpointKey];
-
-        let uri = selectedApi.template;
-        if (selectedApi.params && selectedApi.params.length > 0) {
-            selectedApi.params.forEach(param => {
+        if (endpoint) {
+            let uri = endpoint.template;
+            methodSelect.value = endpoint.defaultMethod || 'GET';
+            
+            // Handle parameters by prompting user
+            if (endpoint.params && endpoint.params.length > 0) {
+                endpoint.params.forEach(param => {
                 const paramValue = prompt(`Enter value for ${param}:`);
                 uri = uri.replace(`{${param}}`, paramValue || '');
             });
         }
-        uriField.value = uri;
+            
+            uriInput.value = uri;
 
-        if (selectedApi.defaultMethod === 'GET') {
-            payloadField.value = '';
-        } else if (selectedApi.samplePayload) {
-            if (typeof selectedApi.samplePayload === 'object') {
-                payloadField.value = JSON.stringify(selectedApi.samplePayload, null, 2);
+            // Handle payload
+            if (endpoint.defaultMethod === 'GET') {
+                payloadInput.value = '';
+            } else if (endpoint.samplePayload) {
+                if (typeof endpoint.samplePayload === 'object') {
+                    payloadInput.value = JSON.stringify(endpoint.samplePayload, null, 2);
             } else {
-                payloadField.value = selectedApi.samplePayload;
+                    payloadInput.value = endpoint.samplePayload;
             }
         } else {
-            payloadField.value = '';
-        }
+                payloadInput.value = '';
+            }
 
-        if (selectedApi.defaultMethod) {
-            methodSelect.value = selectedApi.defaultMethod;
+             _log(`URI field updated for ${domain} - ${endpointKey}`, 'info', {uri: uriInput.value});
+        } else {
+            uriInput.value = '';
+            methodSelect.value = 'GET';
+            payloadInput.value = '';
+            _log(`Cleared URI for ${domain} as endpointKey ${endpointKey} is invalid`, 'info');
         }
     }
 
-    async function sendApiRequest(column) {
-        const methodField = document.getElementById(`${column}-method`);
-        const uriField = document.getElementById(`${column}-uri`);
-        const payloadField = document.getElementById(`${column}-request-payload`);
-        const responseField = document.getElementById(`${column}-response`);
-        
-        const method = methodField.value;
-        const uri = uriField.value;
+    async function sendApiRequest(domain) {
+        const ids = API_CONTROLS_IDS[domain];
+        const method = document.getElementById(ids.methodSelect)?.value;
+        const uri = document.getElementById(ids.uriInput)?.value;
+        const payloadString = document.getElementById(ids.payloadInput)?.value;
+        const responseOutput = document.getElementById(ids.responseOutput);
+
+        if (!method || !uri || !responseOutput) {
+            _log('Missing method, URI, or response output element.', 'error', {domain});
+            if (responseOutput) responseOutput.textContent = 'Error: Missing required fields.';
+            return;
+        }
+
         let payload = null;
         
         // For GET requests, ensure payload is null
-        if (method !== 'GET' && payloadField.value) {
+        if (method !== 'GET' && payloadString) {
             try {
-                payload = JSON.parse(payloadField.value);
+                payload = JSON.parse(payloadString);
             } catch (e) {
-                responseField.value = `Error parsing JSON payload: ${e.message}`;
+                responseOutput.textContent = `Error parsing JSON payload: ${e.message}`;
                 return;
             }
         }
         
         // Show loading state
-        responseField.value = "Sending request...";
+        responseOutput.textContent = "Sending request...";
         
         try {
-            // Make the API call
+            // Make the API call using the original /api/headless/track endpoint
             const response = await fetch('/api/headless/track', {
                 method: 'POST',
                 headers: {
@@ -444,7 +506,7 @@
                     uri: uri,
                     method: method,
                     payload: payload,
-                    domain: column // Track which domain the call came from
+                    domain: domain // Track which domain the call came from
                 })
             });
             
@@ -453,174 +515,61 @@
             // Update response field
             if (result.api_call && result.api_call.response) {
                 // Use plain JSON.stringify for the textarea
-                responseField.value = JSON.stringify(result.api_call.response, null, 2);
+                responseOutput.textContent = JSON.stringify(result.api_call.response, null, 2);
                 
                 // Store API call but don't update events display
-                if (column === 'party') {
+                if (domain === 'party') {
                     partyApiCalls.unshift(result.api_call);
-                } else if (column === 'deposits') {
+                } else if (domain === 'deposits') {
                     depositsApiCalls.unshift(result.api_call);
-                } else if (column === 'lending') {
+                } else if (domain === 'lending') {
                     lendingApiCalls.unshift(result.api_call);
                 }
             } else if (result.api_call && result.api_call.error) {
-                responseField.value = JSON.stringify(result.api_call.error, null, 2);
+                responseOutput.textContent = JSON.stringify(result.api_call.error, null, 2);
             } else {
-                responseField.value = "No response data received from API call";
+                responseOutput.textContent = "No response data received from API call";
             }
         } catch (e) {
             console.error('Error making API call:', e);
-            responseField.value = `Error making API call: ${e.message}`;
+            responseOutput.textContent = `Error making API call: ${e.message}`;
         }
     }
 
-    function updateEvents(column) {
-        const eventsContainer = document.getElementById(`${column}-events`);
-        let apiCalls = [];
-        
-        // Get the appropriate API calls history
-        if (column === 'party') {
-            apiCalls = partyApiCalls;
-        } else if (column === 'deposits') {
-            apiCalls = depositsApiCalls;
-        } else if (column === 'lending') {
-            apiCalls = lendingApiCalls;
+    // --- Event Streaming UI Functions ---
+    function updateEventsUI(domain, eventData) {
+        const ids = API_CONTROLS_IDS[domain];
+        const eventsContainer = document.getElementById(ids.eventsContainer);
+        if (!eventsContainer) {
+            _log(`Events container not found for domain: ${domain}`, 'warn');
+            return;
         }
-        
-        if (apiCalls && apiCalls.length > 0) {
-            // Clear placeholder text
-            eventsContainer.innerHTML = '';
-            
-            // Add recent calls/events
-            apiCalls.forEach(call => {
-                const callDiv = document.createElement('div');
-                callDiv.className = 'mb-2 p-1 border-b border-gray-200';
-                
-                // Format timestamp
-                const timestamp = new Date(call.timestamp).toLocaleTimeString();
-                
-                callDiv.innerHTML = `
-                    <div class="text-xs text-teal-700">${timestamp} - ${call.method} ${call.uri}</div>
-                `;
-                
-                eventsContainer.appendChild(callDiv);
-            });
-        } else {
-            // Just clear the container if no events
-            eventsContainer.innerHTML = '';
-        }
-    }
 
-    // --- Kafka Event Streaming Functions ---
-    function startEventStream(domain) {
-        const eventsContainer = document.getElementById(`${domain}-events`);
-        const connectButton = document.getElementById(`${domain}-connect`);
-        
-        // Clear the events container
-        eventsContainer.innerHTML = '';
-        
-        // Add loading indicator
-        const loadingElement = document.createElement('div');
-        loadingElement.className = 'text-xs text-blue-600 mb-2';
-        loadingElement.textContent = `Connecting to ${domain} events...`;
-        eventsContainer.appendChild(loadingElement);
-        
-        // Close existing connection if any
-        stopEventStream(domain);
-        
-        // Update button state immediately
-        connectButton.textContent = "Disconnect";
-        connectButton.classList.remove("bg-teal-600");
-        connectButton.classList.add("bg-red-600");
-        
-        // Add a small delay for party domain to prevent UI freezing
-        if (domain === 'party') {
-            setTimeout(() => {
-                createEventSource(domain, eventsContainer, connectButton);
-            }, 50);
-        } else {
-            createEventSource(domain, eventsContainer, connectButton);
-        }
-    }
-    
-    function createEventSource(domain, eventsContainer, connectButton) {
-        // Create new EventSource with session ID
-        const eventSourceUrl = `/api/headless-v2/events/${domain}?session_id=${getSessionId()}`;
-        const eventSource = new EventSource(eventSourceUrl);
-        
-        // Store the EventSource in the right variable
-        if (domain === 'party') {
-            partyEventSource = eventSource;
-        } else if (domain === 'deposits') {
-            depositsEventSource = eventSource;
-        } else if (domain === 'lending') {
-            lendingEventSource = eventSource;
-        }
-        
-        // Set up event handlers
-        eventSource.onopen = function() {
-            console.log(`${domain} EventSource connection opened`);
-        };
-        
-        eventSource.onmessage = function(event) {
-            try {
-                const data = JSON.parse(event.data);
-                
-                if (data.type === 'info') {
+        if (eventData.type === 'info') {
                     // Don't show all info messages for party domain to reduce UI updates
                     if (domain !== 'party' || 
-                        data.message.includes('Connecting') || 
-                        data.message.includes('Connected') || 
-                        data.message.includes('Found') ||
-                        data.message.includes('Listening')) {
+                eventData.message.includes('Connecting') || 
+                eventData.message.includes('Connected') || 
+                eventData.message.includes('Found') ||
+                eventData.message.includes('Listening')) {
                         const infoElement = document.createElement('div');
                         infoElement.className = 'mb-1 text-blue-600';
-                        infoElement.textContent = data.message;
+                infoElement.textContent = eventData.message;
                         eventsContainer.insertBefore(infoElement, eventsContainer.firstChild);
                     }
                 } 
-                else if (data.type === 'error') {
+        else if (eventData.type === 'error') {
                     // Display error message
                     const errorElement = document.createElement('div');
                     errorElement.className = 'mb-1 text-red-600';
-                    errorElement.textContent = data.message;
+            errorElement.textContent = eventData.message;
                     eventsContainer.insertBefore(errorElement, eventsContainer.firstChild);
                 }
-                else if (data.type === 'event') {
-                    // Format and display event data
-                    const eventData = data.data;
-                    
-                    // Use colored summary buttons for all domains
-                    displayEventSummary(eventData, eventsContainer);
+        else if (eventData.type === 'event') {
+            // Format and display event data with original color-coded expandable UI
+            displayEventSummary(eventData.data, eventsContainer);
                 }
                 // Ignore ping messages
-            } catch (e) {
-                console.error(`Error processing ${domain} event data:`, e);
-            }
-        };
-        
-        eventSource.onerror = function(error) {
-            console.error(`${domain} EventSource error:`, error);
-            
-            // Display error in the container
-            const errorElement = document.createElement('div');
-            errorElement.className = 'mb-1 text-red-600';
-            errorElement.textContent = `Connection error: ${error.type || 'Unknown error'}`;
-            eventsContainer.insertBefore(errorElement, eventsContainer.firstChild);
-            
-            // For party domain, don't try to reconnect as often
-            const reconnectDelay = domain === 'party' ? 10000 : 5000;
-            
-            // Reconnect after a brief delay
-            setTimeout(function() {
-                if ((domain === 'party' && partyEventSource) || 
-                    (domain === 'deposits' && depositsEventSource) || 
-                    (domain === 'lending' && lendingEventSource)) {
-                    // Only try to reconnect if we haven't manually closed
-                    startEventStream(domain);
-                }
-            }, reconnectDelay);
-        };
     }
     
     function displayEventSummary(eventData, eventsContainer) {
@@ -692,7 +641,7 @@
                 <span class="font-medium">Offset:</span> ${eventData.offset}
             </div>
             <div class="font-medium mb-1">Payload:</div>
-            <pre class="whitespace-pre-wrap overflow-x-auto bg-white p-2 rounded border">${formatJSON(eventData.payload)}</pre>
+            <pre class="whitespace-pre-wrap overflow-x-auto bg-white p-2 rounded border">${formatJSONForDisplay(eventData.payload)}</pre>
         `;
         
         // Add click handler to toggle details
@@ -719,35 +668,46 @@
         limitEventCount(eventsContainer, 25);
     }
     
-    function getEventColor(eventType) {
-        // Generate consistent colors based on event type
-        const colors = [
-            '#3B82F6', // Blue
-            '#10B981', // Green
-            '#F59E0B', // Yellow
-            '#EF4444', // Red
-            '#8B5CF6', // Purple
-            '#06B6D4', // Cyan
-            '#F97316', // Orange
-            '#84CC16', // Lime
-            '#EC4899', // Pink
-            '#6B7280'  // Gray
-        ];
+    function formatJSONForDisplay(json) {
+        if (!json) return '';
         
-        // Simple hash function to get consistent color for same event type
-        let hash = 0;
-        for (let i = 0; i < eventType.length; i++) {
-            const char = eventType.charCodeAt(i);
-            hash = ((hash << 5) - hash) + char;
-            hash = hash & hash; // Convert to 32-bit integer
+        try {
+            if (typeof json === 'string') {
+                json = JSON.parse(json);
+            }
+            
+            const formatted = JSON.stringify(json, null, 2)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, 
+                    function (match) {
+                        let cls = 'text-blue-600'; // number
+                        if (/^"/.test(match)) {
+                            if (/:$/.test(match)) {
+                                cls = 'text-teal-700 font-medium'; // key
+                            } else {
+                                cls = 'text-green-600'; // string
+                            }
+                        } else if (/true|false/.test(match)) {
+                            cls = 'text-purple-600'; // boolean
+                        } else if (/null/.test(match)) {
+                            cls = 'text-red-600'; // null
+                        }
+                        return '<span class="' + cls + '">' + match + '</span>';
+                    }
+                );
+                
+            return formatted;
+        } catch (e) {
+            console.error('Error formatting JSON:', e);
+            return String(json);
         }
-        
-        return colors[Math.abs(hash) % colors.length];
     }
-    
-    function limitEventCount(eventsContainer, maxCount) {
+
+    function limitEventCount(container, maxCount) {
         // Limit number of events shown to prevent browser performance issues
-        const children = Array.from(eventsContainer.children);
+        const children = Array.from(container.children);
         // Keep only the first maxCount real event elements (not info/error messages)
         const eventElements = children.filter(child => 
             child.classList.contains('mb-2') && 
@@ -756,70 +716,132 @@
         
         if (eventElements.length > maxCount) {
             for (let i = maxCount; i < eventElements.length; i++) {
-                if (eventElements[i] && eventElements[i].parentNode === eventsContainer) {
-                    eventsContainer.removeChild(eventElements[i]);
+                if (eventElements[i] && eventElements[i].parentNode === container) {
+                    container.removeChild(eventElements[i]);
                 }
             }
         }
     }
-    
-    function stopEventStream(domain) {
-        let eventSource = null;
+
+    function startEventStream(domain) {
+        const connectBtn = _getElement(API_CONTROLS_IDS[domain].connectButton);
+        const eventsContainer = _getElement(API_CONTROLS_IDS[domain].eventsContainer);
         
-        // Get the appropriate EventSource
-        if (domain === 'party') {
-            eventSource = partyEventSource;
-            partyEventSource = null;
-        } else if (domain === 'deposits') {
-            eventSource = depositsEventSource;
-            depositsEventSource = null;
-        } else if (domain === 'lending') {
-            eventSource = lendingEventSource;
-            lendingEventSource = null;
+        if (!connectBtn || connectBtn.disabled) {
+            _log(`Event stream for ${domain} is already active or button is disabled`, 'warn');
+            return;
         }
         
-        // Clean up the EventSource using the new cleanup function
-        cleanupEventSource(eventSource, domain);
+        // Show connection in progress
+        eventsContainer.innerHTML = '<div class="text-blue-600 font-medium">Connecting to event stream...</div>';
         
-        // Update the button state
-        const connectButton = document.getElementById(`${domain}-connect`);
-        if (connectButton) {
-            connectButton.textContent = "Connect";
-            connectButton.classList.remove("bg-red-600");
-            connectButton.classList.add("bg-teal-600");
+        // Create event stream with proper parameter order: url, onMessage, onError, tabName
+        BackendConnector.createEventStream(
+            `/api/headless-v2/events/${domain}`,
+            (eventData) => {
+                updateEventsUI(domain, eventData);
+            },
+            (error) => {
+                _log(`Event stream error for ${domain}: ${error}`, 'error');
+                eventsContainer.innerHTML = `<div class="text-red-600 font-medium">Connection failed: ${error}</div>`;
+                
+                // Reset button to connect state with proper blue styling
+                connectBtn.disabled = false;
+                connectBtn.textContent = 'Connect';
+                connectBtn.className = connectBtn.className.replace(/bg-(red|green)-\d+/g, 'bg-blue-600').replace(/hover:bg-(red|green)-\d+/g, 'hover:bg-blue-700');
+                if (!connectBtn.className.includes('bg-blue-600')) {
+                    connectBtn.className += ' bg-blue-600 hover:bg-blue-700';
+                }
+                connectBtn.onclick = () => startEventStream(domain);
+            },
+            'headless-v2' // Pass tabName for TabManager registration
+        );
+        
+        // Update button to disconnect state with red styling immediately
+        connectBtn.disabled = false;
+        connectBtn.textContent = 'Disconnect';
+        // Remove any existing color classes and add red styling
+        connectBtn.className = connectBtn.className.replace(/bg-(blue|green)-\d+/g, 'bg-red-600').replace(/hover:bg-(blue|green)-\d+/g, 'hover:bg-red-700');
+        if (!connectBtn.className.includes('bg-red-600')) {
+            connectBtn.className += ' bg-red-600 hover:bg-red-700';
         }
         
-        // Inform the user
-        const eventsContainer = document.getElementById(`${domain}-events`);
-        if (eventsContainer) {
-            const infoElement = document.createElement('div');
-            infoElement.className = 'mb-1 text-gray-600';
-            infoElement.textContent = 'Event streaming disconnected';
-            eventsContainer.insertBefore(infoElement, eventsContainer.firstChild);
-        }
-    }
-    
-    function toggleEventStream(domain) {
-        const isConnected = 
-            (domain === 'party' && partyEventSource) || 
-            (domain === 'deposits' && depositsEventSource) || 
-            (domain === 'lending' && lendingEventSource);
+        // Update click handler to disconnect
+        connectBtn.onclick = () => stopEventStream(domain);
         
-        if (isConnected) {
-            stopEventStream(domain);
-        } else {
-            startEventStream(domain);
-        }
+        _log(`Starting event stream for ${domain}`);
     }
 
-    // --- Event Listeners ---
+    function stopEventStream(domain) {
+        _log(`Attempting to stop event stream for domain: ${domain}`);
+        const ids = API_CONTROLS_IDS[domain];
+        const connectButton = document.getElementById(ids.connectButton);
+
+        BackendConnector.callApi(`/api/headless-v2/events/${domain}/disconnect`, 'POST', { session_id: BackendConnector.getSessionId() })
+            .then(() => _log(`Backend disconnect request sent for ${domain}`, 'info'))
+            .catch(err => _log(`Backend disconnect request failed for ${domain}`, 'error', err));
+
+        if (connectButton) {
+            connectButton.disabled = false;
+            connectButton.textContent = 'Connect';
+            // Remove any existing color classes and add blue styling
+            connectButton.className = connectButton.className.replace(/bg-(red|green)-\d+/g, 'bg-blue-600').replace(/hover:bg-(red|green)-\d+/g, 'hover:bg-blue-700');
+            if (!connectButton.className.includes('bg-blue-600')) {
+                connectButton.className += ' bg-blue-600 hover:bg-blue-700';
+            }
+            
+            // Restore the original click handler
+            connectButton.onclick = () => startEventStream(domain);
+        }
+        
+        const eventsContainer = document.getElementById(ids.eventsContainer);
+        if(eventsContainer){
+            const p = document.createElement('p');
+            p.className = 'text-yellow-400';
+            p.textContent = `Event stream for ${domain} disconnected.`;
+            eventsContainer.insertBefore(p, eventsContainer.firstChild);
+        }
+        _log(`Event stream stopped for ${domain}.`, 'info');
+    }
+    
+    function _getElement(id) {
+        const element = document.getElementById(id);
+        if (!element) {
+            _log(`Element with ID '${id}' not found.`, 'warn');
+        }
+        return element;
+    }
+
+    const eventListeners = [];
+
+    function _addManagedEventListener(element, type, listener) {
+        if (element) {
+            element.addEventListener(type, listener);
+            eventListeners.push({ element, type, listener });
+        } 
+    }
+    
+    function _removeAllManagedEventListeners() {
+        _log('Removing all managed event listeners for HeadlessV2Module...');
+        eventListeners.forEach(({ element, type, listener }) => {
+            if (element) {
+                element.removeEventListener(type, listener);
+            }
+        });
+        eventListeners.length = 0; 
+        _log('All managed event listeners removed.');
+    }
+
     function setupEventListeners() {
+        _log('Setting up event listeners for Headless V2...');
+        _removeAllManagedEventListeners(); 
+
         // Sequence diagram toggle
         const toggleDiagramBtn = document.getElementById('toggle-diagram');
         const diagramContainer = document.getElementById('diagram-container');
         
         if (toggleDiagramBtn && diagramContainer) {
-            toggleDiagramBtn.addEventListener('click', () => {
+            _addManagedEventListener(toggleDiagramBtn, 'click', () => {
                 // Toggle diagram visibility
                 if (diagramContainer.style.display === 'none') {
                     diagramContainer.style.display = 'flex';
@@ -831,175 +853,216 @@
             });
         }
         
-        // Party/Customer Column
-        document.getElementById('party-endpoint').addEventListener('change', (e) => {
-            updateUri('party', e.target.value);
-        });
-        
-        document.getElementById('party-send').addEventListener('click', () => {
-            sendApiRequest('party');
-        });
-        
-        document.getElementById('party-connect').addEventListener('click', () => {
-            toggleEventStream('party');
-        });
-        
-        // Deposits/Accounts Column
-        document.getElementById('deposits-endpoint').addEventListener('change', (e) => {
-            updateUri('deposits', e.target.value);
-        });
-        
-        document.getElementById('deposits-send').addEventListener('click', () => {
-            sendApiRequest('deposits');
-        });
-        
-        document.getElementById('deposits-connect').addEventListener('click', () => {
-            toggleEventStream('deposits');
-        });
-        
-        // Lending Column
-        document.getElementById('lending-endpoint').addEventListener('change', (e) => {
-            updateUri('lending', e.target.value);
-        });
-        
-        document.getElementById('lending-send').addEventListener('click', () => {
-            sendApiRequest('lending');
-        });
-        
-        document.getElementById('lending-connect').addEventListener('click', () => {
-            toggleEventStream('lending');
-        });
-    }
-
-    // --- Load Headless Data ---
-    async function loadHeadlessData() {
-        // Skip loading previous API calls
-        return;
-        
-        /* Original implementation - commented out to prevent loading previous calls
-        try {
-            const response = await fetch('/api/headless/data');
-            const data = await response.json();
+        Object.keys(API_CONTROLS_IDS).forEach(domain => {
+            const ids = API_CONTROLS_IDS[domain];
+            _addManagedEventListener(_getElement(ids.select), 'change', () => updateUri(domain, _getElement(ids.select).value));
+            _addManagedEventListener(_getElement(ids.sendButton), 'click', () => sendApiRequest(domain));
             
-            if (data.api_calls && data.api_calls.length > 0) {
-                // Sort API calls into the correct domains
-                data.api_calls.forEach(call => {
-                    const uri = call.uri.toLowerCase();
-                    
-                    if (uri.includes('modulardemo') || uri.includes('party')) {
-                        partyApiCalls.push(call);
-                    } else if (uri.includes('deposits') || uri.includes('accounts')) {
-                        depositsApiCalls.push(call);
-                    } else if (uri.includes('lendings') || uri.includes('loans')) {
-                        lendingApiCalls.push(call);
-                    }
-                });
-                
-                // Update all event displays
-                updateEvents('party');
-                updateEvents('deposits');
-                updateEvents('lending');
+            // Set up connect button with proper initial state
+            const connectBtn = _getElement(ids.connectButton);
+            if(connectBtn) {
+                connectBtn.disabled = false;
+                connectBtn.textContent = 'Connect';
+                // Ensure button starts with blue styling
+                connectBtn.className = connectBtn.className.replace(/bg-(red|green)-\d+/g, 'bg-blue-600').replace(/hover:bg-(red|green)-\d+/g, 'hover:bg-blue-700');
+                if (!connectBtn.className.includes('bg-blue-600')) {
+                    connectBtn.className += ' bg-blue-600 hover:bg-blue-700';
+                }
+                _addManagedEventListener(connectBtn, 'click', () => startEventStream(domain));
             }
-        } catch (e) {
-            console.error('Error loading headless data:', e);
-        }
-        */
+        });
+        _log('Event listeners set up for Headless V2.');
     }
 
-    // --- Initialization ---
-    function initHeadlessV2Tab() {
-        console.log("Initializing Headless V2 Tab...");
-        
-        // Set up event listeners
+    return {
+        _domReady: false,
+        _pollIntervalId: null,
+        _isActivating: false,
+        _KEY_ELEMENT_IDS_V2: [
+            'party-endpoint',
+            'party-send',
+            'party-request-payload',
+            'party-response',
+            'party-uri',
+            'party-method',
+            'party-connect',
+            'party-events',
+            'deposits-endpoint',
+            'deposits-send',
+            'deposits-request-payload',
+            'deposits-response',
+            'deposits-uri',
+            'deposits-method',
+            'deposits-connect',
+            'deposits-events',
+            'lending-endpoint',
+            'lending-send',
+            'lending-request-payload',
+            'lending-response',
+            'lending-uri',
+            'lending-method',
+            'lending-connect',
+            'lending-events',
+            'toggle-diagram',
+            'diagram-container'
+        ],
+        onInit: function() {
+            _log('Initializing...');
+            this._domReady = false; 
+            this._isActivating = false;
+            if (this._pollIntervalId) {
+                clearInterval(this._pollIntervalId);
+            }
+            this._pollIntervalId = null;
+        },
+
+        onActivate: function() {
+            _log('HeadlessV2 app activated.');
+            this._isActivating = true;
+            
+            // Clear any existing polling intervals
+            if (this._pollIntervalId) {
+                clearInterval(this._pollIntervalId);
+                this._pollIntervalId = null;
+            }
+            
+            // Check if DOM is already ready
+            if (this._checkDOMReadyV2()) {
+                _log('HeadlessV2 DOM already ready on activation.', 'info');
+                this._domReady = true;
+                this._initializeHeadlessV2View();
+            } else {
+                _log('HeadlessV2 DOM not ready on activation. Starting polling...', 'info');
+                this._domReady = false;
+                this._waitForHeadlessV2DOM();
+            }
+        },
+
+        onDeactivate: function(isUnloading) {
+            _log('HeadlessV2 app deactivated.');
+            this._isActivating = false;
+            
+            // Clear any polling intervals immediately
+            if (this._pollIntervalId) {
+                clearInterval(this._pollIntervalId);
+                this._pollIntervalId = null;
+                _log('HeadlessV2 DOM polling stopped due to deactivation.');
+            }
+            
+            // Clean up event listeners and resources
+            _removeAllManagedEventListeners();
+            
+            // Event streams are managed by BackendConnector, no need to clean up here
+            
+            _log('HeadlessV2 app cleanup completed.');
+        },
+
+        onDestroy: function(isUnloading) {
+            _log(`Destroying (isUnloading: ${isUnloading})...`);
+            this._isActivating = false;
+            if (this._pollIntervalId) {
+                clearInterval(this._pollIntervalId);
+                this._pollIntervalId = null;
+            }
+            this._domReady = false; 
+            _log('Destroyed.');
+        },
+
+        // --- Internal DOM Helper Methods (Moved and Updated) ---
+        _checkDOMReadyV2: function() {
+            for (const id of this._KEY_ELEMENT_IDS_V2) {
+                if (!document.getElementById(id)) {
+                    _log(`Element ${id} not found yet... (HeadlessV2)`, 'info'); 
+                    return false;
+                }
+            }
+            _log('All key DOM elements for HeadlessV2 found!', 'success');
+            return true;
+        },
+
+        _initializeHeadlessV2View: function() {
+            _log('Initializing HeadlessV2 View (DOM is ready)...');
+            this._domReady = true;
+            populateApiDropdowns();
         setupEventListeners();
-        
-        // Load data from backend
-        loadHeadlessData();
-        
-        // Populate dropdowns first
-        populateApiDropdowns(); // Call this before setting default values
+            _log('Headless V2 View setup complete.');
+        },
 
-        // Set default API for each column
-        const partyEndpointSelect = document.getElementById('party-endpoint');
-        if (partyEndpointSelect) {
-            partyEndpointSelect.value = 'createCustomer';
-            updateUri('party', 'createCustomer');
+        _waitForHeadlessV2DOM: function() {
+            if (this._domReady && this._isActivating) {
+                _log('_waitForHeadlessV2DOM: DOM already ready and still activating.', 'info');
+                this._initializeHeadlessV2View();
+                return;
+            }
+            if (!this._isActivating) {
+                 _log('_waitForHeadlessV2DOM: Not activating. Aborting DOM poll.', 'warn');
+                 if (this._pollIntervalId) clearInterval(this._pollIntervalId);
+                 this._pollIntervalId = null;
+                 return;
+            }
+
+            _log('_waitForHeadlessV2DOM: Starting to poll for DOM elements...');
+            
+            if (this._pollIntervalId) clearInterval(this._pollIntervalId);
+
+            let pollCount = 0;
+            const maxPolls = 80; // Increased from 40 to 80 (20 seconds)
+            const pollInterval = 250; // 250ms intervals
+            const self = this; // For setInterval context
+
+            this._pollIntervalId = setInterval(() => {
+                if (!self._isActivating) { 
+                    clearInterval(self._pollIntervalId);
+                    self._pollIntervalId = null;
+                    _log('Polling stopped (HeadlessV2): Tab deactivated during DOM check.', 'warn');
+                    return;
+                }
+                pollCount++;
+                _log(`HeadlessV2 DOM check attempt ${pollCount}/${maxPolls}`, 'info');
+                
+                if (self._checkDOMReadyV2()) { 
+                    clearInterval(self._pollIntervalId);
+                    self._pollIntervalId = null;
+                    _log('HeadlessV2 DOM ready! Initializing view...', 'success');
+                    self._initializeHeadlessV2View(); 
+                } else if (pollCount >= maxPolls) {
+                    clearInterval(self._pollIntervalId);
+                    self._pollIntervalId = null;
+                    _log('Failed to find all HeadlessV2 DOM elements after timeout.', 'error');
+                    const tabContentArea = document.getElementById('headless-v2-content-area') || document.getElementById('tab-content-area'); 
+                    if (tabContentArea && self._isActivating) { 
+                        tabContentArea.innerHTML = '<div class="p-4 text-red-500">Error: Headless V2 interface failed to load. Key elements missing.</div>';
+                    }
+                }
+            }, pollInterval);
         }
-        
-        const depositsEndpointSelect = document.getElementById('deposits-endpoint');
-        if (depositsEndpointSelect) {
-            depositsEndpointSelect.value = 'createCurrentAccount';
-            updateUri('deposits', 'createCurrentAccount');
-        }
-        
-        const lendingEndpointSelect = document.getElementById('lending-endpoint');
-        if (lendingEndpointSelect) {
-            lendingEndpointSelect.value = 'createLoan';
-            updateUri('lending', 'createLoan');
-        }
-        
-        // Make reload function available globally
-        window.reloadHeadlessData = loadHeadlessData;
-    }
-
-    // --- Global Cleanup Function --- 
-    window.cleanupCurrentTab = function() {
-        console.log("Running cleanup for Headless V2 Tab...");
-        
-        // Close all EventSource connections using the new cleanup mechanism
-        stopEventStream('party');
-        stopEventStream('deposits');
-        stopEventStream('lending');
-        
-        // Send cleanup request to backend for all connections
-        cleanupAllConnections();
-        
-        // Remove event listeners dynamically if they were added
-        const partyEndpoint = document.getElementById('party-endpoint');
-        if (partyEndpoint) partyEndpoint.replaceWith(partyEndpoint.cloneNode(true));
-        const partySend = document.getElementById('party-send');
-        if (partySend) partySend.replaceWith(partySend.cloneNode(true));
-        const partyConnect = document.getElementById('party-connect');
-        if (partyConnect) partyConnect.replaceWith(partyConnect.cloneNode(true));
-
-        const depositsEndpoint = document.getElementById('deposits-endpoint');
-        if (depositsEndpoint) depositsEndpoint.replaceWith(depositsEndpoint.cloneNode(true));
-        const depositsSend = document.getElementById('deposits-send');
-        if (depositsSend) depositsSend.replaceWith(depositsSend.cloneNode(true));
-        const depositsConnect = document.getElementById('deposits-connect');
-        if (depositsConnect) depositsConnect.replaceWith(depositsConnect.cloneNode(true));
-
-        const lendingEndpoint = document.getElementById('lending-endpoint');
-        if (lendingEndpoint) lendingEndpoint.replaceWith(lendingEndpoint.cloneNode(true));
-        const lendingSend = document.getElementById('lending-send');
-        if (lendingSend) lendingSend.replaceWith(lendingSend.cloneNode(true));
-        const lendingConnect = document.getElementById('lending-connect');
-        if (lendingConnect) lendingConnect.replaceWith(lendingConnect.cloneNode(true));
-
-        const toggleDiagramBtn = document.getElementById('toggle-diagram');
-        if (toggleDiagramBtn) {
-            toggleDiagramBtn.replaceWith(toggleDiagramBtn.cloneNode(true));
-        }
-        
-        // Remove the global functions
-        delete window.reloadHeadlessData;
-        delete window.cleanupCurrentTab; // Self-remove after execution if desired, or manage centrally
     };
-    
-    // Add page unload cleanup
-    window.addEventListener('beforeunload', function() {
-        cleanupAllConnections();
-    });
-    
-    window.addEventListener('unload', function() {
-        cleanupAllConnections();
-    });
+})();
 
-    // --- Initial Execution ---
-    // Ensure DOM is fully loaded before initializing
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initHeadlessV2Tab);
+// Register with TabManager
+function registerHeadlessV2App() {
+    if (window.TabManager) {
+        window.TabManager.registerTab('headless-v2', HeadlessV2Module);
+        console.log('[HeadlessV2Module] Successfully registered with TabManager');
+        return true;
     } else {
-        initHeadlessV2Tab();
+        console.warn('[HeadlessV2Module] TabManager not found yet. Will retry...');
+        return false;
     }
-})(); 
+}
+
+// Try to register immediately
+if (!registerHeadlessV2App()) {
+    // If TabManager not ready, wait and retry
+    let retryCount = 0;
+    const maxRetries = 50; // 5 seconds max
+    const retryInterval = setInterval(() => {
+        retryCount++;
+        if (registerHeadlessV2App()) {
+            clearInterval(retryInterval);
+        } else if (retryCount >= maxRetries) {
+            clearInterval(retryInterval);
+            console.error('[HeadlessV2Module] TabManager not found after maximum retries. Ensure tab-manager.js is loaded first.');
+        }
+    }, 100);
+}

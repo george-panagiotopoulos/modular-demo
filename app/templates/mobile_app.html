@@ -47,86 +47,58 @@
       </div>
     </div>
 
-    <!-- Customer Profile Section (Initially hidden, shown when Payments button is clicked) -->
-    <div id="profile-section" class="hidden bg-white rounded-lg shadow-md p-4">
-      <div class="flex justify-between items-center mb-3">
-        <h3 class="text-lg font-semibold text-gray-700 flex items-center">
+    <!-- Customer Profile Section -->
+    <div id="profile-section" class="hidden p-4">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-semibold text-gray-800 flex items-center">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
           </svg>
           Customer Profile
         </h3>
-        <button id="close-profile" class="text-sm bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-1 rounded-full flex items-center focus:outline-none focus:ring-2 focus:ring-gray-300">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-          Back
-        </button>
       </div>
-      <div id="profile-content" class="space-y-2">
+      <div id="profile-content" class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
         <div class="text-center text-gray-500 py-2">Loading profile...</div>
       </div>
     </div>
 
-    <!-- Transactions Section (Initially hidden) -->
-    <div id="transactions-section" class="hidden mt-6">
-        <div class="flex justify-between items-center mb-3">
-            <h3 class="text-xl font-semibold text-gray-700" id="transactions-title">Transactions</h3>
-             <button id="back-to-accounts" class="text-sm text-blue-600 hover:underline"> &lt; Back to Accounts</button>
-        </div>
-      <div id="transactions-list" class="bg-white p-4 rounded-lg shadow space-y-3 max-h-96 overflow-y-auto">
-        <!-- Transaction items will be loaded here by JS -->
-        <div class="text-center text-gray-500 py-4">Loading transactions...</div>
+    <!-- Transactions Section -->
+    <div id="transactions-section" class="hidden p-4">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-semibold text-gray-800">Transactions</h3>
+        <span id="transaction-account-name" class="text-sm text-gray-600"></span>
+      </div>
+      <div id="transactions-list" class="space-y-2">
+        <!-- Transactions will be populated here -->
       </div>
     </div>
 
-    <!-- Loan Details Section (Initially hidden) -->
-    <div id="loan-details-section" class="hidden mt-6">
-        <div class="flex justify-between items-center mb-3">
-            <h3 class="text-xl font-semibold text-gray-700" id="loan-details-title">Loan Details</h3>
-            <button id="back-to-loans-from-details" class="text-sm bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-1 rounded-full flex items-center focus:outline-none focus:ring-2 focus:ring-gray-300">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                Back
-            </button>
-        </div>
-        <div class="bg-white rounded-lg shadow-md overflow-hidden">
-            <div id="loan-details-info" class="p-4">
-                <!-- Loan details info will be placed here -->
-                <div class="text-center text-gray-500 py-4">Loading loan details...</div>
-            </div>
-            <div class="p-4 border-t border-gray-100">
-                <button id="view-payment-schedule-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                    View Payment Schedule
-                </button>
-            </div>
-        </div>
+    <!-- Loan Details Section -->
+    <div id="loan-details-section" class="hidden p-4">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-semibold text-gray-800">Loan Details</h3>
+      </div>
+      <div id="loan-details-info" class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <!-- Loan details will be populated here -->
+      </div>
+      <div class="mt-4">
+        <button id="view-payment-schedule-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+          View Payment Schedule
+        </button>
+      </div>
     </div>
 
-    <!-- Loan Schedule Section (Initially hidden) -->
-    <div id="loan-schedule-section" class="hidden mt-6">
-        <div class="flex justify-between items-center mb-3">
-            <h3 class="text-xl font-semibold text-gray-700" id="loan-schedule-title">Payment Schedule</h3>
-            <button id="back-to-loan-details" class="text-sm bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-1 rounded-full flex items-center focus:outline-none focus:ring-2 focus:ring-gray-300">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                Back
-            </button>
-        </div>
-        <div class="bg-white rounded-lg shadow-md overflow-hidden">
-            <div id="loan-schedule-info" class="bg-blue-50 p-4 border-b border-blue-100">
-                <!-- Loan summary info will be placed here -->
-            </div>
-            <div class="p-2">
-                <h4 class="text-sm font-medium text-gray-600 mb-2 px-2">Upcoming Payments</h4>
-                <div id="loan-schedule-list" class="space-y-2 max-h-96 overflow-y-auto p-2">
-                    <!-- Schedule items will be loaded here by JS -->
-                    <div class="text-center text-gray-500 py-4">Loading payment schedule...</div>
-                </div>
-            </div>
-        </div>
+    <!-- Loan Schedule Section -->
+    <div id="loan-schedule-section" class="hidden p-4">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-semibold text-gray-800">Payment Schedule</h3>
+      </div>
+      <div id="loan-schedule-info" class="mb-4">
+        <!-- Loan info will be populated here -->
+      </div>
+      <div id="loan-schedule-list" class="space-y-3 max-h-96 overflow-y-auto">
+        <!-- Schedule items will be populated here -->
+      </div>
     </div>
 
     <!-- Transfer Section (Initially hidden/modal?) -->

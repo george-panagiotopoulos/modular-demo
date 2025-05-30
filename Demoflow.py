@@ -20,13 +20,13 @@ load_dotenv()
 CREATE_CURRENT_ACCOUNT = True      # Default: Create current account
 CREATE_MORTGAGE = True           # Default: Create mortgage loan
 CREATE_CONSUMER_LOAN = True      # Optional: Create consumer loan (uncomment to enable)
-CREATE_TERM_DEPOSIT = False       # Optional: Create term deposit (uncomment to enable)
+CREATE_TERM_DEPOSIT = True       # Optional: Create term deposit (uncomment to enable)
 
 # Uncomment the line below to enable consumer loan creation
 # CREATE_CONSUMER_LOAN = True
 
 # Uncomment the line below to enable term deposit creation
-# CREATE_TERM_DEPOSIT = False
+# CREATE_TERM_DEPOSIT = True
 
 # =============================================================================
 
