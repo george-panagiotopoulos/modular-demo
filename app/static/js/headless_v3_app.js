@@ -63,10 +63,18 @@
     // Session management for concurrent connections
     let sessionId = null;
     let isInitialized = false;
+    let isTabActive = false; // Track if this tab is currently active
 
     // Global color mapping to ensure consistent colors across all streams
     let globalEventColorMap = {};
     let colorAssignmentIndex = 0; // Track next color to assign
+
+    // Store references to global event listeners for proper cleanup
+    let globalEventListeners = {
+        visibilitychange: null,
+        beforeunload: null,
+        hashchange: null
+    };
 
     // Generate or retrieve session ID
     function getSessionId() {
@@ -191,16 +199,54 @@
 
     // Page visibility change handler to cleanup connections when tab becomes hidden
     function handleVisibilityChange() {
-        if (document.hidden) {
-            console.log('Page hidden, cleaning up connections...');
+        // Only cleanup if this tab is currently active and the page becomes hidden
+        if (document.hidden && isTabActive) {
+            console.log('Page hidden while headless-v3 tab active, cleaning up connections...');
             cleanupAllConnections();
         }
     }
 
     // Beforeunload handler to cleanup connections when leaving page
     function handleBeforeUnload() {
-        console.log('Page unloading, cleaning up connections...');
-        cleanupAllConnections();
+        // Only cleanup if this tab is currently active
+        if (isTabActive) {
+            console.log('Page unloading while headless-v3 tab active, cleaning up connections...');
+            cleanupAllConnections();
+        }
+    }
+
+    // Add global event listeners only when tab is active
+    function addGlobalEventListeners() {
+        if (!globalEventListeners.visibilitychange) {
+            globalEventListeners.visibilitychange = handleVisibilityChange;
+            document.addEventListener('visibilitychange', globalEventListeners.visibilitychange);
+            console.log('[HeadlessV3] Added visibilitychange listener');
+        }
+        
+        if (!globalEventListeners.beforeunload) {
+            globalEventListeners.beforeunload = handleBeforeUnload;
+            window.addEventListener('beforeunload', globalEventListeners.beforeunload);
+            console.log('[HeadlessV3] Added beforeunload listener');
+        }
+        
+        // Note: hashchange is handled by TabManager, so we don't add it here
+    }
+
+    // Remove global event listeners when tab is not active
+    function removeGlobalEventListeners() {
+        if (globalEventListeners.visibilitychange) {
+            document.removeEventListener('visibilitychange', globalEventListeners.visibilitychange);
+            globalEventListeners.visibilitychange = null;
+            console.log('[HeadlessV3] Removed visibilitychange listener');
+        }
+        
+        if (globalEventListeners.beforeunload) {
+            window.removeEventListener('beforeunload', globalEventListeners.beforeunload);
+            globalEventListeners.beforeunload = null;
+            console.log('[HeadlessV3] Removed beforeunload listener');
+        }
+        
+        // Note: hashchange is handled by TabManager, so we don't remove it here
     }
 
     // Update component display
@@ -760,40 +806,32 @@
             // Apply selection button
             const applyBtn = document.getElementById('apply-selection');
             if (applyBtn) {
-                applyBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    applyComponentSelection();
-                });
+                applyBtn.addEventListener('click', applyComponentSelection);
+                console.log('[HeadlessV3] Apply selection button listener added');
             }
             
             // Demo creation button
             const demoBtn = document.getElementById('create-demo-data-v3');
             if (demoBtn) {
-                demoBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    handleCreateDemoData();
-                });
+                demoBtn.addEventListener('click', handleCreateDemoData);
+                console.log('[HeadlessV3] Create demo data button listener added');
             }
             
             // Connect and disconnect buttons for each component
-            ['component1', 'component2', 'component3'].forEach(componentKey => {
-                const connectButton = document.getElementById(`${componentKey}-connect`);
-                const disconnectButton = document.getElementById(`${componentKey}-disconnect`);
+            for (let i = 1; i <= 3; i++) {
+                const connectButton = document.getElementById(`component${i}-connect`);
+                const disconnectButton = document.getElementById(`component${i}-disconnect`);
                 
                 if (connectButton) {
-                    connectButton.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        connectToComponent(componentKey);
-                    });
+                    connectButton.addEventListener('click', () => connectToComponent(`component${i}`));
+                    console.log(`[HeadlessV3] Component ${i} connect button listener added`);
                 }
                 
                 if (disconnectButton) {
-                    disconnectButton.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        disconnectFromComponent(componentKey);
-                    });
+                    disconnectButton.addEventListener('click', () => disconnectFromComponent(`component${i}`));
+                    console.log(`[HeadlessV3] Component ${i} disconnect button listener added`);
                 }
-            });
+            }
             
             // Initialize with default selection
             applyComponentSelection();
@@ -821,44 +859,18 @@
     // Start polling immediately
     pollForHeadlessV3Content();
 
-    // Also try to initialize on DOMContentLoaded as backup
-    document.addEventListener('DOMContentLoaded', function() {
-        setTimeout(() => {
-            if (!isInitialized) {
-                if (isHeadlessV3ContentLoaded()) {
-                    initializeHeadlessV3();
-                }
-            }
-        }, 100);
-    });
-
-    // Add page visibility and unload handlers
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
-    // Add cleanup when navigating away from this tab
-    window.addEventListener('hashchange', function() {
-        if (!window.location.hash.includes('headless-v3')) {
-            console.log('Navigating away from headless-v3 tab, cleaning up...');
-            cleanupAllConnections();
-        }
-    });
-
-    // Global cleanup function for external access
-    window.cleanupHeadlessV3 = cleanupAllConnections;
-
-    // Mark as initialized at the end
-    window.headlessV3Initialized = true;
-
     // Create module object for TabManager registration with correct method names
     const HeadlessV3Module = {
         onInit: function() {
             console.log('[HeadlessV3Module] Initializing...');
-            // Initialization logic if needed
+            // Initialize the app when TabManager calls onInit
+            init();
         },
         
         onActivate: function(isRestoring = false) {
             console.log('[HeadlessV3Module] Activating...', isRestoring ? '(restoring)' : '');
+            isTabActive = true;
+            addGlobalEventListeners();
             if (!isInitialized && isHeadlessV3ContentLoaded()) {
                 initializeHeadlessV3();
             }
@@ -866,11 +878,15 @@
         
         onDeactivate: function(isUnloading = false) {
             console.log('[HeadlessV3Module] Deactivating...', isUnloading ? '(unloading)' : '');
+            isTabActive = false;
+            removeGlobalEventListeners();
             cleanupAllConnections();
         },
         
         onDestroy: function(isUnloading = false) {
             console.log('[HeadlessV3Module] Destroying...', isUnloading ? '(unloading)' : '');
+            isTabActive = false;
+            removeGlobalEventListeners();
             cleanupAllConnections();
         }
     };
@@ -881,5 +897,92 @@
         console.log('[HeadlessV3Module] Successfully registered with TabManager');
     } else {
         console.error('[HeadlessV3Module] TabManager not found. Ensure tab-manager.js is loaded first and correctly.');
+        // Fallback: initialize directly if TabManager is not available
+        setTimeout(() => {
+            if (!window.TabManager) {
+                console.log('[HeadlessV3Module] Fallback initialization without TabManager');
+                init();
+            }
+        }, 100);
+    }
+
+    // Mark as initialized at the end
+    window.headlessV3Initialized = true;
+
+    // Global cleanup function for external access
+    window.cleanupHeadlessV3 = cleanupAllConnections;
+
+    // Initialize the headless v3 app
+    function init() {
+        console.log('[HeadlessV3] Initializing headless v3 app...');
+        
+        // Check if we're currently on the headless-v3 tab
+        isTabActive = window.location.hash.includes('headless-v3');
+        console.log('[HeadlessV3] Tab active on init:', isTabActive);
+        
+        // Only add global event listeners if tab is active
+        // Note: hashchange is handled by TabManager, so we don't add it here
+        if (isTabActive) {
+            // Add only visibility and beforeunload listeners, not hashchange
+            if (!globalEventListeners.visibilitychange) {
+                globalEventListeners.visibilitychange = handleVisibilityChange;
+                document.addEventListener('visibilitychange', globalEventListeners.visibilitychange);
+                console.log('[HeadlessV3] Added visibilitychange listener');
+            }
+            
+            if (!globalEventListeners.beforeunload) {
+                globalEventListeners.beforeunload = handleBeforeUnload;
+                window.addEventListener('beforeunload', globalEventListeners.beforeunload);
+                console.log('[HeadlessV3] Added beforeunload listener');
+            }
+        }
+        
+        setupUI();
+        
+        // Expose global functions
+        window.HeadlessV3 = {
+            cleanupAllConnections: cleanupAllConnections,
+            getActiveConnections: () => Object.keys(activeConnections),
+            connectToComponent: connectToComponent,
+            disconnectFromComponent: disconnectFromComponent,
+            applyComponentSelection: applyComponentSelection
+        };
+        
+        console.log('[HeadlessV3] Initialization complete');
+    }
+
+    // Setup UI elements and event listeners
+    function setupUI() {
+        // Setup apply selection button
+        const applyBtn = document.getElementById('apply-selection');
+        if (applyBtn) {
+            applyBtn.addEventListener('click', applyComponentSelection);
+            console.log('[HeadlessV3] Apply selection button listener added');
+        }
+        
+        // Setup create demo data button
+        const createDemoBtn = document.getElementById('create-demo-data-v3');
+        if (createDemoBtn) {
+            createDemoBtn.addEventListener('click', handleCreateDemoData);
+            console.log('[HeadlessV3] Create demo data button listener added');
+        }
+        
+        // Setup component connect/disconnect buttons
+        for (let i = 1; i <= 3; i++) {
+            const connectBtn = document.getElementById(`component${i}-connect`);
+            const disconnectBtn = document.getElementById(`component${i}-disconnect`);
+            
+            if (connectBtn) {
+                connectBtn.addEventListener('click', () => connectToComponent(`component${i}`));
+                console.log(`[HeadlessV3] Component ${i} connect button listener added`);
+            }
+            
+            if (disconnectBtn) {
+                disconnectBtn.addEventListener('click', () => disconnectFromComponent(`component${i}`));
+                console.log(`[HeadlessV3] Component ${i} disconnect button listener added`);
+            }
+        }
+        
+        console.log('[HeadlessV3] UI setup complete');
     }
 })();

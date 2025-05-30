@@ -1,5 +1,178 @@
 console.log('[MobileAppModule] Script loaded and executing...');
 
+// ===== RADICAL NEW PARTY ID HANDLER - COMPLETELY ISOLATED =====
+// This is a standalone, bulletproof Party ID handler that works independently
+const PartyIdHandler = {
+    initialized: false,
+    
+    init() {
+        if (this.initialized) return;
+        console.log('[PartyIdHandler] Initializing...');
+        
+        // Wait for DOM to be ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => this.setup());
+        } else {
+            this.setup();
+        }
+    },
+    
+    setup() {
+        if (this.initialized) return;
+        
+        const applyBtn = document.getElementById('change-party-id') || 
+                        document.querySelector('[id*="party-id"]') ||
+                        document.querySelector('button[onclick*="party"]');
+        const partyInput = document.getElementById('party-id-input') ||
+                          document.querySelector('input[id*="party"]');
+        
+        if (applyBtn && partyInput) {
+            this.attachListeners(applyBtn, partyInput);
+            this.initialized = true;
+            console.log('[PartyIdHandler] Ready!');
+        } else {
+            // Only set up mutation observer if not already initialized
+            this.setupMutationObserver();
+        }
+    },
+    
+    attachListeners(applyBtn, partyInput) {
+        // Remove any existing listeners first
+        const newApplyBtn = applyBtn.cloneNode(true);
+        const newPartyInput = partyInput.cloneNode(true);
+        applyBtn.parentNode.replaceChild(newApplyBtn, applyBtn);
+        partyInput.parentNode.replaceChild(newPartyInput, partyInput);
+        
+        // Add click listener to apply button
+        newApplyBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.handlePartyIdChange(newPartyInput);
+        });
+        
+        // Add Enter key listener to input
+        newPartyInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                this.handlePartyIdChange(newPartyInput);
+            }
+        });
+        
+        this.initialized = true;
+    },
+    
+    setupMutationObserver() {
+        if (this.initialized) return;
+        
+        const observer = new MutationObserver((mutations) => {
+            if (this.initialized) {
+                observer.disconnect();
+                return;
+            }
+            
+            const applyBtn = document.getElementById('change-party-id');
+            const partyInput = document.getElementById('party-id-input');
+            
+            if (applyBtn && partyInput) {
+                observer.disconnect();
+                this.attachListeners(applyBtn, partyInput);
+            }
+        });
+        
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+        
+        // Stop observing after 10 seconds
+        setTimeout(() => {
+            if (!this.initialized) {
+                observer.disconnect();
+            }
+        }, 10000);
+    },
+    
+    handlePartyIdChange(partyInput) {
+        const newPartyId = partyInput.value.trim();
+        
+        if (!newPartyId) {
+            alert('Please enter a Party ID');
+            return;
+        }
+        
+        const currentPartyId = localStorage.getItem('currentPartyId') || '';
+        
+        if (newPartyId === currentPartyId) {
+            this.showSuccessMessage(newPartyId);
+            return;
+        }
+        
+        // Update party ID
+        localStorage.setItem('currentPartyId', newPartyId);
+        
+        // Visual feedback
+        partyInput.style.backgroundColor = '#dcfce7';
+        setTimeout(() => {
+            partyInput.style.backgroundColor = '';
+        }, 1000);
+        
+        this.showSuccessMessage(newPartyId);
+        
+        // Refresh data if MobileAppModule is available
+        if (window.MobileAppModule && typeof window.MobileAppModule._handlePartyIdChange === 'function') {
+            try {
+                window.MobileAppModule._partyId = newPartyId;
+                window.MobileAppModule._showHome();
+            } catch (error) {
+                console.error('[PartyIdHandler] Error refreshing data:', error);
+            }
+        }
+    },
+    
+    showSuccessMessage(partyId) {
+        // Remove any existing success message
+        const existing = document.querySelector('.party-id-success-message');
+        if (existing) existing.remove();
+        
+        const message = document.createElement('div');
+        message.className = 'party-id-success-message';
+        message.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #10b981;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            z-index: 10000;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        `;
+        message.textContent = `Party ID updated: ${partyId}`;
+        
+        document.body.appendChild(message);
+        
+        setTimeout(() => {
+            if (message.parentNode) {
+                message.parentNode.removeChild(message);
+            }
+        }, 3000);
+    }
+};
+
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => PartyIdHandler.init());
+} else {
+    PartyIdHandler.init();
+}
+
+// Also initialize on window load as backup
+window.addEventListener('load', () => PartyIdHandler.init());
+
+// ===== END OF RADICAL PARTY ID HANDLER =====
+
 const MobileAppModule = {
     // Private properties
     _accountsData: [],
@@ -1392,3 +1565,7 @@ if (!registerMobileApp()) {
 } else {
     console.log('[MobileAppModule] Registration successful on first attempt!');
 }
+
+// Expose MobileAppModule globally for the PartyIdHandler
+window.MobileAppModule = MobileAppModule;
+console.log('[MobileAppModule] Exposed to global window object for PartyIdHandler access');
