@@ -219,6 +219,7 @@ const ComponentStream = ({
 // Main Headless V3 Component
 const HeadlessV3 = () => {
   const [components, setComponents] = useState([]);
+  const [componentOrder, setComponentOrder] = useState([]); // New state for drag-and-drop order
   const [connectedComponents, setConnectedComponents] = useState(new Set());
   const [events, setEvents] = useState({});
   const [expandedEvents, setExpandedEvents] = useState({});
@@ -226,6 +227,8 @@ const HeadlessV3 = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [sessionId] = useState(`headless-v3-session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
+  const [draggedComponent, setDraggedComponent] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
   
   const backendUrlRef = useRef('http://localhost:8080'); // Our Express.js backend
   const eventSourcesRef = useRef({});
@@ -343,6 +346,10 @@ const HeadlessV3 = () => {
       
       if (data.success) {
         setComponents(data.data);
+        // Initialize component order if not already set
+        setComponentOrder(prevOrder => 
+          prevOrder.length === 0 ? data.data.map(comp => comp.key) : prevOrder
+        );
       } else {
         throw new Error(data.error || 'Failed to fetch components');
       }
@@ -593,6 +600,55 @@ const HeadlessV3 = () => {
     return null;
   };
 
+  // Handle drag and drop reordering
+  const handleDragStart = (e, componentKey, index) => {
+    setDraggedComponent({ key: componentKey, index });
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', componentKey);
+  };
+
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverIndex(index);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = (e, dropIndex) => {
+    e.preventDefault();
+    
+    if (!draggedComponent || draggedComponent.index === dropIndex) {
+      setDraggedComponent(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    const newOrder = [...componentOrder];
+    const [movedItem] = newOrder.splice(draggedComponent.index, 1);
+    newOrder.splice(dropIndex, 0, movedItem);
+    
+    setComponentOrder(newOrder);
+    setDraggedComponent(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedComponent(null);
+    setDragOverIndex(null);
+  };
+
+  // Get ordered components for rendering
+  const getOrderedComponents = () => {
+    if (componentOrder.length === 0) return components;
+    
+    return componentOrder
+      .map(key => components.find(comp => comp.key === key))
+      .filter(Boolean); // Remove any undefined components
+  };
+
   // Initialize component
   useEffect(() => {
     fetchComponents();
@@ -629,11 +685,21 @@ const HeadlessV3 = () => {
       )}
 
       <div className="components-grid">
-        {components.map(component => (
-          <div key={component.key} className="component-card">
+        {getOrderedComponents().map((component, index) => (
+          <div 
+            key={component.key}
+            className={`component-card ${draggedComponent?.key === component.key ? 'dragging' : ''} ${dragOverIndex === index ? 'drag-over' : ''}`}
+            draggable="true"
+            onDragStart={(e) => handleDragStart(e, component.key, index)}
+            onDragOver={(e) => handleDragOver(e, index)}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, index)}
+            onDragEnd={handleDragEnd}
+          >
             <div className="component-header">
               <h3>{component.name}</h3>
               <span className="component-version">{component.version}</span>
+              <span className="drag-handle">⋮⋮</span>
             </div>
             
             <p className="component-description">{component.description}</p>
@@ -678,7 +744,10 @@ const HeadlessV3 = () => {
               {connectedComponents.has(component.key) ? (
                 <button 
                   className="disconnect-btn"
-                  onClick={() => disconnectFromComponent(component.key)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    disconnectFromComponent(component.key);
+                  }}
                   disabled={loading}
                 >
                   🔌 Disconnect
@@ -686,7 +755,10 @@ const HeadlessV3 = () => {
               ) : (
                 <button 
                   className="connect-btn"
-                  onClick={() => connectToComponent(component.key)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    connectToComponent(component.key);
+                  }}
                   disabled={loading}
                 >
                   🔗 Connect to Event Hub

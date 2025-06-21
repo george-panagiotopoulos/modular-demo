@@ -32,7 +32,11 @@
   background: linear-gradient(135deg, var(--light-gray) 0%, #f0f2f5 100%);
   font-family: var(--font-family);
   color: var(--text-primary);
+  width: 90vw; /* 90% of viewport width */
+  max-width: 1400px; /* Maximum width for very large screens */
+  margin: 0 auto; /* Center the container */
   padding: 2rem;
+  box-sizing: border-box; /* Include padding in width calculation */
 }
 
 /* ========================================
@@ -102,7 +106,7 @@
    ======================================== */
 .components-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+  grid-template-columns: repeat(3, 1fr); /* Exactly 3 columns */
   gap: 2rem;
   margin-bottom: 2rem;
 }
@@ -118,11 +122,47 @@
   border: 1px solid #e2e8f0;
   transition: var(--transition);
   overflow: hidden;
+  position: relative;
 }
 
 .component-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--hover-shadow);
+}
+
+/* Drag and Drop Styles */
+.component-card.dragging {
+  transform: rotate(2deg);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+  z-index: 1000;
+  opacity: 0.8;
+}
+
+.component-card.drag-over {
+  border: 2px dashed var(--temenos-teal);
+  background: rgba(92, 184, 178, 0.05);
+  transform: scale(1.02);
+}
+
+.drag-handle {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  color: var(--text-secondary);
+  font-size: 1.2rem;
+  cursor: grab;
+  opacity: 0.6;
+  transition: var(--transition);
+  user-select: none;
+}
+
+.drag-handle:hover {
+  opacity: 1;
+  color: var(--temenos-teal);
+}
+
+.drag-handle:active {
+  cursor: grabbing;
 }
 
 .component-header {
@@ -133,6 +173,7 @@
   align-items: flex-start;
   flex-wrap: wrap;
   gap: 1rem;
+  position: relative;
 }
 
 .component-header h3 {
@@ -589,13 +630,15 @@
    ======================================== */
 @media (max-width: 1200px) {
   .components-grid {
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    grid-template-columns: repeat(2, 1fr); /* 2 columns on medium screens */
+    gap: 1.5rem;
   }
 }
 
 @media (max-width: 768px) {
   .headless-v3-container {
     padding: 1rem;
+    width: 95vw; /* Slightly wider on mobile for better use of space */
   }
   
   .headless-v3-header {
@@ -615,7 +658,7 @@
   }
   
   .components-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr; /* Single column on mobile */
     gap: 1.5rem;
   }
   
