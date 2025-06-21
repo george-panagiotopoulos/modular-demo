@@ -221,36 +221,118 @@ const HeadlessV3 = () => {
   const [components, setComponents] = useState([]);
   const [connectedComponents, setConnectedComponents] = useState(new Set());
   const [events, setEvents] = useState({});
+  const [expandedEvents, setExpandedEvents] = useState({});
   const [stats, setStats] = useState({ sessions: { active: 0 }, connections: { total: 0 } });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [sessionId] = useState(() => `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
+  const [sessionId] = useState(`headless-v3-session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
   
   const backendUrlRef = useRef('http://localhost:8080'); // Our Express.js backend
   const eventSourcesRef = useRef({});
   const maxEventsPerComponent = 50;
+  
+  // Global color mapping to ensure consistent colors across all streams (matching original)
+  const globalEventColorMapRef = useRef({});
+  const colorAssignmentIndexRef = useRef(0);
+  
+  // Expanded color palette with 30 distinct colors for better event type differentiation (from original)
+  const eventColorPalette = [
+    '#3B82F6', // Blue
+    '#10B981', // Green
+    '#F59E0B', // Yellow
+    '#EF4444', // Red
+    '#8B5CF6', // Purple
+    '#06B6D4', // Cyan
+    '#F97316', // Orange
+    '#84CC16', // Lime
+    '#EC4899', // Pink
+    '#6B7280', // Gray
+    '#14B8A6', // Teal
+    '#F472B6', // Hot Pink
+    '#A855F7', // Violet
+    '#22C55E', // Emerald
+    '#FB923C', // Amber
+    '#38BDF8', // Sky Blue
+    '#FBBF24', // Golden Yellow
+    '#F87171', // Light Red
+    '#A78BFA', // Light Purple
+    '#34D399', // Light Green
+    '#60A5FA', // Light Blue
+    '#FBBF24', // Amber
+    '#FB7185', // Rose
+    '#C084FC', // Lavender
+    '#4ADE80', // Light Lime
+    '#FACC15', // Bright Yellow
+    '#F472B6', // Magenta
+    '#06B6D4', // Bright Cyan
+    '#8B5CF6', // Indigo
+    '#EAB308'  // Gold
+  ];
 
-  // Event type color mapping (from original headless v2)
-  const eventColors = {
-    'CustomerCreated': '#4CAF50',
-    'CustomerUpdated': '#2196F3', 
-    'PartyLinked': '#FF9800',
-    'AccountOpened': '#9C27B0',
-    'DepositMade': '#4CAF50',
-    'AccountClosed': '#F44336',
-    'LoanCreated': '#3F51B5',
-    'PaymentProcessed': '#4CAF50',
-    'LoanClosed': '#FF5722',
-    'EventStored': '#607D8B',
-    'EventReplayed': '#795548',
-    'SnapshotCreated': '#009688',
-    'MessageTransformed': '#E91E63',
-    'ExternalCallMade': '#FF9800',
-    'DataSynced': '#4CAF50',
-    'PositionUpdated': '#2196F3',
-    'TradeExecuted': '#4CAF50',
-    'PortfolioRebalanced': '#9C27B0',
-    'default': '#757575'
+  // Get color for event type (matching original logic)
+  const getEventColor = (eventType) => {
+    // Check if we already have a color assigned to this event type
+    if (globalEventColorMapRef.current[eventType]) {
+      return globalEventColorMapRef.current[eventType];
+    }
+    
+    // Sequential assignment - no collisions possible
+    const selectedColor = eventColorPalette[colorAssignmentIndexRef.current % eventColorPalette.length];
+    
+    // Store the color mapping globally for this session
+    globalEventColorMapRef.current[eventType] = selectedColor;
+    
+    // Move to next color for the next new event type
+    colorAssignmentIndexRef.current++;
+    
+    console.log(`Event type: "${eventType}" -> Sequential Index: ${colorAssignmentIndexRef.current - 1} -> Color: ${selectedColor}`);
+    console.log(`Total unique event types seen: ${Object.keys(globalEventColorMapRef.current).length}`);
+    
+    return selectedColor;
+  };
+
+  // Format timestamp like original (full date/time format)
+  const formatTimestamp = (timestamp) => {
+    if (!timestamp) return new Date().toLocaleString();
+    
+    let date;
+    if (typeof timestamp === 'string' && timestamp.includes(':') && !timestamp.includes('-')) {
+      // Backend sends timestamp as H:M:S format, convert to full datetime
+      const today = new Date();
+      const timeStr = timestamp;
+      const [hours, minutes, seconds] = timeStr.split(':');
+      today.setHours(parseInt(hours), parseInt(minutes), parseInt(seconds));
+      date = today;
+    } else {
+      date = new Date(timestamp);
+    }
+    
+    return date.toLocaleString('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
+    });
+  };
+
+  // Format JSON for display (matching original)
+  const formatJSON = (json) => {
+    if (typeof json === 'string') {
+      try {
+        json = JSON.parse(json);
+      } catch (e) {
+        return json; // Return as-is if not valid JSON
+      }
+    }
+    
+    if (typeof json === 'object' && json !== null) {
+      return JSON.stringify(json, null, 2);
+    }
+    
+    return String(json);
   };
 
   // Fetch available components
@@ -377,119 +459,58 @@ const HeadlessV3 = () => {
     }
   };
 
-  // Handle incoming events (enhanced visualization from headless v2)
-  const handleIncomingEvent = (componentKey, eventData) => {
+  // Limit event count in container (matching original)
+  const limitEventCount = (componentKey, maxCount = 25) => {
     setEvents(prev => {
       const componentEvents = prev[componentKey] || [];
-      
-      if (eventData.type === 'event') {
-        const newEvent = {
-          ...eventData,
-          id: `${componentKey}-${Date.now()}-${Math.random()}`,
-          timestamp: eventData.data.timestamp || new Date().toLocaleTimeString('en-US', {
-            hour12: false,
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit'
-          }),
-          expanded: false
-        };
-
-        // Add new event and limit to maxEventsPerComponent
-        const updatedEvents = [newEvent, ...componentEvents].slice(0, maxEventsPerComponent);
-        
+      if (componentEvents.length > maxCount) {
         return {
           ...prev,
-          [componentKey]: updatedEvents
-        };
-      } else if (eventData.type === 'info' || eventData.type === 'error') {
-        const newEvent = {
-          ...eventData,
-          id: `${componentKey}-${Date.now()}-${Math.random()}`,
-          timestamp: new Date().toLocaleTimeString('en-US', {
-            hour12: false,
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit'
-          }),
-          expanded: false
-        };
-
-        const updatedEvents = [newEvent, ...componentEvents].slice(0, maxEventsPerComponent);
-        
-        return {
-          ...prev,
-          [componentKey]: updatedEvents
+          [componentKey]: componentEvents.slice(0, maxCount)
         };
       }
-      
       return prev;
     });
   };
 
-  // Toggle event details expansion
+  const handleIncomingEvent = (componentKey, eventData) => {
+    if (eventData.type === 'heartbeat') {
+      return; // Don't store heartbeat events
+    }
+
+    const eventWithId = {
+      ...eventData,
+      id: `event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    };
+
+    setEvents(prev => {
+      const newEvents = [eventWithId, ...(prev[componentKey] || [])];
+      return {
+        ...prev,
+        [componentKey]: newEvents
+      };
+    });
+
+    // Limit events after adding new one
+    setTimeout(() => limitEventCount(componentKey, 25), 0);
+  };
+
+  // Toggle event expansion
   const toggleEventExpansion = (componentKey, eventId) => {
-    setEvents(prev => ({
+    const key = `${componentKey}-${eventId}`;
+    setExpandedEvents(prev => ({
       ...prev,
-      [componentKey]: prev[componentKey].map(event =>
-        event.id === eventId ? { ...event, expanded: !event.expanded } : event
-      )
+      [key]: !prev[key]
     }));
   };
 
-  // Format JSON for display (from original headless v2)
-  const formatJSONForDisplay = (obj, indent = 0) => {
-    if (obj === null) return <span className="json-null">null</span>;
-    if (typeof obj === 'undefined') return <span className="json-undefined">undefined</span>;
-    if (typeof obj === 'string') return <span className="json-string">"{obj}"</span>;
-    if (typeof obj === 'number') return <span className="json-number">{obj}</span>;
-    if (typeof obj === 'boolean') return <span className="json-boolean">{obj.toString()}</span>;
-    
-    if (Array.isArray(obj)) {
-      if (obj.length === 0) return <span className="json-array">[]</span>;
-      
-      return (
-        <div className="json-array">
-          <span>[</span>
-          {obj.map((item, index) => (
-            <div key={index} style={{ marginLeft: `${(indent + 1) * 20}px` }}>
-              {formatJSONForDisplay(item, indent + 1)}
-              {index < obj.length - 1 && <span>,</span>}
-            </div>
-          ))}
-          <span style={{ marginLeft: `${indent * 20}px` }}>]</span>
-        </div>
-      );
-    }
-    
-    if (typeof obj === 'object') {
-      const keys = Object.keys(obj);
-      if (keys.length === 0) return <span className="json-object">{'{}'}</span>;
-      
-      return (
-        <div className="json-object">
-          <span>{'{'}</span>
-          {keys.map((key, index) => (
-            <div key={key} style={{ marginLeft: `${(indent + 1) * 20}px` }}>
-              <span className="json-key">"{key}"</span>: {formatJSONForDisplay(obj[key], indent + 1)}
-              {index < keys.length - 1 && <span>,</span>}
-            </div>
-          ))}
-          <span style={{ marginLeft: `${indent * 20}px` }}>{'}'}</span>
-        </div>
-      );
-    }
-    
-    return <span>{String(obj)}</span>;
-  };
-
-  // Render event summary (enhanced from headless v2)
+  // Render event summary (matching original displayEventSummary function)
   const renderEventSummary = (componentKey, event) => {
     if (event.type === 'info') {
       return (
         <div key={event.id} className="event-item info-event">
           <div className="event-header">
-            <span className="event-timestamp">{event.timestamp}</span>
+            <span className="event-timestamp">{formatTimestamp(event.timestamp)}</span>
             <span className="event-type info">INFO</span>
             <span className="event-message">{event.message}</span>
           </div>
@@ -501,7 +522,7 @@ const HeadlessV3 = () => {
       return (
         <div key={event.id} className="event-item error-event">
           <div className="event-header">
-            <span className="event-timestamp">{event.timestamp}</span>
+            <span className="event-timestamp">{formatTimestamp(event.timestamp)}</span>
             <span className="event-type error">ERROR</span>
             <span className="event-message">{event.message}</span>
           </div>
@@ -514,51 +535,54 @@ const HeadlessV3 = () => {
     }
 
     if (event.type === 'event' && event.data) {
-      const { topic, payload } = event.data;
+      const { topic, payload, partition, offset, key } = event.data;
       
-      // Extract event type from payload
-      let eventType = 'Unknown';
-      let businessKey = '';
+      // Extract event information - matching original logic
+      const timestamp = formatTimestamp(event.timestamp || (payload && payload.time));
+      const topicName = topic || 'Unknown Topic';
+      
+      // Extract type and businesskey from payload - matching original extraction logic
+      let eventType = 'Unknown Type';
+      let businessKey = 'Unknown Business Key';
       
       if (payload && typeof payload === 'object') {
-        eventType = payload.eventType || payload.type || payload.event_type || 'Event';
-        businessKey = payload.businessKey || payload.id || payload.key || '';
+        eventType = payload.type || payload.eventType || payload.event_type || 'Unknown Type';
+        businessKey = payload.businesskey || payload.businessKey || payload.id || payload.key || 'Unknown Business Key';
       }
-
-      const eventColor = eventColors[eventType] || eventColors.default;
+      
+      // Generate a color based on event type - using original color logic
+      const eventColor = getEventColor(eventType);
+      
+      const expansionKey = `${componentKey}-${event.id}`;
+      const isExpanded = expandedEvents[expansionKey];
 
       return (
-        <div key={event.id} className="event-item data-event">
-          <div 
-            className="event-header clickable"
+        <div key={event.id} className="event-wrapper">
+          {/* Summary button - matching original styling */}
+          <button
+            className="event-summary-button"
+            style={{ backgroundColor: eventColor }}
             onClick={() => toggleEventExpansion(componentKey, event.id)}
           >
-            <span className="event-timestamp">{event.timestamp}</span>
-            <span 
-              className="event-type" 
-              style={{ backgroundColor: eventColor, color: 'white' }}
-            >
-              {eventType}
-            </span>
-            <span className="event-topic">{topic}</span>
-            {businessKey && <span className="event-business-key">{businessKey}</span>}
-            <span className={`expand-icon ${event.expanded ? 'expanded' : ''}`}>▼</span>
-          </div>
+            <div className="event-summary-timestamp">{timestamp}</div>
+            <div className="event-summary-topic">Topic: {topicName}</div>
+            <div className="event-summary-type">Type: {eventType}</div>
+            <div className="event-summary-business-key">Business Key: {businessKey}</div>
+          </button>
           
-          {event.expanded && (
-            <div className="event-details">
+          {/* Full event details container - matching original structure */}
+          {isExpanded && (
+            <div className="event-details-container">
+              <div className="event-details-header">Full Event Details:</div>
               <div className="event-metadata">
-                <div><strong>Topic:</strong> {topic}</div>
-                <div><strong>Partition:</strong> {event.data.partition}</div>
-                <div><strong>Offset:</strong> {event.data.offset}</div>
-                {event.data.key && <div><strong>Key:</strong> {event.data.key}</div>}
+                <div><span className="metadata-label">Topic:</span> {topic}</div>
+                <div><span className="metadata-label">Partition:</span> {partition}</div>
+                <div><span className="metadata-label">Offset:</span> {offset}</div>
+                {key && <div><span className="metadata-label">Key:</span> {key}</div>}
               </div>
-              
-              <div className="event-payload">
-                <strong>Payload:</strong>
-                <div className="json-display">
-                  {formatJSONForDisplay(payload)}
-                </div>
+              <div className="event-payload-section">
+                <div className="payload-label">Payload:</div>
+                <pre className="payload-json">{formatJSON(payload)}</pre>
               </div>
             </div>
           )}
@@ -622,7 +646,7 @@ const HeadlessV3 = () => {
                     <span 
                       className="event-type-tag"
                       style={{ 
-                        backgroundColor: eventColors[component.key] || eventColors.default,
+                        backgroundColor: getEventColor(component.key),
                         color: 'white'
                       }}
                     >
@@ -634,7 +658,7 @@ const HeadlessV3 = () => {
                         key={eventType} 
                         className="event-type-tag"
                         style={{ 
-                          backgroundColor: eventColors[eventType] || eventColors.default,
+                          backgroundColor: getEventColor(eventType),
                           color: 'white'
                         }}
                       >
