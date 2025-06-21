@@ -40,22 +40,6 @@
   border: 0;
 }
 
-.skip-link {
-  position: absolute;
-  top: -40px;
-  left: 6px;
-  background: var(--temenos-navy);
-  color: white;
-  padding: 8px;
-  text-decoration: none;
-  border-radius: 4px;
-  z-index: 1000;
-}
-
-.skip-link:focus {
-  top: 6px;
-}
-
 /* ========================================
    Main Container
    ======================================== */
@@ -159,83 +143,6 @@
 }
 
 /* ========================================
-   Header Section
-   ======================================== */
-.demo-flow-header {
-  background: linear-gradient(135deg, var(--temenos-teal) 0%, var(--temenos-purple) 100%);
-  color: white;
-  padding: 2rem 1rem;
-  text-align: center;
-  position: relative;
-  box-shadow: var(--box-shadow);
-  animation: slideInDown 0.6s ease-out;
-}
-
-.back-button {
-  position: absolute;
-  top: 1rem;
-  left: 1rem;
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-  border: none;
-  padding: 0.75rem 1rem;
-  border-radius: var(--border-radius);
-  font-family: var(--font-family);
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: var(--transition);
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.back-button:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: translateX(-2px);
-}
-
-.back-button:focus {
-  outline: 2px solid white;
-  outline-offset: 2px;
-}
-
-.back-arrow {
-  font-size: 1.2rem;
-}
-
-.header-content {
-  max-width: 800px;
-  margin: 0 auto;
-  padding-top: 1rem;
-}
-
-.header-icon {
-  font-size: 4rem;
-  margin-bottom: 1rem;
-  animation: pulse 2s infinite;
-}
-
-.demo-flow-header h1 {
-  font-size: 3rem;
-  font-weight: 700;
-  margin: 0 0 1rem 0;
-  letter-spacing: -0.02em;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.header-subtitle {
-  font-size: 1.3rem;
-  font-weight: 400;
-  margin: 0;
-  opacity: 0.9;
-}
-
-@keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-}
-
-/* ========================================
    Main Content
    ======================================== */
 .demo-flow-main {
@@ -247,6 +154,17 @@
 
 .demo-flow-content {
   max-width: 1000px;
+  width: 100%;
+}
+
+/* Allow HeadlessV3 to use full width when active */
+.demo-flow-content:has(.headless-v3-container) {
+  max-width: none;
+}
+
+/* Fallback for browsers that don't support :has() */
+.demo-flow-content.event-stream-active {
+  max-width: none;
   width: 100%;
 }
 
@@ -421,14 +339,6 @@
    Responsive Design
    ======================================== */
 @media (max-width: 1200px) {
-  .demo-flow-header h1 {
-    font-size: 2.5rem;
-  }
-  
-  .header-subtitle {
-    font-size: 1.2rem;
-  }
-  
   .welcome-section h2 {
     font-size: 2rem;
   }
@@ -439,28 +349,6 @@
 }
 
 @media (max-width: 768px) {
-  .demo-flow-header {
-    padding: 1.5rem 1rem;
-  }
-  
-  .back-button {
-    position: static;
-    margin-bottom: 1rem;
-    align-self: flex-start;
-  }
-  
-  .header-content {
-    padding-top: 0;
-  }
-  
-  .demo-flow-header h1 {
-    font-size: 2rem;
-  }
-  
-  .header-subtitle {
-    font-size: 1.1rem;
-  }
-  
   .demo-flow-main {
     padding: 2rem 1rem;
   }
@@ -494,14 +382,6 @@
 }
 
 @media (max-width: 480px) {
-  .demo-flow-header h1 {
-    font-size: 1.8rem;
-  }
-  
-  .header-icon {
-    font-size: 3rem;
-  }
-  
   .welcome-section h2 {
     font-size: 1.5rem;
   }
@@ -529,25 +409,19 @@
     transition-duration: 0.01ms !important;
   }
   
-  .header-icon {
-    animation: none;
-  }
-  
   .spinner {
     animation: none;
   }
 }
 
+/* ========================================
+   High Contrast Mode
+   ======================================== */
 @media (prefers-contrast: high) {
   :root {
-    --light-gray: #FFFFFF;
+    --light-gray: #000000;
     --medium-gray: #F0F0F0;
     --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-  }
-  
-  .demo-flow-header {
-    background: var(--temenos-navy);
-    border-bottom: 3px solid var(--temenos-teal);
   }
   
   .coming-soon-section {
@@ -601,16 +475,6 @@
   .demo-flow-container {
     background: white;
     color: black;
-  }
-  
-  .demo-flow-header {
-    background: none;
-    color: black;
-    border-bottom: 2px solid black;
-  }
-  
-  .back-button {
-    display: none;
   }
   
   .placeholder-actions {

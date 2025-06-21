@@ -152,6 +152,9 @@ The dashboard features four main banking product modules:
 - Remove accessibility features
 - Modify the Temenos branding theme
 - Create temporary files in the root directory
+- **NEVER CREATE OR USE MOCK DATA FOR KAFKA EVENTS OR API RESPONSES** - All event streaming and API data must be real or from actual backend services
+- Generate fake/mock Kafka events, simulated API responses, or placeholder data for production flows
+- Use hardcoded mock data in EventStream components or backend services
 
 ### ALWAYS:
 - Run tests after making changes: `npm test`
@@ -161,6 +164,8 @@ The dashboard features four main banking product modules:
 - Update tests when changing component behavior
 - Respect the established import paths
 - Clean up temporary files after development
+- **USE REAL DATA SOURCES** - Connect to actual Kafka topics, real APIs, and live backend services
+- Remove any existing mock data generators or simulators from production code paths
 
 ## TESTING COMMANDS
 

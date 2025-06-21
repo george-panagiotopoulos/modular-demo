@@ -32,6 +32,9 @@ body {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   position: relative;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .app-header::before {
@@ -89,6 +92,12 @@ main[role="main"] {
   .app-header h1 {
     font-size: 2rem;
   }
+  
+  .app-back-button {
+    left: 1rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -98,6 +107,12 @@ main[role="main"] {
   
   .app-header h1 {
     font-size: 1.75rem;
+  }
+  
+  .app-back-button {
+    left: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
   }
 }
 
@@ -119,4 +134,36 @@ main[role="main"] {
   .app-header {
     background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
   }
+}
+
+.app-back-button {
+  position: absolute;
+  left: 2rem;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: none;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  z-index: 2;
+}
+
+.app-back-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateX(-2px);
+}
+
+.app-back-button:focus {
+  outline: 2px solid white;
+  outline-offset: 2px;
+}
+
+.back-arrow {
+  font-size: 1.2rem;
 } 

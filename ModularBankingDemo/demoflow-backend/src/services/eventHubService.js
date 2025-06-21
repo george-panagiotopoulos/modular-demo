@@ -70,7 +70,7 @@ class EventHubService {
 
     try {
       // Create unique consumer group for this session and component
-      const groupId = `headless-v3-${component}-${sessionId}-${Date.now()}`;
+      const groupId = `event-stream-${component}-${sessionId}-${Date.now()}`;
       const consumer = this.kafka.consumer({ 
         groupId,
         sessionTimeout: 30000,

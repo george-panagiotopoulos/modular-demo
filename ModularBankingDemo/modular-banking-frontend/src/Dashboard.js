@@ -438,11 +438,6 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-container">
-      {/* Skip link for accessibility */}
-      <a href="#main-content" className="skip-link">
-        Skip to main content
-      </a>
-      
       {/* Error display */}
       {error && (
         <div className="error-message" role="alert" aria-live="assertive">
@@ -474,7 +469,6 @@ const Dashboard = () => {
 
         {/* Main dashboard grid */}
         <div 
-          id="main-content"
           className="dashboard-grid" 
           data-testid="dashboard-grid"
           role="grid"

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import HeadlessV3 from './components/HeadlessV3';
+import EventStream from './components/EventStream';
 import './DemoFlow.css';
 
 // Loading component
@@ -27,10 +27,6 @@ const DemoFlow = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  const handleBackClick = () => {
-    navigate('/');
-  };
-
   const handleKeyDown = (event) => {
     if (event.key === 'Escape') {
       navigate('/');
@@ -41,7 +37,7 @@ const DemoFlow = () => {
   useEffect(() => {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [navigate]);
 
   if (loading) {
     return (
@@ -57,8 +53,8 @@ const DemoFlow = () => {
   // Tab content renderer
   const renderTabContent = () => {
     switch (activeTab) {
-      case 'headless-v3':
-        return <HeadlessV3 />;
+      case 'event-stream':
+        return <EventStream />;
       case 'mobile-app':
         return (
           <div className="tab-content">
@@ -113,13 +109,13 @@ const DemoFlow = () => {
             <div className="demo-features">
               <div className="feature-card">
                 <div className="feature-icon">🚀</div>
-                <h3>Headless v3 Event Streaming</h3>
+                <h3>Event Stream</h3>
                 <p>Real-time component event monitoring with dynamic component selection and live event feeds.</p>
                 <button 
                   className="feature-button"
-                  onClick={() => setActiveTab('headless-v3')}
+                  onClick={() => setActiveTab('event-stream')}
                 >
-                  Try Headless v3
+                  Try Event Stream
                 </button>
               </div>
 
@@ -186,11 +182,6 @@ const DemoFlow = () => {
       role="main"
       data-testid="demo-flow-container"
     >
-      {/* Skip link for accessibility */}
-      <a href="#main-content" className="skip-link">
-        Skip to main content
-      </a>
-      
       {/* Error display */}
       {error && (
         <div className="error-message" role="alert" aria-live="assertive">
@@ -206,23 +197,6 @@ const DemoFlow = () => {
         </div>
       )}
 
-      {/* Header Section */}
-      <div className="demo-flow-header">
-        <button 
-          className="back-button"
-          onClick={handleBackClick}
-          aria-label="Back to Dashboard"
-        >
-          <span className="back-arrow" aria-hidden="true">←</span>
-          Back to Dashboard
-        </button>
-        <div className="header-content">
-          <div className="header-icon" aria-hidden="true">🚀</div>
-          <h1 id="main-content">Modular Banking Demo</h1>
-          <p className="header-subtitle">Experience the Complete Banking Journey</p>
-        </div>
-      </div>
-
       {/* Tab Navigation */}
       {activeTab !== 'overview' && (
         <nav className="tab-navigation" role="tablist">
@@ -236,13 +210,13 @@ const DemoFlow = () => {
             Overview
           </button>
           <button
-            className={`tab-button ${activeTab === 'headless-v3' ? 'active' : ''}`}
-            onClick={() => setActiveTab('headless-v3')}
+            className={`tab-button ${activeTab === 'event-stream' ? 'active' : ''}`}
+            onClick={() => setActiveTab('event-stream')}
             role="tab"
-            aria-selected={activeTab === 'headless-v3'}
+            aria-selected={activeTab === 'event-stream'}
           >
             <span className="tab-icon">🚀</span>
-            Headless v3
+            Event Stream
           </button>
           <button
             className={`tab-button ${activeTab === 'mobile-app' ? 'active' : ''}`}
@@ -289,7 +263,7 @@ const DemoFlow = () => {
 
       {/* Main Content */}
       <main className="demo-flow-main">
-        <div className="demo-flow-content" role="tabpanel">
+        <div className={`demo-flow-content ${activeTab === 'event-stream' ? 'event-stream-active' : ''}`} role="tabpanel">
           {renderTabContent()}
         </div>
       </main>

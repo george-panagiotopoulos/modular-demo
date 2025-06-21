@@ -35,12 +35,6 @@ const mockGetComputedStyle = (element) => {
     styleObject.cursor = 'pointer';
   }
   
-  if (className.includes('back-button')) {
-    styleObject.backgroundColor = 'rgb(40, 50, 117)'; // #283275
-    styleObject.color = 'rgb(255, 255, 255)';
-    styleObject.cursor = 'pointer';
-  }
-  
   // Add getPropertyValue method
   styleObject.getPropertyValue = (prop) => {
     const camelCaseProp = prop.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
@@ -56,49 +50,29 @@ Object.defineProperty(window, 'getComputedStyle', {
 });
 
 describe('SupportingServices Component', () => {
-  // Mock navigation function for back button
-  const mockNavigateBack = jest.fn();
-  
-  beforeEach(() => {
-    mockNavigateBack.mockClear();
-  });
-
-  test('renders Supporting Services standalone page', () => {
-    render(<SupportingServices onNavigateBack={mockNavigateBack} />);
+  test('renders Supporting Services page with correct sections', () => {
+    render(<SupportingServices />);
     
-    // Check for main page title
-    expect(screen.getByText(/Supporting Services/i)).toBeInTheDocument();
-    expect(screen.getByText(/Infrastructure Layer/i)).toBeInTheDocument();
-  });
-
-  test('displays back button with correct styling and functionality', async () => {
-    const user = userEvent.setup();
-    render(<SupportingServices onNavigateBack={mockNavigateBack} />);
+    // Check for Business Services and Technical Services sections using more specific queries
+    const businessServicesSection = screen.getByTestId('business-services-section');
+    expect(within(businessServicesSection).getByText('Business Services')).toBeInTheDocument();
     
-    const backButton = screen.getByRole('button', { name: /back to dashboard/i });
-    expect(backButton).toBeInTheDocument();
-    expect(backButton).toHaveClass('back-button');
-    
-    // Test Temenos navy color
-    const computedStyle = window.getComputedStyle(backButton);
-    expect(computedStyle.backgroundColor).toBe('rgb(40, 50, 117)');
-    expect(computedStyle.color).toBe('rgb(255, 255, 255)');
-    
-    // Test functionality
-    await user.click(backButton);
-    expect(mockNavigateBack).toHaveBeenCalledTimes(1);
+    const technicalServicesSection = screen.getByTestId('technical-services-section');
+    expect(within(technicalServicesSection).getByText('Technical Services')).toBeInTheDocument();
   });
 
   test('renders Business Services layer with correct services', () => {
-    render(<SupportingServices onNavigateBack={mockNavigateBack} />);
+    render(<SupportingServices />);
     
     // Check for Business Services section
     expect(screen.getByText(/Business Services/i)).toBeInTheDocument();
     
-    // Check for three business services
+    // Check for business services
     expect(screen.getByText('Holdings')).toBeInTheDocument();
     expect(screen.getByText('Party')).toBeInTheDocument();
     expect(screen.getByText('Product Catalogue')).toBeInTheDocument();
+    expect(screen.getByText('Sub-Ledger')).toBeInTheDocument();
+    expect(screen.getByText('Limits')).toBeInTheDocument();
     
     // Verify they have correct styling class
     const holdingsService = screen.getByTestId('holdings-service');
@@ -127,7 +101,7 @@ describe('SupportingServices Component', () => {
   });
 
   test('business services have correct Temenos teal color styling', () => {
-    render(<SupportingServices onNavigateBack={mockNavigateBack} />);
+    render(<SupportingServices />);
     
     const businessServices = [
       screen.getByTestId('holdings-service'),
@@ -144,7 +118,7 @@ describe('SupportingServices Component', () => {
   });
 
   test('technical services have correct Temenos purple color styling', () => {
-    render(<SupportingServices onNavigateBack={mockNavigateBack} />);
+    render(<SupportingServices />);
     
     const technicalServices = [
       screen.getByTestId('event-store-service'),
@@ -160,7 +134,7 @@ describe('SupportingServices Component', () => {
   });
 
   test('renders details pane placeholder', () => {
-    render(<SupportingServices onNavigateBack={mockNavigateBack} />);
+    render(<SupportingServices />);
     
     const detailsPane = screen.getByTestId('details-pane');
     expect(detailsPane).toBeInTheDocument();
@@ -169,7 +143,7 @@ describe('SupportingServices Component', () => {
 
   test('clicking business service updates selected state and details pane', async () => {
     const user = userEvent.setup();
-    render(<SupportingServices onNavigateBack={mockNavigateBack} />);
+    render(<SupportingServices />);
     
     const holdingsService = screen.getByTestId('holdings-service');
     await user.click(holdingsService);
@@ -184,7 +158,7 @@ describe('SupportingServices Component', () => {
 
   test('clicking technical service updates selected state and details pane', async () => {
     const user = userEvent.setup();
-    render(<SupportingServices onNavigateBack={mockNavigateBack} />);
+    render(<SupportingServices />);
     
     const eventStoreService = screen.getByTestId('event-store-service');
     await user.click(eventStoreService);
@@ -199,7 +173,7 @@ describe('SupportingServices Component', () => {
 
   test('services support keyboard navigation', async () => {
     const user = userEvent.setup();
-    render(<SupportingServices onNavigateBack={mockNavigateBack} />);
+    render(<SupportingServices />);
     
     const holdingsService = screen.getByTestId('holdings-service');
     
@@ -219,7 +193,7 @@ describe('SupportingServices Component', () => {
   });
 
   test('services have proper accessibility attributes', () => {
-    render(<SupportingServices onNavigateBack={mockNavigateBack} />);
+    render(<SupportingServices />);
     
     const allServices = [
       screen.getByTestId('holdings-service'),
@@ -251,7 +225,7 @@ describe('SupportingServices Component', () => {
   });
 
   test('component is responsive across different screen sizes', () => {
-    render(<SupportingServices onNavigateBack={mockNavigateBack} />);
+    render(<SupportingServices />);
     
     // Check for responsive container
     const container = screen.getByTestId('supporting-services-container');
@@ -261,7 +235,7 @@ describe('SupportingServices Component', () => {
 
   test('only one service can be active at a time', async () => {
     const user = userEvent.setup();
-    render(<SupportingServices onNavigateBack={mockNavigateBack} />);
+    render(<SupportingServices />);
     
     const holdingsService = screen.getByTestId('holdings-service');
     const partyService = screen.getByTestId('party-service');
@@ -278,7 +252,7 @@ describe('SupportingServices Component', () => {
 
   test('details pane displays correct content for each service', async () => {
     const user = userEvent.setup();
-    render(<SupportingServices onNavigateBack={mockNavigateBack} />);
+    render(<SupportingServices />);
     
     const services = [
       { testId: 'holdings-service', expectedText: 'Holdings' },

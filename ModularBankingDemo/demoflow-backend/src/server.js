@@ -10,7 +10,7 @@ const morgan = require('morgan');
 require('dotenv').config();
 
 // Import routes and services
-const headlessV3Routes = require('./routes/headlessV3Routes');
+const eventStreamRoutes = require('./routes/eventStreamRoutes');
 const { getEventHubService } = require('./services/eventHubService');
 const { getSessionManager } = require('./services/sessionManager');
 
@@ -54,22 +54,22 @@ app.get('/health', (req, res) => {
 });
 
 // API routes
-app.use('/api/headless-v3', headlessV3Routes);
+app.use('/api/event-stream', eventStreamRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({
-    message: 'DemoFlow Backend Server - HeadlessV3 with Azure Event Hub',
+    message: 'DemoFlow Backend Server - Event Stream with Azure Event Hub',
     version: '1.0.0',
     endpoints: {
       health: '/health',
-      components: '/api/headless-v3/components',
-      connect: '/api/headless-v3/connect/:component',
-      disconnect: '/api/headless-v3/disconnect/:component',
-      events: '/api/headless-v3/events/:component',
-      stats: '/api/headless-v3/stats',
-      sessionStatus: '/api/headless-v3/session/:id/status',
-      sessionCleanup: '/api/headless-v3/session/:id/cleanup'
+      components: '/api/event-stream/components',
+      connect: '/api/event-stream/connect/:component',
+      disconnect: '/api/event-stream/disconnect/:component',
+      events: '/api/event-stream/events/:component',
+      stats: '/api/event-stream/stats',
+      sessionStatus: '/api/event-stream/session/:id/status',
+      sessionCleanup: '/api/event-stream/session/:id/cleanup'
     }
   });
 });
@@ -130,7 +130,7 @@ if (require.main === module) {
   const server = app.listen(PORT, () => {
     console.log(`🚀 DemoFlow Backend Server running on port ${PORT}`);
     console.log(`📊 Health check: http://localhost:${PORT}/health`);
-    console.log(`🔗 API endpoints: http://localhost:${PORT}/api/headless-v3/`);
+    console.log(`🔗 API endpoints: http://localhost:${PORT}/api/event-stream/`);
     console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
     
     // Initialize services

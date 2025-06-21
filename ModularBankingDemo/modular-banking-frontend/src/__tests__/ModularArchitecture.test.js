@@ -17,28 +17,12 @@ describe('ModularArchitecture Component', () => {
     expect(typeof ModularArchitecture).toBe('function');
   });
 
-  test('renders the component with correct title and content', () => {
+  test('renders the component with correct content', () => {
     render(<ModularArchitecture />);
     
-    expect(screen.getByText('Modular Architecture')).toBeInTheDocument();
-    expect(screen.getByText('Core Banking Components')).toBeInTheDocument();
-  });
-
-  test('renders back button', () => {
-    render(<ModularArchitecture />);
-    
-    const backButton = screen.getByRole('button', { name: /back to dashboard/i });
-    expect(backButton).toBeInTheDocument();
-  });
-
-  test('back button calls navigate when clicked', async () => {
-    const user = userEvent.setup();
-    render(<ModularArchitecture />);
-    
-    const backButton = screen.getByRole('button', { name: /back to dashboard/i });
-    await user.click(backButton);
-    
-    expect(__mockNavigate).toHaveBeenCalledWith('/');
+    // Check for topic buttons container and placeholder content
+    expect(screen.getByTestId('topic-buttons-container')).toBeInTheDocument();
+    expect(screen.getByText('Select a Topic to Learn More')).toBeInTheDocument();
   });
 
   test('renders twelve topic buttons with correct styling and accessibility', () => {

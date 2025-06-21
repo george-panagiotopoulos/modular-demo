@@ -1,4 +1,4 @@
-/* HeadlessV3 Component Styles - Matching Main App Design System */
+/* Event Stream Component Styles - Matching Main App Design System */
 
 /* Import CSS Variables from main app */
 :root {
@@ -27,13 +27,12 @@
 /* ========================================
    Main Container
    ======================================== */
-.headless-v3-container {
+.event-stream-container {
   min-height: 100vh;
   background: linear-gradient(135deg, var(--light-gray) 0%, #f0f2f5 100%);
   font-family: var(--font-family);
   color: var(--text-primary);
   width: 90vw; /* 90% of viewport width */
-  max-width: 1400px; /* Maximum width for very large screens */
   margin: 0 auto; /* Center the container */
   padding: 2rem;
   box-sizing: border-box; /* Include padding in width calculation */
@@ -42,7 +41,7 @@
 /* ========================================
    Header Section
    ======================================== */
-.headless-v3-header {
+.event-stream-header {
   background: linear-gradient(135deg, var(--temenos-teal) 0%, var(--temenos-purple) 100%);
   color: white;
   padding: 2rem;
@@ -56,7 +55,7 @@
   gap: 1rem;
 }
 
-.headless-v3-header h2 {
+.event-stream-header h2 {
   margin: 0;
   font-size: 1.75rem;
   font-weight: 600;
@@ -107,7 +106,7 @@
 .components-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr); /* Exactly 3 columns */
-  gap: 2rem;
+  gap: 1.5rem; /* Reduced from 2rem to give more space to cards */
   margin-bottom: 2rem;
 }
 
@@ -327,13 +326,32 @@
 }
 
 /* ========================================
-   Events Container
+   Events Container - Made Resizable
    ======================================== */
 .events-container {
-  max-height: 450px;
+  min-height: 600px; /* Increased from 450px for better visibility */
+  max-height: none; /* Remove max-height restriction */
+  height: 600px; /* Default height */
   overflow-y: auto;
   padding: 1rem 1.5rem;
   background: #f8fafc;
+  resize: vertical; /* Make vertically resizable */
+  border: 1px solid #e2e8f0;
+  border-radius: var(--border-radius);
+  position: relative;
+}
+
+/* Add a subtle resize handle indicator */
+.events-container::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 16px;
+  height: 16px;
+  background: linear-gradient(-45deg, transparent 0%, transparent 30%, #94a3b8 30%, #94a3b8 35%, transparent 35%, transparent 65%, #94a3b8 65%, #94a3b8 70%, transparent 70%);
+  cursor: nw-resize;
+  pointer-events: none;
 }
 
 .no-events {
@@ -424,6 +442,7 @@
   margin-top: 0.5rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   font-size: 0.9rem;
+  text-align: left;
 }
 
 .event-details-header {
@@ -434,6 +453,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  text-align: left;
 }
 
 .event-details-header::before {
@@ -447,10 +467,11 @@
   border-radius: var(--border-radius);
   margin-bottom: 1rem;
   border: 1px solid #e2e8f0;
+  text-align: left;
 }
 
 .event-metadata div {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -467,16 +488,18 @@
 }
 
 .event-payload-section {
-  margin-top: 1rem;
+  margin-top: 1.5rem;
+  text-align: left;
 }
 
 .payload-label {
   font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: 0.75rem;
+  margin-bottom: 1.125rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  text-align: left;
 }
 
 .payload-label::before {
@@ -487,7 +510,7 @@
 .payload-json {
   background: #1e293b;
   color: #e2e8f0;
-  padding: 1rem;
+  padding: 1.5rem;
   border-radius: var(--border-radius);
   border: 1px solid #334155;
   white-space: pre-wrap;
@@ -495,9 +518,11 @@
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   font-size: 0.8rem;
   line-height: 1.5;
-  max-height: 300px;
+  min-height: 800px;
+  max-height: 1200px;
   overflow-y: auto;
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+  text-align: left;
 }
 
 /* ========================================
@@ -628,6 +653,12 @@
 /* ========================================
    Responsive Design
    ======================================== */
+@media (max-width: 1400px) {
+  .components-grid {
+    gap: 1.25rem; /* Slightly smaller gap on smaller large screens */
+  }
+}
+
 @media (max-width: 1200px) {
   .components-grid {
     grid-template-columns: repeat(2, 1fr); /* 2 columns on medium screens */
@@ -636,19 +667,19 @@
 }
 
 @media (max-width: 768px) {
-  .headless-v3-container {
+  .event-stream-container {
     padding: 1rem;
     width: 95vw; /* Slightly wider on mobile for better use of space */
   }
   
-  .headless-v3-header {
+  .event-stream-header {
     padding: 1.5rem;
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
   }
   
-  .headless-v3-header h2 {
+  .event-stream-header h2 {
     font-size: 1.5rem;
   }
   
@@ -679,6 +710,8 @@
   
   .events-container {
     padding: 0.75rem 1rem;
+    min-height: 400px; /* Smaller default height on mobile */
+    height: 400px;
   }
   
   .event-summary-button {
@@ -691,7 +724,7 @@
 }
 
 @media (max-width: 480px) {
-  .headless-v3-header h2 {
+  .event-stream-header h2 {
     font-size: 1.25rem;
   }
   

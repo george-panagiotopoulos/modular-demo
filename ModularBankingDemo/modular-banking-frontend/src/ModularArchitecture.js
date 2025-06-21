@@ -61,7 +61,6 @@ const ContentPane = ({ selectedTopic, topics }) => {
 // Main ModularArchitecture Component
 const ModularArchitecture = () => {
   const [selectedTopic, setSelectedTopic] = useState(null);
-  const navigate = useNavigate();
 
   // Topic data based on the Temenos Modular Banking document - 12 original buttons
   const topics = [
@@ -310,32 +309,12 @@ const ModularArchitecture = () => {
     }
   };
 
-  const handleBackClick = () => {
-    navigate('/');
-  };
-
   return (
     <div 
       className="modular-architecture-container" 
       role="main"
       data-testid="modular-architecture-container"
     >
-      {/* Header with Back Button */}
-      <header className="modular-architecture-header">
-        <button
-          className="back-button"
-          onClick={handleBackClick}
-          aria-label="Back to Dashboard"
-          type="button"
-        >
-          ← Back to Dashboard
-        </button>
-        <div className="header-content">
-          <h1>Modular Architecture</h1>
-          <p className="header-subtitle">Core Banking Components</p>
-        </div>
-      </header>
-
       {/* Topic Buttons */}
       <div 
         className="topic-buttons-container"

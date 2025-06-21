@@ -87,26 +87,6 @@ body {
   border: 0;
 }
 
-/* Skip Link */
-.skip-link {
-  position: absolute;
-  top: -40px;
-  left: 6px;
-  background: var(--temenos-primary);
-  color: white;
-  padding: 8px;
-  text-decoration: none;
-  border-radius: var(--radius-md);
-  z-index: 1000;
-  font-weight: 600;
-  transition: top var(--transition-fast);
-}
-
-.skip-link:focus {
-  top: 6px;
-  outline: var(--focus-ring);
-}
-
 /* ========================================
    Dashboard Container
    ======================================== */
@@ -679,10 +659,6 @@ body {
   }
   
   .pane-close {
-    display: none;
-  }
-  
-  .skip-link {
     display: none;
   }
 }

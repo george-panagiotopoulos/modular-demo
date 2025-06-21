@@ -1,6 +1,6 @@
 /**
- * Headless V3 Controller
- * Handles API endpoints for headless_v3 tab functionality
+ * Event Stream Controller
+ * Handles API endpoints for event stream tab functionality
  */
 
 const Component = require('../models/Component');
@@ -8,7 +8,7 @@ const EventStream = require('../models/EventStream');
 const { getSessionManager } = require('../services/sessionManager');
 const { getEventService } = require('../services/eventService');
 
-class HeadlessV3Controller {
+class EventStreamController {
   constructor() {
     this.sessionManager = getSessionManager();
     this.eventService = getEventService();
@@ -17,7 +17,7 @@ class HeadlessV3Controller {
     this.eventService.start();
   }
 
-  // GET /api/headless-v3/components
+  // GET /api/event-stream/components
   async getComponents(req, res) {
     try {
       const components = Component.getAllComponents();
@@ -37,7 +37,7 @@ class HeadlessV3Controller {
     }
   }
 
-  // POST /api/headless-v3/connect/:component
+  // POST /api/event-stream/connect/:component
   async connectToComponent(req, res) {
     try {
       const { component } = req.params;
@@ -102,7 +102,7 @@ class HeadlessV3Controller {
     }
   }
 
-  // POST /api/headless-v3/disconnect/:component
+  // POST /api/event-stream/disconnect/:component
   async disconnectFromComponent(req, res) {
     try {
       const { component } = req.params;
@@ -152,7 +152,7 @@ class HeadlessV3Controller {
     }
   }
 
-  // POST /api/headless-v3/create-demo-data
+  // POST /api/event-stream/create-demo-data
   async createDemoData(req, res) {
     try {
       const { sessionId } = req.body;
@@ -187,7 +187,7 @@ class HeadlessV3Controller {
     }
   }
 
-  // GET /api/headless-v3/events/:component (Server-Sent Events)
+  // GET /api/event-stream/events/:component (Server-Sent Events)
   async streamEvents(req, res) {
     try {
       const { component } = req.params;
@@ -298,7 +298,7 @@ class HeadlessV3Controller {
     }
   }
 
-  // GET /api/headless-v3/session/:sessionId/status
+  // GET /api/event-stream/session/:sessionId/status
   async getSessionStatus(req, res) {
     try {
       const { sessionId } = req.params;
@@ -329,7 +329,7 @@ class HeadlessV3Controller {
     }
   }
 
-  // POST /api/headless-v3/session/:sessionId/cleanup
+  // POST /api/event-stream/session/:sessionId/cleanup
   async cleanupSession(req, res) {
     try {
       const { sessionId } = req.params;
@@ -362,7 +362,7 @@ class HeadlessV3Controller {
     }
   }
 
-  // GET /api/headless-v3/stats
+  // GET /api/event-stream/stats
   async getStats(req, res) {
     try {
       const sessionStats = this.sessionManager.getStats();
@@ -392,7 +392,5 @@ class HeadlessV3Controller {
   }
 }
 
-// Create singleton instance
-const headlessV3ControllerInstance = new HeadlessV3Controller();
-
-module.exports = headlessV3ControllerInstance; 
+// Export singleton instance
+module.exports = new EventStreamController(); 

@@ -1,6 +1,6 @@
 /**
- * Headless V3 API Routes
- * Handles all /api/headless-v3/* endpoints
+ * Event Stream API Routes
+ * Handles all /api/event-stream/* endpoints
  */
 
 const express = require('express');
@@ -92,7 +92,7 @@ const sessionManager = getSessionManager();
 
 // Middleware for logging requests
 router.use((req, res, next) => {
-  console.log(`[HeadlessV3Routes] ${req.method} ${req.path}`, {
+  console.log(`[EventStreamRoutes] ${req.method} ${req.path}`, {
     query: req.query,
     body: req.method !== 'GET' ? req.body : undefined,
     headers: {
@@ -120,7 +120,7 @@ const validateSessionId = (req, res, next) => {
   next();
 };
 
-// GET /api/headless-v3/components
+// GET /api/event-stream/components
 router.get('/components', (req, res) => {
   res.json({
     success: true,
@@ -128,7 +128,7 @@ router.get('/components', (req, res) => {
   });
 });
 
-// POST /api/headless-v3/connect/:component
+// POST /api/event-stream/connect/:component
 router.post('/connect/:component', async (req, res) => {
   const { component } = req.params;
   const sessionId = req.headers['x-session-id'];
@@ -181,7 +181,7 @@ router.post('/connect/:component', async (req, res) => {
   }
 });
 
-// POST /api/headless-v3/disconnect/:component
+// POST /api/event-stream/disconnect/:component
 router.post('/disconnect/:component', async (req, res) => {
   const { component } = req.params;
   const sessionId = req.headers['x-session-id'];
@@ -210,7 +210,7 @@ router.post('/disconnect/:component', async (req, res) => {
   }
 });
 
-// GET /api/headless-v3/events/:component (SSE)
+// GET /api/event-stream/events/:component (SSE)
 router.get('/events/:component', async (req, res) => {
   const { component } = req.params;
   const sessionId = req.headers['x-session-id'] || req.query.session_id;
@@ -323,7 +323,7 @@ router.get('/events/:component', async (req, res) => {
   });
 });
 
-// GET /api/headless-v3/stats
+// GET /api/event-stream/stats
 router.get('/stats', (req, res) => {
   const eventHubStats = eventHubService.getStats();
   const sessionStats = sessionManager.getStats();
@@ -341,7 +341,7 @@ router.get('/stats', (req, res) => {
   });
 });
 
-// GET /api/headless-v3/session/:id/status
+// GET /api/event-stream/session/:id/status
 router.get('/session/:id/status', (req, res) => {
   const { id } = req.params;
   
@@ -358,7 +358,7 @@ router.get('/session/:id/status', (req, res) => {
   });
 });
 
-// POST /api/headless-v3/session/:id/cleanup
+// POST /api/event-stream/session/:id/cleanup
 router.post('/session/:id/cleanup', async (req, res) => {
   const { id } = req.params;
 
@@ -381,9 +381,9 @@ router.post('/session/:id/cleanup', async (req, res) => {
   }
 });
 
-// Error handling middleware specific to headless v3 routes
+// Error handling middleware specific to event stream routes
 router.use((error, req, res, next) => {
-  console.error('[HeadlessV3Routes] Error:', error);
+  console.error('[EventStreamRoutes] Error:', error);
   
   if (res.headersSent) {
     return next(error);
@@ -394,7 +394,7 @@ router.use((error, req, res, next) => {
   
   res.status(status).json({
     error: message,
-    code: error.code || 'HEADLESS_V3_ERROR',
+    code: error.code || 'EVENT_STREAM_ERROR',
     timestamp: new Date().toISOString(),
     path: req.path,
     method: req.method

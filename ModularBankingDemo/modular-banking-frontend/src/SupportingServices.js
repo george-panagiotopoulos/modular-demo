@@ -68,9 +68,8 @@ const DetailsPane = ({ selectedService }) => {
 };
 
 // Main Supporting Services Component
-const SupportingServices = ({ onNavigateBack }) => {
+const SupportingServices = () => {
   const [selectedService, setSelectedService] = useState(null);
-  const navigate = useNavigate();
 
   // Business Services Data - Updated based on Temenos document
   const businessServices = [
@@ -189,48 +188,22 @@ const SupportingServices = ({ onNavigateBack }) => {
     setSelectedService(selectedService?.id === service.id ? null : service);
   };
 
-  const handleBackClick = () => {
-    if (onNavigateBack) {
-      onNavigateBack();
-    } else {
-      navigate('/');
-    }
-  };
-
   // Keyboard navigation for Escape key
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
         if (selectedService) {
           setSelectedService(null);
-        } else if (onNavigateBack) {
-          onNavigateBack();
         }
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [selectedService, onNavigateBack]);
+  }, [selectedService]);
 
   return (
     <div data-testid="supporting-services-container" className="supporting-services-container">
-      {/* Header with Back Button */}
-      <header className="supporting-services-header">
-        <button
-          className="back-button"
-          onClick={handleBackClick}
-          aria-label="Back to Dashboard"
-          type="button"
-        >
-          ← Back to Dashboard
-        </button>
-        <div className="header-content">
-          <h1>Supporting Services</h1>
-          <p className="header-subtitle">Infrastructure Layer</p>
-        </div>
-      </header>
-
       {/* Main Content */}
       <main className="supporting-services-main">
         {/* Services Grid */}
