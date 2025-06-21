@@ -1,0 +1,1248 @@
+/* ========================================
+   CSS Variables for Temenos Banking Theme
+   ======================================== */
+:root {
+  /* Temenos Brand Colors */
+  --temenos-primary: #1e3a8a;
+  --temenos-secondary: #3b82f6;
+  --temenos-accent: #10b981;
+  --temenos-warning: #f59e0b;
+  --temenos-error: #ef4444;
+  --temenos-success: #10b981;
+  
+  /* Neutral Colors */
+  --neutral-50: #f8fafc;
+  --neutral-100: #f1f5f9;
+  --neutral-200: #e2e8f0;
+  --neutral-300: #cbd5e1;
+  --neutral-400: #94a3b8;
+  --neutral-500: #64748b;
+  --neutral-600: #475569;
+  --neutral-700: #334155;
+  --neutral-800: #1e293b;
+  --neutral-900: #0f172a;
+  
+  /* Accessibility */
+  --focus-ring: 0 0 0 3px rgba(59, 130, 246, 0.5);
+  --focus-ring-contrast: 0 0 0 3px rgba(255, 255, 255, 0.8);
+  
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+  
+  /* Border Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  
+  /* Transitions */
+  --transition-fast: 150ms ease-in-out;
+  --transition-normal: 300ms ease-in-out;
+  --transition-slow: 500ms ease-in-out;
+
+  /* New Temenos circular pane colors */
+  --temenos-teal: #5CB8B2;
+  --temenos-purple: #8246AF;
+  --temenos-navy: #283275;
+}
+
+/* ========================================
+   Base Styles
+   ======================================== */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: linear-gradient(135deg, var(--neutral-50) 0%, var(--neutral-100) 100%);
+  min-height: 100vh;
+}
+
+/* Screen Reader Only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Skip Link */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 6px;
+  background: var(--temenos-primary);
+  color: white;
+  padding: 8px;
+  text-decoration: none;
+  border-radius: var(--radius-md);
+  z-index: 1000;
+  font-weight: 600;
+  transition: top var(--transition-fast);
+}
+
+.skip-link:focus {
+  top: 6px;
+  outline: var(--focus-ring);
+}
+
+/* ========================================
+   Dashboard Container
+   ======================================== */
+.dashboard-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: var(--spacing-xl);
+  max-width: 1400px;
+  margin: 0 auto;
+  position: relative;
+}
+
+/* ========================================
+   Error Handling
+   ======================================== */
+.error-message {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border: 1px solid var(--temenos-error);
+  color: var(--neutral-800);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--spacing-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  box-shadow: var(--shadow-md);
+  animation: slideInDown var(--transition-normal);
+}
+
+.error-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.error-dismiss {
+  background: none;
+  border: none;
+  color: var(--temenos-error);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  border-radius: var(--radius-sm);
+  margin-left: auto;
+  transition: all var(--transition-fast);
+}
+
+.error-dismiss:hover {
+  background: rgba(239, 68, 68, 0.1);
+  transform: scale(1.1);
+}
+
+.error-dismiss:focus {
+  outline: var(--focus-ring);
+}
+
+/* ========================================
+   Dashboard Grid
+   ======================================== */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-rows: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-xl);
+  margin-bottom: var(--spacing-2xl);
+  flex: 1;
+}
+
+/* ========================================
+   Dashboard Rectangles
+   ======================================== */
+.dashboard-rectangle {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 2px solid var(--neutral-200);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-xl);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  min-height: 200px;
+  font-family: inherit;
+  font-size: inherit;
+  color: var(--neutral-700);
+}
+
+.dashboard-rectangle::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transition: left var(--transition-slow);
+}
+
+.dashboard-rectangle:hover::before {
+  left: 100%;
+}
+
+.dashboard-rectangle:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: var(--shadow-xl);
+  border-color: var(--temenos-secondary);
+  background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
+}
+
+.dashboard-rectangle:focus {
+  outline: none;
+  box-shadow: var(--shadow-xl), var(--focus-ring);
+  border-color: var(--temenos-secondary);
+  transform: translateY(-2px);
+}
+
+.dashboard-rectangle:active {
+  transform: translateY(-1px) scale(0.98);
+  transition: all 100ms ease-in-out;
+}
+
+.dashboard-rectangle.active {
+  background: linear-gradient(135deg, var(--temenos-primary) 0%, var(--temenos-secondary) 100%);
+  color: white;
+  border-color: var(--temenos-primary);
+  box-shadow: var(--shadow-lg), 0 0 0 3px rgba(30, 58, 138, 0.2);
+}
+
+.dashboard-rectangle.loading {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+/* Rectangle Icons */
+.rectangle-icon {
+  font-size: 3rem;
+  margin-bottom: var(--spacing-md);
+  display: block;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  transition: transform var(--transition-normal);
+}
+
+.dashboard-rectangle:hover .rectangle-icon {
+  transform: scale(1.1) rotate(5deg);
+}
+
+.dashboard-rectangle.active .rectangle-icon {
+  transform: scale(1.05);
+}
+
+/* Rectangle Titles */
+.rectangle-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+  line-height: 1.4;
+  transition: all var(--transition-normal);
+}
+
+.dashboard-rectangle:hover .rectangle-title {
+  transform: translateY(-2px);
+}
+
+/* ========================================
+   Loading Spinner
+   ======================================== */
+.loading-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top: 3px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* ========================================
+   Pane Container
+   ======================================== */
+.pane-container {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid var(--neutral-200);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-2xl);
+  margin-bottom: var(--spacing-xl);
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  animation: slideInUp var(--transition-normal);
+}
+
+.pane-close {
+  position: absolute;
+  top: var(--spacing-md);
+  right: var(--spacing-md);
+  background: var(--neutral-100);
+  border: 1px solid var(--neutral-200);
+  border-radius: 50%;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.25rem;
+  color: var(--neutral-500);
+  transition: all var(--transition-fast);
+}
+
+.pane-close:hover {
+  background: var(--temenos-error);
+  color: white;
+  border-color: var(--temenos-error);
+  transform: scale(1.1);
+}
+
+.pane-close:focus {
+  outline: var(--focus-ring);
+}
+
+/* ========================================
+   Pane Content
+   ======================================== */
+.dashboard-pane {
+  max-width: none;
+  padding-right: 3rem;
+}
+
+.dashboard-pane h2 {
+  color: var(--temenos-primary);
+  font-size: 1.875rem;
+  font-weight: 700;
+  margin-bottom: var(--spacing-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  line-height: 1.2;
+}
+
+.pane-icon {
+  font-size: 2rem;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.dashboard-pane p {
+  color: var(--neutral-600);
+  font-size: 1.125rem;
+  line-height: 1.6;
+  margin-bottom: var(--spacing-xl);
+}
+
+.pane-features {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1px solid #bae6fd;
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  margin-top: var(--spacing-lg);
+}
+
+.pane-features h3 {
+  color: var(--temenos-primary);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: var(--spacing-md);
+}
+
+.pane-features ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.pane-features li {
+  color: var(--neutral-600);
+  padding: var(--spacing-sm) 0;
+  position: relative;
+  padding-left: var(--spacing-lg);
+  line-height: 1.5;
+}
+
+.pane-features li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: var(--temenos-success);
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+/* ========================================
+   Pane Actions
+   ======================================== */
+.pane-action {
+  margin-top: var(--spacing-xl);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--neutral-200);
+  display: flex;
+  justify-content: center;
+}
+
+.learn-more-button {
+  background: linear-gradient(135deg, var(--temenos-purple) 0%, #6d3d8a 100%);
+  color: white;
+  border: none;
+  padding: var(--spacing-md) var(--spacing-xl);
+  border-radius: var(--radius-lg);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-md);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  min-width: 200px;
+  justify-content: center;
+}
+
+.learn-more-button:hover {
+  background: linear-gradient(135deg, #6d3d8a 0%, var(--temenos-purple) 100%);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.learn-more-button:focus {
+  outline: none;
+  box-shadow: var(--shadow-lg), 0 0 0 3px rgba(130, 70, 175, 0.5);
+}
+
+.learn-more-button:active {
+  transform: translateY(0);
+  transition: all 100ms ease-in-out;
+}
+
+.button-icon {
+  font-size: 1.25rem;
+  font-weight: bold;
+}
+
+/* ========================================
+   Footer
+   ======================================== */
+.dashboard-footer {
+  margin-top: auto;
+  padding-top: var(--spacing-xl);
+  border-top: 1px solid var(--neutral-200);
+  text-align: center;
+}
+
+.footer-text {
+  color: var(--neutral-500);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.footer-text strong {
+  color: var(--temenos-primary);
+  font-weight: 700;
+}
+
+/* ========================================
+   Animations
+   ======================================== */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ========================================
+   Responsive Design
+   ======================================== */
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: var(--spacing-md);
+  }
+  
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+  
+  .dashboard-rectangle {
+    min-height: 150px;
+    padding: var(--spacing-lg);
+  }
+  
+  .rectangle-icon {
+    font-size: 2.5rem;
+  }
+  
+  .rectangle-title {
+    font-size: 1.125rem;
+  }
+  
+  .pane-container {
+    padding: var(--spacing-lg);
+  }
+  
+  .dashboard-pane {
+    padding-right: 2rem;
+  }
+  
+  .dashboard-pane h2 {
+    font-size: 1.5rem;
+  }
+  
+  .dashboard-pane p {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-container {
+    padding: var(--spacing-sm);
+  }
+  
+  .dashboard-rectangle {
+    min-height: 120px;
+    padding: var(--spacing-md);
+  }
+  
+  .rectangle-icon {
+    font-size: 2rem;
+    margin-bottom: var(--spacing-sm);
+  }
+  
+  .rectangle-title {
+    font-size: 1rem;
+  }
+  
+  .pane-container {
+    padding: var(--spacing-md);
+  }
+  
+  .dashboard-pane {
+    padding-right: var(--spacing-lg);
+  }
+  
+  .pane-close {
+    width: 2rem;
+    height: 2rem;
+    font-size: 1rem;
+  }
+}
+
+/* ========================================
+   Accessibility Enhancements
+   ======================================== */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .dashboard-rectangle::before {
+    display: none;
+  }
+}
+
+@media (prefers-contrast: high) {
+  :root {
+    --focus-ring: var(--focus-ring-contrast);
+  }
+  
+  .dashboard-rectangle {
+    border-width: 3px;
+  }
+  
+  .dashboard-rectangle:focus {
+    border-width: 4px;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --neutral-50: #0f172a;
+    --neutral-100: #1e293b;
+    --neutral-200: #334155;
+    --neutral-300: #475569;
+    --neutral-400: #64748b;
+    --neutral-500: #94a3b8;
+    --neutral-600: #cbd5e1;
+    --neutral-700: #e2e8f0;
+    --neutral-800: #f1f5f9;
+    --neutral-900: #f8fafc;
+  }
+  
+  body {
+    background: linear-gradient(135deg, var(--neutral-50) 0%, var(--neutral-100) 100%);
+  }
+  
+  .dashboard-rectangle {
+    background: linear-gradient(135deg, var(--neutral-100) 0%, var(--neutral-200) 100%);
+    color: var(--neutral-700);
+  }
+  
+  .dashboard-rectangle:hover {
+    background: linear-gradient(135deg, var(--neutral-200) 0%, var(--neutral-300) 100%);
+  }
+}
+
+/* Print styles */
+@media print {
+  .dashboard-container {
+    background: white;
+    color: black;
+    padding: 1rem;
+  }
+  
+  .dashboard-rectangle {
+    background: white;
+    border: 2px solid black;
+    box-shadow: none;
+    break-inside: avoid;
+  }
+  
+  .pane-container {
+    background: white;
+    border: 1px solid black;
+    box-shadow: none;
+    break-inside: avoid;
+  }
+  
+  .pane-close {
+    display: none;
+  }
+  
+  .skip-link {
+    display: none;
+  }
+}
+
+/* ========================================
+   Dashboard Layout Enhancement
+   ======================================== */
+.dashboard-container {
+  position: relative;
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  min-height: calc(100vh - 200px);
+}
+
+/* Enhanced dashboard layout with circular panes */
+.dashboard-main-layout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3rem;
+  margin: 2rem 0;
+  position: relative;
+}
+
+/* ========================================
+   Circular Panes Styling
+   ======================================== */
+.circular-pane {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  border: 3px solid transparent;
+  position: relative;
+  overflow: hidden;
+  font-weight: 600;
+  font-size: 0.9rem;
+  line-height: 1.2;
+  padding: 1rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 
+              0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  
+  /* Accessibility */
+  outline: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+/* Left circular pane - Modular Architecture */
+.left-circular-pane {
+  background: linear-gradient(135deg, var(--temenos-teal) 0%, #4a9d96 100%);
+  color: white;
+  margin-right: 2rem;
+  /* Add subtle text shadow for better readability */
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Right circular pane - Supporting Services */
+.right-circular-pane {
+  background: linear-gradient(135deg, var(--temenos-purple) 0%, #6d3d8a 100%);
+  color: white;
+  margin-left: 2rem;
+  /* Add subtle text shadow for better readability */
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Circular pane hover effects */
+.circular-pane:hover {
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 
+              0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.left-circular-pane:hover {
+  background: linear-gradient(135deg, #4a9d96 0%, var(--temenos-teal) 100%);
+  border-color: rgba(92, 184, 178, 0.3);
+}
+
+.right-circular-pane:hover {
+  background: linear-gradient(135deg, #6d3d8a 0%, var(--temenos-purple) 100%);
+  border-color: rgba(130, 70, 175, 0.3);
+}
+
+/* Circular pane focus states */
+.circular-pane:focus {
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.8), 
+              0 10px 25px -3px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Circular pane active states */
+.circular-pane.active {
+  transform: translateY(-2px) scale(1.02);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.left-circular-pane.active {
+  background: linear-gradient(135deg, #3d8a85 0%, #4a9d96 100%);
+  box-shadow: 0 0 0 4px rgba(92, 184, 178, 0.3),
+              0 10px 25px -3px rgba(0, 0, 0, 0.15);
+}
+
+.right-circular-pane.active {
+  background: linear-gradient(135deg, #5a3470 0%, #6d3d8a 100%);
+  box-shadow: 0 0 0 4px rgba(130, 70, 175, 0.3),
+              0 10px 25px -3px rgba(0, 0, 0, 0.15);
+}
+
+/* Circular pane text styling - consistent with dashboard rectangles */
+.circular-pane-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+}
+
+.circular-pane-subtitle {
+  font-size: 0.75rem;
+  opacity: 0.9;
+  margin-top: 0.5rem;
+  font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Loading state for circular panes */
+.circular-pane.loading {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.circular-pane.loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 24px;
+  height: 24px;
+  margin: -12px 0 0 -12px;
+  border: 2px solid transparent;
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* ========================================
+   Enhanced Dashboard Grid Layout
+   ======================================== */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+  background: var(--white);
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 
+              0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* ========================================
+   Responsive Design for Circular Panes
+   ======================================== */
+@media (max-width: 1200px) {
+  .dashboard-main-layout {
+    flex-direction: column;
+    gap: 2rem;
+  }
+  
+  .circular-pane {
+    width: 160px;
+    height: 160px;
+    font-size: 0.85rem;
+  }
+  
+  .left-circular-pane,
+  .right-circular-pane {
+    margin: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: 1rem;
+  }
+  
+  .dashboard-main-layout {
+    gap: 1.5rem;
+  }
+  
+  .circular-pane {
+    width: 140px;
+    height: 140px;
+    font-size: 0.8rem;
+  }
+  
+  .circular-pane-title {
+    font-size: 0.9rem;
+  }
+  
+  .circular-pane-subtitle {
+    font-size: 0.7rem;
+  }
+  
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(4, 1fr);
+    gap: 1.5rem;
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .circular-pane {
+    width: 120px;
+    height: 120px;
+    font-size: 0.75rem;
+  }
+  
+  .circular-pane-title {
+    font-size: 0.85rem;
+  }
+  
+  .dashboard-grid {
+    gap: 1rem;
+    padding: 1rem;
+  }
+}
+
+/* ========================================
+   Accessibility Enhancements
+   ======================================== */
+@media (prefers-reduced-motion: reduce) {
+  .circular-pane {
+    transition: none;
+  }
+  
+  .circular-pane:hover {
+    transform: none;
+  }
+  
+  .circular-pane.loading::after {
+    animation: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .circular-pane {
+    border: 2px solid var(--text-dark);
+  }
+  
+  .left-circular-pane {
+    background: var(--temenos-navy);
+  }
+  
+  .right-circular-pane {
+    background: var(--temenos-navy);
+  }
+}
+
+/* Focus visible for better keyboard navigation */
+.circular-pane:focus-visible {
+  outline: 3px solid var(--secondary-blue);
+  outline-offset: 2px;
+}
+
+/* ========================================
+   Demo Flow Section Styling
+   ======================================== */
+.demo-flow-section {
+  width: 100%;
+  padding: 2rem 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, rgba(92, 184, 178, 0.05) 0%, rgba(130, 70, 175, 0.05) 100%);
+  border-top: 1px solid rgba(92, 184, 178, 0.2);
+  border-bottom: 1px solid rgba(92, 184, 178, 0.2);
+  margin: 2rem 0;
+  animation: slideInUp 0.6s ease-out;
+}
+
+.demo-flow-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1.25rem 3rem;
+  background: linear-gradient(135deg, var(--temenos-teal) 0%, var(--temenos-purple) 100%);
+  color: white;
+  border: none;
+  border-radius: 50px;
+  font-family: var(--font-family);
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  min-height: 4rem;
+  box-shadow: 
+    0 8px 25px rgba(92, 184, 178, 0.3),
+    0 4px 10px rgba(0, 0, 0, 0.1);
+  text-decoration: none;
+  outline: none;
+}
+
+.demo-flow-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.6s;
+}
+
+.demo-flow-button:hover::before {
+  left: 100%;
+}
+
+.demo-flow-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 12px 35px rgba(92, 184, 178, 0.4),
+    0 6px 15px rgba(0, 0, 0, 0.15);
+  background: linear-gradient(135deg, #4db5ad 0%, #7a4ba3 100%);
+}
+
+.demo-flow-button:focus {
+  outline: 3px solid var(--secondary-blue);
+  outline-offset: 3px;
+}
+
+.demo-flow-button:active {
+  transform: translateY(0);
+  box-shadow: 
+    0 6px 20px rgba(92, 184, 178, 0.3),
+    0 3px 8px rgba(0, 0, 0, 0.1);
+}
+
+.demo-flow-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.demo-flow-button:disabled:hover {
+  transform: none;
+  box-shadow: 
+    0 8px 25px rgba(92, 184, 178, 0.3),
+    0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.demo-flow-icon {
+  font-size: 1.5rem;
+  animation: pulse 2s infinite;
+}
+
+.demo-flow-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.demo-flow-subtitle {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  font-weight: 400;
+  margin-left: 0.5rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+/* ========================================
+   Responsive Design for Demo Flow
+   ======================================== */
+@media (max-width: 1200px) {
+  .demo-flow-section {
+    padding: 1.5rem 1rem;
+  }
+  
+  .demo-flow-button {
+    padding: 1rem 2.5rem;
+    gap: 0.8rem;
+  }
+  
+  .demo-flow-title {
+    font-size: 1.1rem;
+  }
+  
+  .demo-flow-subtitle {
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .demo-flow-section {
+    padding: 1rem 0.5rem;
+    margin: 1.5rem 0;
+  }
+  
+  .demo-flow-button {
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1.5rem 2rem;
+    text-align: center;
+  }
+  
+  .demo-flow-title {
+    font-size: 1rem;
+  }
+  
+  .demo-flow-subtitle {
+    margin-left: 0;
+    font-size: 0.8rem;
+  }
+  
+  .demo-flow-icon {
+    font-size: 1.3rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .demo-flow-section {
+    padding: 0.8rem 0.5rem;
+    margin: 1rem 0;
+  }
+  
+  .demo-flow-button {
+    padding: 1.2rem 1.5rem;
+    min-height: 3.5rem;
+  }
+  
+  .demo-flow-title {
+    font-size: 0.95rem;
+  }
+  
+  .demo-flow-subtitle {
+    font-size: 0.75rem;
+  }
+  
+  .demo-flow-icon {
+    font-size: 1.2rem;
+  }
+}
+
+/* ========================================
+   Accessibility and Motion Preferences
+   ======================================== */
+@media (prefers-reduced-motion: reduce) {
+  .demo-flow-section {
+    animation: none;
+  }
+  
+  .demo-flow-button {
+    transition: none;
+  }
+  
+  .demo-flow-button:hover {
+    transform: none;
+  }
+  
+  .demo-flow-button::before {
+    transition: none;
+  }
+  
+  .demo-flow-icon {
+    animation: none;
+  }
+}
+
+@media (prefers-contrast: high) {
+  .demo-flow-section {
+    background: none;
+    border-top: 2px solid var(--temenos-teal);
+    border-bottom: 2px solid var(--temenos-teal);
+  }
+  
+  .demo-flow-button {
+    background: var(--temenos-navy);
+    border: 2px solid var(--temenos-teal);
+    box-shadow: none;
+  }
+  
+  .demo-flow-button:hover {
+    background: var(--temenos-teal);
+    color: var(--temenos-navy);
+    box-shadow: none;
+  }
+  
+  .demo-flow-button:focus {
+    outline: 3px solid #ffff00;
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .demo-flow-section {
+    background: linear-gradient(135deg, rgba(92, 184, 178, 0.1) 0%, rgba(130, 70, 175, 0.1) 100%);
+    border-color: rgba(92, 184, 178, 0.3);
+  }
+  
+  .demo-flow-button {
+    box-shadow: 
+      0 8px 25px rgba(92, 184, 178, 0.2),
+      0 4px 10px rgba(0, 0, 0, 0.3);
+  }
+  
+  .demo-flow-button:hover {
+    box-shadow: 
+      0 12px 35px rgba(92, 184, 178, 0.3),
+      0 6px 15px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* ========================================
+   Print Styles
+   ======================================== */
+@media print {
+  .demo-flow-section {
+    background: none;
+    border: 1px solid #000;
+    page-break-inside: avoid;
+  }
+  
+  .demo-flow-button {
+    background: none;
+    color: #000;
+    border: 1px solid #000;
+    box-shadow: none;
+  }
+  
+  .demo-flow-button::before {
+    display: none;
+  }
+}
+
+/* ========================================
+   Animation Keyframes
+   ======================================== */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+} 

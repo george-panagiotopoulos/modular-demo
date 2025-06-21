@@ -1,0 +1,132 @@
+# MODULAR BANKING DEMO - CURSOR RULES
+# =====================================
+
+## PROJECT OVERVIEW
+This is a modular banking demonstration application showcasing the transition from monolithic to microservices architecture. The application demonstrates business functionality to banking customers while revealing the underlying technical architecture to technical users.
+
+## FOLDER STRUCTURE
+```
+ModularBankingDemo/
+├── .cursorrules                          # This file - project guidelines
+├── tests/                               # Empty - tests moved to src/__tests__
+├── modular-banking-frontend/           # React frontend application
+│   ├── public/                         # Static assets
+│   ├── src/                           # Source code
+│   │   ├── __tests__/                 # Test files (Create React App pattern)
+│   │   │   ├── App.test.js           # App component tests
+│   │   │   └── Dashboard.test.js     # Dashboard component tests
+│   │   ├── App.js                     # Main App component
+│   │   ├── App.css                    # App styling (Temenos theme)
+│   │   ├── Dashboard.js               # Main dashboard component
+│   │   ├── Dashboard.css              # Dashboard styling (comprehensive)
+│   │   ├── index.js                   # React entry point
+│   │   └── setupTests.js              # Jest test configuration
+│   ├── package.json                   # Dependencies and scripts
+│   └── README.md                      # Frontend documentation
+└── PUML/                              # PlantUML files (future architecture visualization)
+    └── plantuml-mit-1.2025.1.jar     # PlantUML JAR file
+```
+
+## COMPONENT ARCHITECTURE
+
+### Dashboard Components
+The dashboard features four main banking product modules:
+1. **Deposits R25** (🏦) - Comprehensive deposit management system
+2. **Lending R24** (💰) - Advanced lending platform 
+3. **Pricing** (📊) - Dynamic pricing engine
+4. **Payments** (💳) - Modern payments processing platform
+
+### Styling Guidelines
+- **Primary Theme**: Temenos Banking (Blue: #1e3a8a, #3b82f6)
+- **Design System**: Modern, accessible, responsive
+- **Accessibility**: WCAG 2.1 AA compliant
+- **Animation**: Subtle, professional transitions
+
+## DEVELOPMENT RULES
+
+### 1. FOLDER STRUCTURE COMPLIANCE
+- **Tests are located** in `/src/__tests__/` (Create React App standard)
+- **NEVER** mix test files with component files in src/
+- **PRESERVE** the current directory structure
+- **Note**: We tried moving tests to `/tests/` but Create React App doesn't support custom test paths easily
+
+### 2. TESTING STANDARDS
+- All tests are located in `/ModularBankingDemo/modular-banking-frontend/src/__tests__/`
+- Tests import components using relative paths: `../ComponentName`
+- Maintain comprehensive test coverage (currently 19/19 passing tests)
+- Use proper accessibility testing with @testing-library/jest-dom
+
+### 3. COMPONENT DEVELOPMENT
+- **Dashboard rectangles** represent banking products: Deposits R25, Lending R24, Pricing, Payments
+- **Never change** the core banking product names without updating all related tests
+- **Maintain** the 2x2 grid layout and responsive design
+- **Preserve** accessibility features and keyboard navigation
+
+### 4. STYLING CONSISTENCY
+- **Use** the established Temenos color palette
+- **Maintain** the gradient backgrounds and modern UI elements
+- **Preserve** the header styling that matches the dashboard theme
+- **Keep** all animations and transitions subtle and professional
+
+### 5. IMPORT PATHS
+- Tests import from: `../ComponentName` (relative to __tests__ folder)
+- Source files use relative imports within src/
+- **Never** break the import structure when refactoring
+
+### 6. NAMING CONVENTIONS
+- Component files: PascalCase (Dashboard.js, App.js)
+- Test files: ComponentName.test.js
+- CSS files: match component names (Dashboard.css, App.css)
+- Test IDs: kebab-case (deposits-r25-pane, dashboard-grid)
+
+## FUTURE DEVELOPMENT AREAS
+
+### Planned Features (from original spec)
+1. **Mobile App Tab** - Smartphone resolution interface for bank customers
+2. **Branch Application Tab** - Employee interface for bank operations  
+3. **Headless APIs Tab** - REST API testing and event monitoring
+4. **Architecture Tab** - Dynamic PUML visualization of system architecture
+5. **Assistant Tab** - RAG model for architecture documentation
+
+### Technology Integration
+- **Backend**: Python Flask (when implemented)
+- **Architecture Visualization**: PlantUML with dynamic highlighting
+- **Event Streaming**: Apache Kafka / Azure Event Hub integration
+- **API Testing**: REST API console with JSON request/response
+
+## CRITICAL REMINDERS
+
+### DO NOT:
+- Mix test files with component files in src/
+- Change the banking product names without comprehensive updates
+- Break the established folder structure
+- Remove accessibility features
+- Modify the Temenos branding theme
+
+### ALWAYS:
+- Run tests after making changes: `npm test`
+- Maintain the responsive design
+- Preserve keyboard navigation
+- Keep the professional banking appearance
+- Update tests when changing component behavior
+- Respect the established import paths
+
+## TESTING COMMANDS
+```bash
+# Run all tests
+cd modular-banking-frontend && npm test
+
+# Run specific test file
+cd modular-banking-frontend && npm test -- --testNamePattern="Dashboard"
+
+# Run tests without watch mode
+cd modular-banking-frontend && npm test -- --watchAll=false
+```
+
+## CONTACT & CONTEXT
+This project demonstrates modular banking architecture for business and technical stakeholders. The UI must remain professional, accessible, and true to banking industry standards while showcasing the underlying microservices transformation.
+
+## TECHNICAL NOTES
+- **Test Location**: Originally planned for `/tests/` but moved to `src/__tests__/` due to Create React App limitations
+- **Jest Configuration**: Using default Create React App patterns for maximum compatibility
+- **Import Paths**: Simplified to relative imports from __tests__ directory 

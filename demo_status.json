@@ -1,15 +1,15 @@
 {
   "status": "completed",
   "results": {
-    "party_id": "2515429693",
-    "account_id": "1013719272",
+    "party_id": "2516466195",
+    "account_id": "1013719612",
     "loan_ids": [
-      "AA2507364FR2",
-      "AA25073YP62Z"
+      "AA25073P8VVP",
+      "AA250736K21X"
     ],
-    "term_deposit_id": "1013719288"
+    "term_deposit_id": "1013719628"
   },
   "error": "",
   "progress": "Completed successfully!",
-  "timestamp": "2025-06-03T11:15:49.593580"
+  "timestamp": "2025-06-13T21:24:48.067647"
 }
