@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import HeadlessV3 from './components/HeadlessV3';
 import './DemoFlow.css';
 
 // Loading component
@@ -14,6 +15,7 @@ const LoadingSpinner = () => (
 const DemoFlow = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('overview');
   const navigate = useNavigate();
 
   // Simulate loading state
@@ -51,6 +53,132 @@ const DemoFlow = () => {
       </div>
     );
   }
+
+  // Tab content renderer
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'headless-v3':
+        return <HeadlessV3 />;
+      case 'mobile-app':
+        return (
+          <div className="tab-content">
+            <div className="coming-soon-section">
+              <div className="coming-soon-icon">📱</div>
+              <h3>Mobile App Demo</h3>
+              <p>Mobile banking interface simulation coming soon...</p>
+            </div>
+          </div>
+        );
+      case 'branch-app':
+        return (
+          <div className="tab-content">
+            <div className="coming-soon-section">
+              <div className="coming-soon-icon">🏦</div>
+              <h3>Branch Application Demo</h3>
+              <p>Bank employee interface simulation coming soon...</p>
+            </div>
+          </div>
+        );
+      case 'architecture':
+        return (
+          <div className="tab-content">
+            <div className="coming-soon-section">
+              <div className="coming-soon-icon">🏗️</div>
+              <h3>Architecture Visualization</h3>
+              <p>Dynamic PUML architecture diagrams coming soon...</p>
+            </div>
+          </div>
+        );
+      case 'assistant':
+        return (
+          <div className="tab-content">
+            <div className="coming-soon-section">
+              <div className="coming-soon-icon">🤖</div>
+              <h3>AI Assistant</h3>
+              <p>RAG-powered architecture assistant coming soon...</p>
+            </div>
+          </div>
+        );
+      default:
+        return (
+          <div className="tab-content">
+            <div className="welcome-section">
+              <h2>Welcome to the Modular Banking Experience</h2>
+              <p>
+                This comprehensive demo showcases how our modular architecture delivers seamless customer experiences 
+                while maintaining the flexibility and scalability that modern banks require.
+              </p>
+            </div>
+
+            <div className="demo-features">
+              <div className="feature-card">
+                <div className="feature-icon">🚀</div>
+                <h3>Headless v3 Event Streaming</h3>
+                <p>Real-time component event monitoring with dynamic component selection and live event feeds.</p>
+                <button 
+                  className="feature-button"
+                  onClick={() => setActiveTab('headless-v3')}
+                >
+                  Try Headless v3
+                </button>
+              </div>
+
+              <div className="feature-card">
+                <div className="feature-icon">📱</div>
+                <h3>Mobile Banking</h3>
+                <p>Customer-facing mobile application with complete banking functionality.</p>
+                <button 
+                  className="feature-button"
+                  onClick={() => setActiveTab('mobile-app')}
+                  disabled
+                >
+                  Coming Soon
+                </button>
+              </div>
+
+              <div className="feature-card">
+                <div className="feature-icon">🏦</div>
+                <h3>Branch Application</h3>
+                <p>Bank employee interface for customer service and operations.</p>
+                <button 
+                  className="feature-button"
+                  onClick={() => setActiveTab('branch-app')}
+                  disabled
+                >
+                  Coming Soon
+                </button>
+              </div>
+
+              <div className="feature-card">
+                <div className="feature-icon">🏗️</div>
+                <h3>Architecture View</h3>
+                <p>Dynamic PUML visualization showing real-time component interactions.</p>
+                <button 
+                  className="feature-button"
+                  onClick={() => setActiveTab('architecture')}
+                  disabled
+                >
+                  Coming Soon
+                </button>
+              </div>
+
+              <div className="feature-card">
+                <div className="feature-icon">🤖</div>
+                <h3>AI Assistant</h3>
+                <p>RAG-powered assistant for architecture questions and guidance.</p>
+                <button 
+                  className="feature-button"
+                  onClick={() => setActiveTab('assistant')}
+                  disabled
+                >
+                  Coming Soon
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+    }
+  };
 
   return (
     <div 
@@ -90,57 +218,79 @@ const DemoFlow = () => {
         </button>
         <div className="header-content">
           <div className="header-icon" aria-hidden="true">🚀</div>
-          <h1 id="main-content">End-to-end demo flow</h1>
+          <h1 id="main-content">Modular Banking Demo</h1>
           <p className="header-subtitle">Experience the Complete Banking Journey</p>
         </div>
       </div>
 
+      {/* Tab Navigation */}
+      {activeTab !== 'overview' && (
+        <nav className="tab-navigation" role="tablist">
+          <button
+            className={`tab-button ${activeTab === 'overview' ? 'active' : ''}`}
+            onClick={() => setActiveTab('overview')}
+            role="tab"
+            aria-selected={activeTab === 'overview'}
+          >
+            <span className="tab-icon">🏠</span>
+            Overview
+          </button>
+          <button
+            className={`tab-button ${activeTab === 'headless-v3' ? 'active' : ''}`}
+            onClick={() => setActiveTab('headless-v3')}
+            role="tab"
+            aria-selected={activeTab === 'headless-v3'}
+          >
+            <span className="tab-icon">🚀</span>
+            Headless v3
+          </button>
+          <button
+            className={`tab-button ${activeTab === 'mobile-app' ? 'active' : ''}`}
+            onClick={() => setActiveTab('mobile-app')}
+            role="tab"
+            aria-selected={activeTab === 'mobile-app'}
+            disabled
+          >
+            <span className="tab-icon">📱</span>
+            Mobile App
+          </button>
+          <button
+            className={`tab-button ${activeTab === 'branch-app' ? 'active' : ''}`}
+            onClick={() => setActiveTab('branch-app')}
+            role="tab"
+            aria-selected={activeTab === 'branch-app'}
+            disabled
+          >
+            <span className="tab-icon">🏦</span>
+            Branch App
+          </button>
+          <button
+            className={`tab-button ${activeTab === 'architecture' ? 'active' : ''}`}
+            onClick={() => setActiveTab('architecture')}
+            role="tab"
+            aria-selected={activeTab === 'architecture'}
+            disabled
+          >
+            <span className="tab-icon">🏗️</span>
+            Architecture
+          </button>
+          <button
+            className={`tab-button ${activeTab === 'assistant' ? 'active' : ''}`}
+            onClick={() => setActiveTab('assistant')}
+            role="tab"
+            aria-selected={activeTab === 'assistant'}
+            disabled
+          >
+            <span className="tab-icon">🤖</span>
+            Assistant
+          </button>
+        </nav>
+      )}
+
       {/* Main Content */}
       <main className="demo-flow-main">
-        <div className="demo-flow-content">
-          <div className="welcome-section">
-            <h2>Welcome to the Modular Banking Experience</h2>
-            <p>
-              This comprehensive demo will guide you through the complete banking workflow, 
-              showcasing how our modular architecture delivers seamless customer experiences 
-              while maintaining the flexibility and scalability that modern banks require.
-            </p>
-          </div>
-
-          <div className="coming-soon-section">
-            <div className="coming-soon-icon" aria-hidden="true">🔧</div>
-            <h3>Coming Soon</h3>
-            <p>
-              We're currently preparing an interactive end-to-end demonstration that will showcase:
-            </p>
-            <ul className="feature-list">
-              <li>Complete customer onboarding journey</li>
-              <li>Account opening and management processes</li>
-              <li>Loan application and approval workflow</li>
-              <li>Payment processing and transfers</li>
-              <li>Real-time analytics and reporting</li>
-              <li>Cross-module integration capabilities</li>
-            </ul>
-          </div>
-
-          <div className="placeholder-actions">
-            <button 
-              className="primary-action-button"
-              onClick={handleBackClick}
-              aria-label="Return to Dashboard to explore individual modules"
-            >
-              <span className="button-icon" aria-hidden="true">🏦</span>
-              Explore Individual Modules
-            </button>
-            <button 
-              className="secondary-action-button"
-              onClick={() => navigate('/modular-architecture')}
-              aria-label="Learn more about our modular architecture"
-            >
-              <span className="button-icon" aria-hidden="true">🏗️</span>
-              Learn About Architecture
-            </button>
-          </div>
+        <div className="demo-flow-content" role="tabpanel">
+          {renderTabContent()}
         </div>
       </main>
 
