@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import '../styles/HeadlessV3.css';
+import './HeadlessV3.css';
 
 // Component configuration mapping
 const COMPONENT_CONFIG = {
