@@ -1,0 +1,825 @@
+/* Temenos Color Variables */
+:root {
+  --temenos-primary: #5CB8B2;
+  --temenos-secondary: #8246AF;
+  --temenos-accent: #283275;
+  --temenos-light: #F8FAFA;
+  --temenos-gray: #6B7280;
+  --temenos-dark: #1F2937;
+  --temenos-success: #10B981;
+  --temenos-warning: #F59E0B;
+  --temenos-error: #EF4444;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+}
+
+/* Mobile App Container */
+.mobile-app-container {
+  max-width: 390px;
+  width: 100%;
+  height: 844px;
+  margin: 0 auto;
+  background: var(--temenos-light);
+  border: 1px solid #E5E7EB;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+}
+
+.mobile-app-container.responsive-mobile {
+  /* Ensure responsive behavior */
+  min-height: 100vh;
+}
+
+/* Loading Container */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 1rem;
+  color: var(--temenos-gray);
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f3f4f6;
+  border-top: 3px solid var(--temenos-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Header */
+.mobile-header {
+  background: linear-gradient(135deg, var(--temenos-primary) 0%, var(--temenos-secondary) 100%);
+  color: white;
+  padding: 1rem;
+  box-shadow: var(--shadow-md);
+  position: relative;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo-text {
+  font-size: 1.5rem;
+  font-weight: bold;
+  letter-spacing: -0.025em;
+}
+
+.header-title h1 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* Main Content */
+.mobile-main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  background: var(--temenos-light);
+}
+
+/* Screens */
+.screen {
+  height: 100%;
+  min-height: 500px;
+}
+
+.screen-header {
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.screen-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--temenos-dark);
+  margin: 0;
+  flex: 1;
+}
+
+.back-button {
+  background: none;
+  border: none;
+  color: var(--temenos-primary);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+}
+
+.back-button:hover {
+  background: rgba(92, 184, 178, 0.1);
+}
+
+.account-info {
+  font-size: 0.875rem;
+  color: var(--temenos-gray);
+  margin: 0.5rem 0 0 0;
+}
+
+.screen-content {
+  height: calc(100% - 3rem);
+}
+
+/* Party ID Section */
+.party-id-section {
+  background: white;
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid #E5E7EB;
+}
+
+.party-id-form .form-group.inline {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.party-id-form .form-group.inline label {
+  font-weight: 600;
+  color: var(--temenos-dark);
+  white-space: nowrap;
+}
+
+.party-id-form .form-group.inline input {
+  flex: 1;
+}
+
+/* Form Groups */
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: var(--temenos-dark);
+  font-size: 0.875rem;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #E5E7EB;
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--temenos-primary);
+  box-shadow: 0 0 0 3px rgba(92, 184, 178, 0.1);
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  min-height: 44px; /* Touch-friendly minimum */
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--temenos-primary);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #4DA8A2;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+  background: var(--temenos-secondary);
+  color: white;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #723B9A;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--temenos-primary);
+  border: 2px solid var(--temenos-primary);
+}
+
+.btn-outline:hover {
+  background: var(--temenos-primary);
+  color: white;
+}
+
+/* Sections */
+.accounts-section,
+.loans-section {
+  margin-bottom: 1.5rem;
+}
+
+.accounts-section h3,
+.loans-section h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--temenos-dark);
+  margin-bottom: 1rem;
+}
+
+.cards-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.placeholder-card {
+  background: white;
+  border: 1px solid #E5E7EB;
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--temenos-gray);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Account and Loan Cards */
+.account-card,
+.loan-card {
+  background: white;
+  border: 1px solid #E5E7EB;
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+}
+
+.account-card:hover,
+.loan-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.card-header h4 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--temenos-dark);
+  margin: 0;
+  flex: 1;
+}
+
+.account-type,
+.loan-type {
+  background: var(--temenos-primary);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.card-body {
+  margin-bottom: 1rem;
+}
+
+.balance-info,
+.loan-info {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.balance-item,
+.loan-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.balance-item .label,
+.loan-item .label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--temenos-gray);
+  text-transform: uppercase;
+}
+
+.balance-item .amount,
+.loan-item .amount {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--temenos-dark);
+}
+
+.balance-item .amount.primary,
+.loan-item .amount.primary {
+  color: var(--temenos-primary);
+  font-size: 1.25rem;
+}
+
+.card-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.card-actions .btn {
+  flex: 1;
+  min-width: 120px;
+}
+
+/* Transfer Form */
+.transfer-form {
+  background: white;
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid #E5E7EB;
+}
+
+/* Success Message */
+.success-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #F0FDF4;
+  border: 1px solid #BBF7D0;
+  color: var(--temenos-success);
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+}
+
+.success-icon {
+  font-size: 1rem;
+}
+
+/* Profile Information */
+.profile-info {
+  background: white;
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid #E5E7EB;
+}
+
+.profile-section {
+  margin-bottom: 1.5rem;
+}
+
+.profile-section h3 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--temenos-dark);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #F3F4F6;
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-item .label {
+  font-weight: 600;
+  color: var(--temenos-gray);
+}
+
+.info-item .value {
+  font-weight: 600;
+  color: var(--temenos-dark);
+}
+
+/* Transactions */
+.transactions-list {
+  background: white;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid #E5E7EB;
+  overflow: hidden;
+}
+
+.transaction-item {
+  padding: 1rem;
+  border-bottom: 1px solid #F3F4F6;
+}
+
+.transaction-item:last-child {
+  border-bottom: none;
+}
+
+.transaction-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.transaction-description {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.transaction-description strong {
+  font-weight: 600;
+  color: var(--temenos-dark);
+}
+
+.transaction-date {
+  font-size: 0.75rem;
+  color: var(--temenos-gray);
+}
+
+.transaction-amount {
+  font-weight: 700;
+  font-size: 1rem;
+  white-space: nowrap;
+}
+
+.transaction-amount.credit {
+  color: var(--temenos-success);
+}
+
+.transaction-amount.debit {
+  color: var(--temenos-error);
+}
+
+/* Loan Details */
+.loan-details {
+  background: white;
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid #E5E7EB;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: #F9FAFB;
+  border-radius: var(--radius-sm);
+}
+
+.detail-item .label {
+  font-weight: 600;
+  color: var(--temenos-gray);
+}
+
+.detail-item .value {
+  font-weight: 700;
+  color: var(--temenos-dark);
+}
+
+/* Loan Schedule */
+.schedule-container {
+  background: white;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid #E5E7EB;
+  overflow: hidden;
+}
+
+.schedule-table {
+  display: flex;
+  flex-direction: column;
+}
+
+.schedule-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 1rem;
+  padding: 1rem;
+  border-bottom: 1px solid #F3F4F6;
+  align-items: center;
+}
+
+.schedule-row:last-child {
+  border-bottom: none;
+}
+
+.payment-date {
+  font-size: 0.875rem;
+  color: var(--temenos-gray);
+}
+
+.payment-amount {
+  font-weight: 700;
+  color: var(--temenos-dark);
+}
+
+.payment-status {
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.payment-status.paid {
+  background: #F0FDF4;
+  color: var(--temenos-success);
+}
+
+.payment-status.pending {
+  background: #FFFBEB;
+  color: var(--temenos-warning);
+}
+
+.payment-status.overdue {
+  background: #FEF2F2;
+  color: var(--temenos-error);
+}
+
+/* Bottom Navigation */
+.mobile-navigation {
+  display: flex;
+  background: white;
+  border-top: 1px solid #E5E7EB;
+  box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
+  padding: 0.5rem;
+}
+
+.nav-button {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 0.5rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: var(--radius-sm);
+  min-height: 44px; /* Touch-friendly minimum */
+  color: var(--temenos-gray);
+}
+
+.nav-button:hover {
+  background: #F3F4F6;
+}
+
+.nav-button.active {
+  color: var(--temenos-primary);
+  background: rgba(92, 184, 178, 0.1);
+}
+
+.nav-icon {
+  font-size: 1.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.nav-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Error Message */
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  color: var(--temenos-error);
+  padding: 0.75rem 1rem;
+  margin: 0 1rem 1rem 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+}
+
+.error-icon {
+  font-size: 1rem;
+}
+
+.error-text {
+  flex: 1;
+}
+
+.error-dismiss {
+  background: none;
+  border: none;
+  color: var(--temenos-error);
+  cursor: pointer;
+  font-size: 1.25rem;
+  font-weight: bold;
+  padding: 0;
+  min-height: 24px;
+  min-width: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Responsive Design */
+@media (max-width: 420px) {
+  .mobile-app-container {
+    max-width: 100%;
+    height: 100vh;
+    border-radius: 0;
+    border: none;
+  }
+}
+
+@media (max-height: 700px) {
+  .screen {
+    min-height: 400px;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01s !important;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .mobile-app-container {
+    background: #1F2937;
+    border-color: #374151;
+  }
+  
+  .mobile-main {
+    background: #1F2937;
+  }
+  
+  .placeholder-card,
+  .party-id-section,
+  .transfer-form,
+  .profile-info,
+  .account-card,
+  .loan-card,
+  .transactions-list,
+  .loan-details,
+  .schedule-container {
+    background: #374151;
+    border-color: #4B5563;
+    color: #F9FAFB;
+  }
+  
+  .mobile-navigation {
+    background: #374151;
+    border-top-color: #4B5563;
+  }
+}
+
+/* Focus indicators for keyboard navigation */
+.nav-button:focus,
+.btn:focus,
+input:focus,
+select:focus,
+.back-button:focus {
+  outline: 2px solid var(--temenos-primary);
+  outline-offset: 2px;
+}
+
+/* Animation for screen transitions */
+.screen {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Loading states */
+.screen.loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Touch interactions */
+@media (hover: none) and (pointer: coarse) {
+  .btn:hover,
+  .nav-button:hover,
+  .back-button:hover,
+  .account-card:hover,
+  .loan-card:hover {
+    transform: none;
+    box-shadow: none;
+    background: inherit;
+  }
+  
+  .btn:active,
+  .nav-button:active,
+  .back-button:active {
+    transform: scale(0.95);
+  }
+} 
+/* Loading Overlay - for when loading during interactions */
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  gap: 1rem;
+}
+
+.loading-overlay .spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f3f4f6;
+  border-top: 3px solid var(--temenos-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loading-overlay p {
+  color: var(--temenos-gray);
+  font-weight: 500;
+}

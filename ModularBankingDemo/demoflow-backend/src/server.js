@@ -1,6 +1,6 @@
 /**
  * DemoFlow Backend Server
- * Express.js server for headless_v3 functionality with real Azure Event Hub integration
+ * Express.js server for banking API and event stream functionality with real Azure Event Hub integration
  */
 
 const express = require('express');
@@ -11,11 +11,12 @@ require('dotenv').config();
 
 // Import routes and services
 const eventStreamRoutes = require('./routes/eventStreamRoutes');
+const bankingRoutes = require('./routes/banking');
 const { getEventHubService } = require('./services/eventHubService');
 const { getSessionManager } = require('./services/sessionManager');
 
 const app = express();
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 5011;
 
 // Security middleware
 app.use(helmet({
@@ -44,30 +45,47 @@ app.get('/health', (req, res) => {
   const sessionManager = getSessionManager();
   
   res.json({
-    status: 'ok',
+    status: 'healthy',
     timestamp: new Date().toISOString(),
     services: {
       eventHub: eventHubService ? 'active' : 'inactive',
-      sessionManager: sessionManager ? 'active' : 'inactive'
+      sessionManager: sessionManager ? 'active' : 'inactive',
+      banking: 'active'
     }
   });
 });
 
 // API routes
 app.use('/api/event-stream', eventStreamRoutes);
+app.use('/api/banking', bankingRoutes);
+
+// Legacy route mapping for MobileApp compatibility
+// Map the old endpoints to new banking endpoints
+app.get('/api/parties/:partyId/accounts', (req, res) => {
+  console.log(`[Legacy API] Redirecting /api/parties/${req.params.partyId}/accounts to banking API`);
+  req.url = `/api/banking/parties/${req.params.partyId}/accounts`;
+  app.handle(req, res);
+});
+
+app.get('/api/parties/:partyId/loans', (req, res) => {
+  console.log(`[Legacy API] Redirecting /api/parties/${req.params.partyId}/loans to banking API`);
+  req.url = `/api/banking/parties/${req.params.partyId}/loans`;
+  app.handle(req, res);
+});
 
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({
-    message: 'DemoFlow Backend Server - Event Stream with Azure Event Hub',
+    message: 'Modular Banking Demo - Backend Server',
     version: '1.0.0',
     endpoints: {
       health: '/health',
-      components: '/api/event-stream/components',
-      connect: '/api/event-stream/connect/:component',
-      disconnect: '/api/event-stream/disconnect/:component',
-      events: '/api/event-stream/events/:component',
-      stats: '/api/event-stream/stats',
+      banking: '/api/banking',
+      eventStreamComponents: '/api/event-stream/components',
+      eventStreamConnect: '/api/event-stream/connect/:component',
+      eventStreamDisconnect: '/api/event-stream/disconnect/:component',
+      eventStreamEvents: '/api/event-stream/events/:component',
+      eventStreamStats: '/api/event-stream/stats',
       sessionStatus: '/api/event-stream/session/:id/status',
       sessionCleanup: '/api/event-stream/session/:id/cleanup'
     }
@@ -79,7 +97,17 @@ app.use('*', (req, res) => {
   res.status(404).json({
     error: 'Endpoint not found',
     path: req.originalUrl,
-    method: req.method
+    method: req.method,
+    availableEndpoints: [
+      'GET /health',
+      'GET /api/banking/parties/:partyId/accounts',
+      'GET /api/banking/parties/:partyId/loans',
+      'GET /api/event-stream/components',
+      'GET /api/event-stream/stats',
+      'POST /api/event-stream/connect/:component',
+      'POST /api/event-stream/disconnect/:component',
+      'GET /api/event-stream/events/:component'
+    ]
   });
 });
 
@@ -128,9 +156,10 @@ module.exports = app;
 // Start server only if this file is run directly
 if (require.main === module) {
   const server = app.listen(PORT, () => {
-    console.log(`🚀 DemoFlow Backend Server running on port ${PORT}`);
+    console.log(`🚀 Modular Banking Demo Backend Server running on port ${PORT}`);
     console.log(`📊 Health check: http://localhost:${PORT}/health`);
-    console.log(`🔗 API endpoints: http://localhost:${PORT}/api/event-stream/`);
+    console.log(`🏦 Banking API: http://localhost:${PORT}/api/banking/`);
+    console.log(`🔗 Event Stream API: http://localhost:${PORT}/api/event-stream/`);
     console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
     
     // Initialize services

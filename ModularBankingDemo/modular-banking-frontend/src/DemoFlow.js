@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import EventStream from './components/EventStream';
+import MobileApp from './components/MobileApp/MobileApp';
 import './DemoFlow.css';
 
 // Loading component
@@ -56,15 +57,7 @@ const DemoFlow = () => {
       case 'event-stream':
         return <EventStream />;
       case 'mobile-app':
-        return (
-          <div className="tab-content">
-            <div className="coming-soon-section">
-              <div className="coming-soon-icon">📱</div>
-              <h3>Mobile App Demo</h3>
-              <p>Mobile banking interface simulation coming soon...</p>
-            </div>
-          </div>
-        );
+        return <MobileApp />;
       case 'branch-app':
         return (
           <div className="tab-content">
@@ -126,9 +119,8 @@ const DemoFlow = () => {
                 <button 
                   className="feature-button"
                   onClick={() => setActiveTab('mobile-app')}
-                  disabled
                 >
-                  Coming Soon
+                  Try Mobile Banking
                 </button>
               </div>
 
@@ -223,7 +215,6 @@ const DemoFlow = () => {
             onClick={() => setActiveTab('mobile-app')}
             role="tab"
             aria-selected={activeTab === 'mobile-app'}
-            disabled
           >
             <span className="tab-icon">📱</span>
             Mobile App

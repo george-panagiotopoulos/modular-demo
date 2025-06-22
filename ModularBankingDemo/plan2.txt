@@ -1,0 +1,283 @@
+# Backend API Implementation Plan for Standalone ModularBankingDemo (Revised)
+
+## Current State Analysis
+
+### What We Have:
+- **Express.js server** in `ModularBankingDemo/demoflow-backend/` (port 5011)
+- **React frontend** in `ModularBankingDemo/modular-banking-frontend/` (port 3011)
+- **Existing services**: EventHub, SessionManager for headless functionality
+- **MobileApp component** that expects these core API endpoints:
+  - `GET /api/parties/{partyId}/accounts`
+  - `GET /api/parties/{partyId}/loans` 
+  - `GET /api/parties/{partyId}` (profile)
+  - `GET /api/loans/{loanId}/details`
+  - `GET /api/loans/{loanId}/schedule`
+  - `GET /api/health`
+
+### What We Need:
+- Implement core banking API endpoints in the Express.js backend
+- Connect to real Temenos banking APIs (same as the Flask app was doing)
+- Make the frontend work standalone without the Flask dependency
+- **SCOPE**: Focus on parties, accounts, and loans only (no payments/transactions)
+
+## Implementation Plan
+
+### Phase 1: Backend API Infrastructure Setup
+
+#### 1.1 Create Banking API Routes Structure
+```
+ModularBankingDemo/demoflow-backend/src/routes/
+├── eventStreamRoutes.js (existing)
+├── bankingRoutes.js (NEW - main banking APIs)
+├── partiesRoutes.js (NEW - party/customer endpoints)
+└── loansRoutes.js (NEW - loan endpoints)
+```
+
+#### 1.2 Create Banking Services Layer
+```
+ModularBankingDemo/demoflow-backend/src/services/
+├── eventHubService.js (existing)
+├── sessionManager.js (existing)
+├── eventService.js (existing)
+├── temenosApiService.js (NEW - Temenos API client)
+├── partiesService.js (NEW - customer data service)
+└── loansService.js (NEW - loans service)
+```
+
+#### 1.3 Create Models/DTOs
+```
+ModularBankingDemo/demoflow-backend/src/models/
+├── Account.js (NEW)
+├── Loan.js (NEW)
+└── Party.js (NEW)
+```
+
+#### 1.4 Add Configuration Management
+```
+ModularBankingDemo/demoflow-backend/src/config/
+├── temenosConfig.js (NEW - Temenos API endpoints)
+└── bankingConfig.js (NEW - banking-specific config)
+```
+
+### Phase 2: Temenos API Integration Service
+
+#### 2.1 Core Temenos API Service (`temenosApiService.js`)
+- **Purpose**: Central service to communicate with Temenos Banking APIs
+- **Features**:
+  - HTTP client with proper error handling
+  - Request/response logging and tracking
+  - Authentication handling
+  - Retry logic for failed requests
+  - Response caching where appropriate
+
+#### 2.2 API Endpoints to Integrate
+Based on the Flask implementation, we need to connect to:
+- `ms-holdings-api` for accounts, loans, arrangements
+- `ms-parties-api` for customer information (if available)
+
+### Phase 3: Banking Services Implementation
+
+#### 3.1 Parties Service (`partiesService.js`)
+```javascript
+// Functions to implement:
+- getPartyDetails(partyId)
+- getPartyAccounts(partyId) 
+- getPartyLoans(partyId)
+```
+
+#### 3.2 Loans Service (`loansService.js`)
+```javascript
+// Functions to implement:
+- getLoanDetails(loanId)
+- getLoanSchedule(loanId)
+```
+
+### Phase 4: API Routes Implementation
+
+#### 4.1 Party Routes (`partiesRoutes.js`)
+```javascript
+GET /api/parties/:partyId
+GET /api/parties/:partyId/accounts
+GET /api/parties/:partyId/loans
+```
+
+#### 4.2 Loan Routes (`loansRoutes.js`)
+```javascript
+GET /api/loans/:loanId/details
+GET /api/loans/:loanId/schedule
+```
+
+#### 4.3 Main Banking Routes (`bankingRoutes.js`)
+```javascript
+// Aggregates all banking routes
+// Includes health check endpoint
+GET /api/health
+```
+
+### Phase 5: Frontend Configuration Update
+
+#### 5.1 Update API Service Configuration
+- Frontend runs on port 3011
+- Backend runs on port 5011
+- Update React's proxy configuration to route `/api` calls to Express backend
+- Update CORS settings in Express server
+
+#### 5.2 Proxy Configuration
+- Ensure proper error handling for backend connectivity
+- No changes needed to apiService.js (it uses relative URLs)
+
+### Phase 6: Error Handling & Logging
+
+#### 6.1 Comprehensive Error Handling
+- API-specific error responses
+- Proper HTTP status codes
+- Error logging and monitoring
+- Graceful degradation for API failures
+
+#### 6.2 Request/Response Logging
+- Track all API calls for debugging
+- Performance monitoring
+- Request correlation IDs
+
+### Phase 7: Testing & Validation
+
+#### 7.1 Backend API Tests
+```
+ModularBankingDemo/demoflow-backend/tests/
+├── integration/
+│   ├── bankingApi.test.js
+│   ├── partiesApi.test.js
+│   └── loansApi.test.js
+├── services/
+│   ├── temenosApiService.test.js
+│   ├── partiesService.test.js
+│   └── loansService.test.js
+└── routes/
+    └── bankingRoutes.test.js
+```
+
+#### 7.2 End-to-End Testing
+- Test MobileApp component with new backend
+- Verify all API endpoints work correctly
+- Test error scenarios and edge cases
+
+## Implementation Strategy
+
+### Step 1: Core Infrastructure (1-2 hours)
+1. Set up the basic routing structure
+2. Create the Temenos API service
+3. Add configuration management
+4. Update server.js to include new routes
+5. Update CORS for port 3011
+
+### Step 2: Parties & Accounts APIs (2-3 hours)
+1. Implement parties service and routes
+2. Test with MobileApp home screen functionality
+3. Ensure accounts data is properly formatted
+
+### Step 3: Loans APIs (1-2 hours)
+1. Implement loans service and routes
+2. Test loan details and schedule screens
+3. Verify data format matches expectations
+
+### Step 4: Frontend Integration (1 hour)
+1. Update frontend proxy configuration if needed
+2. Test complete integration
+3. Fix any connectivity issues
+
+### Step 5: Testing & Polish (1-2 hours)
+1. Add comprehensive tests
+2. Improve error handling
+3. Add logging and monitoring
+
+## Key Technical Decisions
+
+### 1. Port Configuration
+- **Express Backend**: Port 5011 (from .env file)
+- **React Frontend**: Port 3011 (from package.json)
+- **Proxy**: React dev server proxy `/api` → `http://localhost:5011`
+
+### 2. API Response Format
+- Maintain exact same response format as Flask backend
+- Ensure MobileApp component works without changes
+- Use same error handling patterns
+
+### 3. Temenos Integration
+- Reuse the same Temenos API endpoints and logic from Flask app
+- Maintain the same data transformation logic
+- Keep the same authentication and request patterns
+
+### 4. Environment Variables
+```bash
+# .env file additions (to existing file)
+TEMENOS_BASE_URL=http://modulardemo.northeurope.cloudapp.azure.com
+TEMENOS_HOLDINGS_API_PATH=/ms-holdings-api/api
+```
+
+### 5. Scope Limitations
+- **INCLUDED**: Parties, Accounts, Loans
+- **EXCLUDED**: Payments, Transactions, Transfers
+- MobileApp transfer functionality will show appropriate "not implemented" message
+
+## File Structure After Implementation
+
+```
+ModularBankingDemo/
+├── demoflow-backend/
+│   ├── .env (updated with Temenos config)
+│   ├── src/
+│   │   ├── server.js (updated with banking routes)
+│   │   ├── config/
+│   │   │   ├── temenosConfig.js (NEW)
+│   │   │   └── bankingConfig.js (NEW)
+│   │   ├── models/
+│   │   │   ├── Account.js (NEW)
+│   │   │   ├── Loan.js (NEW)
+│   │   │   └── Party.js (NEW)
+│   │   ├── routes/
+│   │   │   ├── eventStreamRoutes.js (existing)
+│   │   │   ├── bankingRoutes.js (NEW)
+│   │   │   ├── partiesRoutes.js (NEW)
+│   │   │   └── loansRoutes.js (NEW)
+│   │   └── services/
+│   │       ├── eventHubService.js (existing)
+│   │       ├── sessionManager.js (existing)
+│   │       ├── eventService.js (existing)
+│   │       ├── temenosApiService.js (NEW)
+│   │       ├── partiesService.js (NEW)
+│   │       └── loansService.js (NEW)
+│   └── tests/
+│       ├── integration/
+│       │   ├── bankingApi.test.js (NEW)
+│       │   ├── partiesApi.test.js (NEW)
+│       │   └── loansApi.test.js (NEW)
+│       └── services/
+│           ├── temenosApiService.test.js (NEW)
+│           ├── partiesService.test.js (NEW)
+│           └── loansService.test.js (NEW)
+└── modular-banking-frontend/
+    └── (no changes needed - uses relative API calls)
+```
+
+## Success Criteria
+
+1. ✅ MobileApp component works for parties, accounts, and loans
+2. ✅ All API endpoints return same data format as Flask backend
+3. ✅ Real Temenos API integration (no mocking)
+4. ✅ Proper error handling and logging
+5. ✅ Comprehensive test coverage
+6. ✅ Standalone operation (no Flask dependency)
+7. ✅ Production-ready code quality
+8. ✅ Transfer functionality gracefully handles "not implemented" state
+
+## Implementation Timeline
+
+**Total Estimated Time: 6-10 hours**
+
+1. **Infrastructure Setup**: 1-2 hours
+2. **Parties & Accounts APIs**: 2-3 hours  
+3. **Loans APIs**: 1-2 hours
+4. **Frontend Integration**: 1 hour
+5. **Testing & Polish**: 1-2 hours
+
+This revised plan focuses on the core banking functionality needed for the MobileApp while maintaining a clean, maintainable architecture that can be extended in the future. 

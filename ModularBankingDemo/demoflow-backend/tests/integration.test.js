@@ -50,7 +50,7 @@ jest.mock('../src/services/sessionManager', () => ({
 }));
 
 // Import the actual routes after mocking
-const headlessV3Routes = require('../src/routes/headlessV3Routes');
+const eventStreamRoutes = require('../src/routes/eventStreamRoutes');
 
 describe('Frontend-Backend Integration Tests', () => {
   let app;
@@ -61,7 +61,7 @@ describe('Frontend-Backend Integration Tests', () => {
     app = express();
     app.use(cors());
     app.use(express.json());
-    app.use('/api/headless-v3', headlessV3Routes);
+    app.use('/api/event-stream', eventStreamRoutes);
     
     // Add health endpoint
     app.get('/health', (req, res) => {
@@ -137,7 +137,7 @@ describe('Frontend-Backend Integration Tests', () => {
   describe('Component Configuration Integration', () => {
     test('should return banking component configurations', async () => {
       const response = await request(app)
-        .get('/api/headless-v3/components')
+        .get('/api/event-stream/components')
         .expect(200);
 
       expect(response.body).toHaveProperty('success', true);
@@ -159,7 +159,7 @@ describe('Frontend-Backend Integration Tests', () => {
 
     test('should handle CORS preflight requests', async () => {
       await request(app)
-        .options('/api/headless-v3/components')
+        .options('/api/event-stream/components')
         .expect(204);
     });
   });
@@ -170,7 +170,7 @@ describe('Frontend-Backend Integration Tests', () => {
       const sessionId = 'test-session-123';
 
       const response = await request(app)
-        .post(`/api/headless-v3/connect/${component}`)
+        .post(`/api/event-stream/connect/${component}`)
         .set('x-session-id', sessionId)
         .expect(200);
 
@@ -188,7 +188,7 @@ describe('Frontend-Backend Integration Tests', () => {
       const sessionId = 'test-session-456';
 
       const response = await request(app)
-        .post(`/api/headless-v3/connect/${component}`)
+        .post(`/api/event-stream/connect/${component}`)
         .set('x-session-id', sessionId)
         .expect(400);
 
@@ -201,7 +201,7 @@ describe('Frontend-Backend Integration Tests', () => {
       const component = 'party';
 
       const response = await request(app)
-        .post(`/api/headless-v3/connect/${component}`)
+        .post(`/api/event-stream/connect/${component}`)
         .expect(400);
 
       expect(response.body).toHaveProperty('success', false);
@@ -217,7 +217,7 @@ describe('Frontend-Backend Integration Tests', () => {
       mockEventHubService.connectToComponent.mockRejectedValueOnce(new Error('Connection failed'));
 
       const response = await request(app)
-        .post(`/api/headless-v3/connect/${component}`)
+        .post(`/api/event-stream/connect/${component}`)
         .set('x-session-id', sessionId)
         .expect(500);
 
@@ -238,7 +238,7 @@ describe('Frontend-Backend Integration Tests', () => {
       const sessionId = 'test-session-disconnect';
 
       const response = await request(app)
-        .post(`/api/headless-v3/disconnect/${component}`)
+        .post(`/api/event-stream/disconnect/${component}`)
         .set('x-session-id', sessionId)
         .expect(200);
 
@@ -252,7 +252,7 @@ describe('Frontend-Backend Integration Tests', () => {
       const sessionId = 'test-session-not-connected';
 
       const response = await request(app)
-        .post(`/api/headless-v3/disconnect/${component}`)
+        .post(`/api/event-stream/disconnect/${component}`)
         .set('x-session-id', sessionId)
         .expect(200);
 
@@ -264,7 +264,7 @@ describe('Frontend-Backend Integration Tests', () => {
       const component = 'party';
 
       const response = await request(app)
-        .post(`/api/headless-v3/disconnect/${component}`)
+        .post(`/api/event-stream/disconnect/${component}`)
         .expect(400);
 
       expect(response.body).toHaveProperty('success', false);
@@ -284,7 +284,7 @@ describe('Frontend-Backend Integration Tests', () => {
       const component = 'party';
 
       request(app)
-        .get(`/api/headless-v3/events/${component}`)
+        .get(`/api/event-stream/events/${component}`)
         .set('Accept', 'text/event-stream')
         .expect(400)
         .expect('Content-Type', /application\/json/)
@@ -303,7 +303,7 @@ describe('Frontend-Backend Integration Tests', () => {
   describe('Statistics Integration', () => {
     test('should return combined service statistics', async () => {
       const response = await request(app)
-        .get('/api/headless-v3/stats')
+        .get('/api/event-stream/stats')
         .expect(200);
 
       expect(response.body).toHaveProperty('success', true);
@@ -324,7 +324,7 @@ describe('Frontend-Backend Integration Tests', () => {
       });
 
       const response = await request(app)
-        .get(`/api/headless-v3/session/${sessionId}/status`)
+        .get(`/api/event-stream/session/${sessionId}/status`)
         .expect(200);
 
       expect(response.body).toHaveProperty('success', true);
@@ -343,7 +343,7 @@ describe('Frontend-Backend Integration Tests', () => {
       });
 
       const response = await request(app)
-        .get(`/api/headless-v3/session/${sessionId}/status`)
+        .get(`/api/event-stream/session/${sessionId}/status`)
         .expect(200);
 
       expect(response.body).toHaveProperty('success', true);
@@ -355,7 +355,7 @@ describe('Frontend-Backend Integration Tests', () => {
   describe('Error Handling Integration', () => {
     test('should handle malformed JSON requests', async () => {
       const response = await request(app)
-        .post('/api/headless-v3/connect/party')
+        .post('/api/event-stream/connect/party')
         .set('Content-Type', 'application/json')
         .send('{ invalid json }')
         .expect(400);
@@ -369,7 +369,7 @@ describe('Frontend-Backend Integration Tests', () => {
       const sessionId = 'test-session-123';
 
       const response = await request(app)
-        .post(`/api/headless-v3/connect/${component}`)
+        .post(`/api/event-stream/connect/${component}`)
         .send(`sessionId=${sessionId}`)
         .expect(400);
 
@@ -384,7 +384,7 @@ describe('Frontend-Backend Integration Tests', () => {
       mockEventHubService.connectToComponent.mockRejectedValueOnce(new Error('Service unavailable'));
 
       const response = await request(app)
-        .post(`/api/headless-v3/connect/${component}`)
+        .post(`/api/event-stream/connect/${component}`)
         .set('x-session-id', sessionId)
         .expect(500);
 
@@ -400,7 +400,7 @@ describe('Frontend-Backend Integration Tests', () => {
 
     test('should handle 404 for non-existent endpoints', async () => {
       await request(app)
-        .get('/api/headless-v3/non-existent-endpoint')
+        .get('/api/event-stream/non-existent-endpoint')
         .expect(404);
     });
   });
@@ -412,7 +412,7 @@ describe('Frontend-Backend Integration Tests', () => {
 
       const requests = Array.from({ length: concurrentRequests }, (_, i) => 
         request(app)
-          .post(`/api/headless-v3/connect/${component}`)
+          .post(`/api/event-stream/connect/${component}`)
           .set('x-session-id', `concurrent-session-${i}`)
           .expect(200)
       );
@@ -429,12 +429,12 @@ describe('Frontend-Backend Integration Tests', () => {
 
       for (let i = 0; i < 3; i++) {
         await request(app)
-          .post(`/api/headless-v3/connect/${component}`)
+          .post(`/api/event-stream/connect/${component}`)
           .set('x-session-id', sessionId)
           .expect(200);
 
         await request(app)
-          .post(`/api/headless-v3/disconnect/${component}`)
+          .post(`/api/event-stream/disconnect/${component}`)
           .set('x-session-id', sessionId)
           .expect(200);
       }
@@ -452,7 +452,7 @@ describe('Frontend-Backend Integration Tests', () => {
 
       const requests = Array.from({ length: requestCount }, () =>
         request(app)
-          .get('/api/headless-v3/stats')
+          .get('/api/event-stream/stats')
           .expect(200)
       );
 
@@ -470,7 +470,7 @@ describe('Frontend-Backend Integration Tests', () => {
   describe('Cross-Origin Resource Sharing (CORS)', () => {
     test('should handle CORS preflight requests', async () => {
       await request(app)
-        .options('/api/headless-v3/components')
+        .options('/api/event-stream/components')
         .set('Origin', 'http://localhost:3000')
         .set('Access-Control-Request-Method', 'GET')
         .expect(204);
@@ -478,7 +478,7 @@ describe('Frontend-Backend Integration Tests', () => {
 
     test('should include CORS headers in responses', async () => {
       const response = await request(app)
-        .get('/api/headless-v3/components')
+        .get('/api/event-stream/components')
         .set('Origin', 'http://localhost:3000')
         .expect(200);
 
@@ -490,7 +490,7 @@ describe('Frontend-Backend Integration Tests', () => {
       const sessionId = 'cors-test-session';
 
       const response = await request(app)
-        .post(`/api/headless-v3/connect/${component}`)
+        .post(`/api/event-stream/connect/${component}`)
         .set('Origin', 'http://localhost:3000')
         .set('x-session-id', sessionId)
         .expect(200);
