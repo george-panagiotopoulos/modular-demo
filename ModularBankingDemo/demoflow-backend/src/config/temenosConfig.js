@@ -15,6 +15,7 @@ const temenosConfig = {
     holdings: {
       arrangements: '/v1.0.0/holdings/parties/{partyId}/arrangements',
       accountBalances: '/v3.0.0/holdings/accounts/{accountId}/balances',
+      transactions: '/v2.0.0/holdings/accounts/{accountId}/transactions',
       loanDetails: '/v1.0.0/holdings/arrangements/{arrangementId}',
       loanSchedule: '/v1.0.0/holdings/arrangements/{arrangementId}/schedule'
     }

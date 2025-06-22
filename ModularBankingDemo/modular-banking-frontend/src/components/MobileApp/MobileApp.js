@@ -13,6 +13,16 @@ import {
 } from '../../services/apiService';
 import './MobileApp.css';
 
+// Helper function to transform technical product names to user-friendly labels
+const getProductDisplayName = (productName) => {
+  const productMappings = {
+    'MORTGAGE.PRODUCT': 'Mortgage Loan',
+    'GS.CONSUMER.LOAN': 'Consumer Loan'
+  };
+  
+  return productMappings[productName] || productName;
+};
+
 const MobileApp = () => {
   // State management
   const [partyId, setPartyId] = useState('TEST123');
@@ -62,8 +72,15 @@ const MobileApp = () => {
         loansPromise
       ]);
 
-      setAccounts(Array.isArray(accountsData) ? accountsData : []);
-      setLoans(Array.isArray(loansData) ? loansData : []);
+      // Handle the new API response format with success/data structure
+      const accounts = accountsData?.data || accountsData || [];
+      const loans = loansData?.data || loansData || [];
+      
+      console.log(`[MobileApp] Processing accounts data:`, accounts);
+      console.log(`[MobileApp] Processing loans data:`, loans);
+
+      setAccounts(Array.isArray(accounts) ? accounts : []);
+      setLoans(Array.isArray(loans) ? loans : []);
     } catch (err) {
       setError('API Error: Failed to load banking data. Please try again.');
       console.error('Error loading initial data:', err);
@@ -91,6 +108,11 @@ const MobileApp = () => {
     setActiveScreen(screen);
     setError('');
     setSuccess('');
+    
+    // Auto-load profile when navigating to profile tab
+    if (screen === 'profile' && !profile) {
+      loadProfile();
+    }
   };
 
   // Data loading functions
@@ -112,8 +134,8 @@ const MobileApp = () => {
   const showTransactions = async (accountId) => {
     setLoading(true);
     try {
-      const transactionData = await fetchTransactions(accountId);
-      setTransactions(transactionData);
+      const transactionData = await fetchTransactions(accountId, partyId);
+      setTransactions(transactionData.transactions || []);
       setSelectedAccount(accountId);
       setActiveScreen('transactions');
     } catch (err) {
@@ -127,17 +149,28 @@ const MobileApp = () => {
   const showLoanDetails = async (loanId) => {
     setLoading(true);
     try {
-      const [details, schedule] = await Promise.all([
-        fetchLoanDetails(loanId),
-        fetchLoanSchedule(loanId)
-      ]);
+      const details = await fetchLoanDetails(loanId);
       setLoanDetails(details);
-      setLoanSchedule(schedule);
       setSelectedLoan(loanId);
       setActiveScreen('loanDetails');
     } catch (err) {
-      setError('Failed to load loan details');
+      setError('Failed to load loan details. The upstream API may be unavailable.');
       console.error('Error loading loan details:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const showLoanSchedule = async (loanId) => {
+    setLoading(true);
+    try {
+      const schedule = await fetchLoanSchedule(loanId);
+      setLoanSchedule(schedule);
+      setSelectedLoan(loanId);
+      setActiveScreen('loanSchedule');
+    } catch (err) {
+      setError('Failed to load loan schedule. The upstream API may be unavailable.');
+      console.error('Error loading loan schedule:', err);
     } finally {
       setLoading(false);
     }
@@ -212,7 +245,7 @@ const MobileApp = () => {
         <div className="cards-container">
           {accounts.length > 0 ? (
             accounts.map((account) => (
-              <div key={account.id} className="account-card">
+              <div key={account.accountId || account.id} className="account-card">
                 <div className="card-header">
                   <h4>{account.displayName}</h4>
                   <span className="account-type">{account.productName}</span>
@@ -231,7 +264,7 @@ const MobileApp = () => {
                   <div className="card-actions">
                     <button 
                       className="btn btn-outline"
-                      onClick={() => showTransactions(account.id)}
+                      onClick={() => showTransactions(account.accountId || account.id)}
                     >
                       View Transactions
                     </button>
@@ -252,9 +285,9 @@ const MobileApp = () => {
         <div className="cards-container">
           {loans.length > 0 ? (
             loans.map((loan) => (
-              <div key={loan.id} className="account-card">
+              <div key={loan.loanId || loan.id} className="account-card">
                 <div className="card-header">
-                  <h4>{loan.productName}</h4>
+                  <h4>{getProductDisplayName(loan.productName)}</h4>
                   <span className="account-type">Loan Account</span>
                 </div>
                 <div className="card-body">
@@ -267,7 +300,7 @@ const MobileApp = () => {
                   <div className="card-actions">
                     <button 
                       className="btn btn-outline"
-                      onClick={() => showLoanDetails(loan.id)}
+                      onClick={() => showLoanDetails(loan.loanId || loan.id)}
                     >
                       View Details
                     </button>
@@ -298,31 +331,158 @@ const MobileApp = () => {
               <div className="info-grid">
                 <div className="info-item">
                   <span className="label">Name</span>
-                  <span className="value">{profile.displayName}</span>
+                  <span className="value">{profile.firstName} {profile.lastName}</span>
                 </div>
                 <div className="info-item">
-                  <span className="label">Party ID</span>
-                  <span className="value">{profile.partyId}</span>
+                  <span className="label">Customer ID</span>
+                  <span className="value">{profile.customerId}</span>
                 </div>
                 <div className="info-item">
-                  <span className="label">Customer Since</span>
-                  <span className="value">{formatDate(profile.customerSince)}</span>
+                  <span className="label">Date of Birth</span>
+                  <span className="value">{profile.dateOfBirth}</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">Email</span>
+                  <span className="value">{profile.email || 'N/A'}</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">Mobile</span>
+                  <span className="value">{profile.mobilePhone || 'N/A'}</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">Nationality</span>
+                  <span className="value">{profile.nationality || 'N/A'}</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">City of Birth</span>
+                  <span className="value">{profile.cityOfBirth || 'N/A'}</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">Address</span>
+                  <span className="value">{profile.address || 'N/A'}</span>
                 </div>
               </div>
             </div>
           </div>
         ) : (
           <div className="placeholder-card">
-            <p>Click "Load Profile" to view profile information</p>
-            <button 
-              className="btn btn-primary"
-              onClick={loadProfile}
-              disabled={loading}
-            >
-              Load Profile
-            </button>
+            <p>Loading profile information...</p>
           </div>
         )}
+      </div>
+    </div>
+  );
+
+  const renderTransactionsScreen = () => (
+    <div className="screen transactions-screen" data-testid="transactions-screen">
+      <div className="screen-header">
+        <button className="back-button" onClick={() => handleNavigation('home')}>‹ Back</button>
+        <h2>Transactions</h2>
+      </div>
+      <div className="screen-content">
+        <div className="transaction-list">
+          {transactions.length > 0 ? (
+            transactions.map((tx) => (
+              <div key={tx.transactionId} className="transaction-item">
+                <div className="transaction-details">
+                  <span className="description">{tx.description}</span>
+                  <span className="date">{formatDate(tx.date)}</span>
+                </div>
+                <div className={`amount ${tx.type === 'DEBIT' ? 'debit' : 'credit'}`}>
+                  {formatCurrency(tx.amount)}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="placeholder-card">
+              <p>No transactions found for this account.</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderLoanDetailsScreen = () => (
+    <div className="screen loan-details-screen" data-testid="loan-details-screen">
+      <div className="screen-header">
+        <button className="back-button" onClick={() => handleNavigation('home')}>‹ Back</button>
+        <h2>Loan Details</h2>
+      </div>
+      <div className="screen-content">
+        {loanDetails ? (
+          <div className="details-card">
+            <div className="info-grid">
+              <div className="info-item">
+                <span className="label">Arrangement ID</span>
+                <span className="value">{loanDetails.arrangementId}</span>
+              </div>
+              <div className="info-item">
+                <span className="label">Product</span>
+                <span className="value">{loanDetails.productDescription}</span>
+              </div>
+              <div className="info-item">
+                <span className="label">Status</span>
+                <span className="value">{loanDetails.arrangementStatus}</span>
+              </div>
+              <div className="info-item">
+                <span className="label">Start Date</span>
+                <span className="value">{formatDate(loanDetails.arrangementStartDate)}</span>
+              </div>
+            </div>
+            <div className="card-actions">
+              <button
+                className="btn btn-primary"
+                onClick={() => showLoanSchedule(selectedLoan)}
+              >
+                View Payment Schedule
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="placeholder-card">
+            <p>Loan details could not be loaded.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderLoanScheduleScreen = () => (
+    <div className="screen loan-schedule-screen" data-testid="loan-schedule-screen">
+      <div className="screen-header">
+        <button className="back-button" onClick={() => handleNavigation('loanDetails')}>‹ Back</button>
+        <h2>Loan Payment Schedule</h2>
+      </div>
+      <div className="screen-content">
+        <div className="schedule-list">
+          {loanSchedule && loanSchedule.length > 0 ? (
+            loanSchedule.map((item, index) => (
+              <div key={index} className="schedule-item">
+                <div className="schedule-date">
+                  <span className="label">Date</span>
+                  <span className="value">{formatDate(item.paymentDate)}</span>
+                </div>
+                <div className="schedule-amount">
+                  <span className="label">Principal</span>
+                  <span className="value">{formatCurrency(item.principalAmount)}</span>
+                </div>
+                <div className="schedule-amount">
+                  <span className="label">Interest</span>
+                  <span className="value">{formatCurrency(item.interestAmount)}</span>
+                </div>
+                <div className="schedule-amount total">
+                  <span className="label">Total</span>
+                  <span className="value">{formatCurrency(item.totalAmount)}</span>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="placeholder-card">
+              <p>No schedule information available for this loan.</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -344,7 +504,7 @@ const MobileApp = () => {
             >
               <option value="">Select Account</option>
               {accounts.map((account) => (
-                <option key={account.id} value={account.id}>
+                <option key={account.accountId || account.id} value={account.accountId || account.id}>
                   {account.displayName} - {formatCurrency(account.availableBalance)}
                 </option>
               ))}
@@ -452,6 +612,9 @@ const MobileApp = () => {
         {activeScreen === 'home' && renderHomeScreen()}
         {activeScreen === 'profile' && renderProfileScreen()}
         {activeScreen === 'transfer' && renderTransferScreen()}
+        {activeScreen === 'transactions' && renderTransactionsScreen()}
+        {activeScreen === 'loanDetails' && renderLoanDetailsScreen()}
+        {activeScreen === 'loanSchedule' && renderLoanScheduleScreen()}
       </main>
 
       <nav className="mobile-navigation" role="navigation">

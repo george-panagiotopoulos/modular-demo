@@ -114,6 +114,7 @@ class Loan {
    */
   toJSON() {
     return {
+      id: this.contractReference,
       loanId: this.loanId,
       displayName: this.displayName,
       productName: this.productName,

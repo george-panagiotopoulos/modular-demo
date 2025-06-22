@@ -1,0 +1,43 @@
+# Migration Plan: Mobile App Screens
+
+This document outlines the plan to migrate four key screens from the old Python/jQuery application to the new React/Node.js stack.
+
+**Party ID for Testing:** `2516466195`
+
+## 1. Discover Temenos API Endpoints & Verify with cURL
+
+*   **Objective:** Identify the real, underlying Temenos API endpoints for the required features by inspecting the old application's source code. Stubbing is forbidden.
+*   **Action Items:**
+    1.  Read and analyze the old Python backend file: `/Users/gpanagiotopoulos/ModularDemo/app/routes/main_routes.py`. This file is expected to contain the logic that calls the core Temenos APIs.
+    2.  Identify the specific endpoints for:
+        *   Fetching customer information/profile.
+        *   Fetching account transactions.
+        *   Fetching loan details.
+        *   Fetching loan payment schedule.
+    3.  Once the endpoints are identified, I will formulate and execute `curl` commands against the live Temenos backend to verify they work and to understand the JSON data structure. I will use the provided party ID.
+
+## 2. Update Node.js Backend (`demoflow-backend`)
+
+*   **Objective:** Create new routes in the `server.js` application to act as a secure and managed proxy to the Temenos APIs.
+*   **Action Items:**
+    1.  I will inspect the existing Node.js backend structure, particularly `demoflow-backend/src/server.js` and any related routing files (e.g., `demoflow-backend/src/routes/banking.js`).
+    2.  I will add new API routes to the Express server that correspond to the features being migrated. These routes will likely be:
+        *   `GET /api/banking/parties/:partyId/profile`
+        *   `GET /api/banking/accounts/:accountId/transactions`
+        *   `GET /api/banking/loans/:loanId/details`
+        *   `GET /api/banking/loans/:loanId/schedule`
+    3.  The implementation for each route will involve making a secure HTTP request from the Node.js server to the corresponding Temenos API endpoint discovered in Step 1.
+
+## 3. Update React Frontend (`modular-banking-frontend`)
+
+*   **Objective:** Create the necessary React components and UI logic within `MobileApp.js` to display the data for the four new screens.
+*   **Action Items:**
+    1.  I will analyze the existing `MobileApp.js` component and its state management.
+    2.  Based on the analysis, I will add the UI rendering logic for four new views/screens directly within `MobileApp.js`:
+        *   **Customer Information Screen:** A view to display the fetched profile data.
+        *   **Transactions Screen:** A view to list transactions for a selected account.
+        *   **Loan Details Screen:** A view to display the comprehensive details of a selected loan.
+        *   **Loan Schedule Screen:** A view to show the loan's repayment schedule.
+    3.  I will update the `apiService.js` file to add new functions that make calls to the new Node.js backend endpoints created in Step 2.
+    4.  I will wire up the UI, connecting buttons like "View Transactions" and "View Details" to the appropriate data-fetching functions and ensuring the application navigates to the correct screen upon receiving data.
+    5.  I will handle loading and error states gracefully to provide a good user experience. 

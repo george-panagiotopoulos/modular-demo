@@ -99,6 +99,7 @@ class Account {
    */
   toJSON() {
     return {
+      id: this.contractReference,
       accountId: this.accountId,
       displayName: this.displayName,
       productName: this.productName,

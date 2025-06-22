@@ -3,6 +3,7 @@
  * Handles loan-specific operations using Temenos APIs
  */
 
+const axios = require('axios'); // Import axios for direct calls
 const { getTemenosApiService } = require('./temenosApiService');
 const Loan = require('../models/Loan');
 const bankingConfig = require('../config/bankingConfig');
@@ -14,119 +15,90 @@ class LoansService {
 
   /**
    * Get loan details by loan ID
-   * @param {string} loanId - Loan arrangement ID
+   * @param {string} loanId - Loan contract reference ID
    * @returns {Promise<Object>} - Loan details
    */
   async getLoanDetails(loanId) {
+    console.log(`[Loans Service] getLoanDetails called with loanId: ${loanId}`);
+    
     try {
-      console.log(`[LoansService] Getting loan details for ${loanId}`);
+      // Use the hardcoded URL that matches the Python implementation
+      const url = `http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/${loanId}/status`;
+      console.log(`[Loans Service] Calling Temenos API URL: ${url}`);
       
-      // Get arrangement details from Temenos
-      const arrangementData = await this.temenosApi.getArrangementDetails(loanId);
-      
-      if (!arrangementData) {
-        throw new Error(bankingConfig.errors.LOAN_NOT_FOUND);
-      }
-      
-      // Get balance data for the loan
-      let balanceData = { balance: 0.0 };
-      let accountId = null;
-      
-      // Extract account ID from arrangement
-      if (arrangementData.alternateReferences) {
-        for (const ref of arrangementData.alternateReferences) {
-          if (ref.alternateType === 'ACCOUNT') {
-            accountId = ref.alternateId;
-            break;
-          }
+      const response = await axios.get(url, {
+        headers: {
+          'Accept': 'application/json'
         }
+      });
+      
+      console.log(`[Loans Service] Temenos API response status: ${response.status}`);
+      console.log(`[Loans Service] Temenos API response data:`, response.data);
+      
+      // Transform the response to match the expected format
+      if (response.data && response.data.body && Array.isArray(response.data.body) && response.data.body.length > 0) {
+        const loanData = response.data.body[0];
+        console.log(`[Loans Service] Transformed loan data:`, loanData);
+        return loanData;
       }
       
-      if (accountId) {
-        try {
-          const balanceResponse = await this.temenosApi.getAccountBalances(accountId);
-          
-          if (balanceResponse && balanceResponse.items && balanceResponse.items.length > 0) {
-            const balanceItem = balanceResponse.items[0];
-            // For loans, balance is typically negative, convert to positive outstanding
-            const rawBalance = parseFloat(balanceItem.onlineActualBalance || 0);
-            balanceData.balance = rawBalance < 0 ? Math.abs(rawBalance) : rawBalance;
-          }
-        } catch (error) {
-          console.error(`[LoansService] Error fetching balance for loan ${loanId}:`, error.message);
-        }
-      }
-      
-      // Create loan object
-      const loan = Loan.fromTemenosArrangement(arrangementData, balanceData);
-      
-      return loan.toJSON();
-      
+      console.log(`[Loans Service] No loan data found in response`);
+      throw new Error('No loan data found');
     } catch (error) {
-      console.error(`[LoansService] Error getting loan details for ${loanId}:`, error.message);
-      throw new Error(bankingConfig.errors.LOAN_NOT_FOUND);
+      console.error(`[Loans Service] Error getting loan details for ${loanId}:`, error.message);
+      if (error.response) {
+        console.error(`[Loans Service] Temenos API error status: ${error.response.status}`);
+        console.error(`[Loans Service] Temenos API error data:`, error.response.data);
+      }
+      throw new Error(`Failed to fetch loan details: ${error.message}`);
     }
   }
 
   /**
-   * Get loan payment schedule
-   * @param {string} loanId - Loan arrangement ID
-   * @returns {Promise<Object>} - Payment schedule data
+   * Get loan payment schedule by loan ID
+   * @param {string} loanId - Loan contract reference ID
+   * @returns {Promise<Array>} - Loan payment schedule
    */
   async getLoanSchedule(loanId) {
+    console.log(`[Loans Service] getLoanSchedule called with loanId: ${loanId}`);
+    
     try {
-      console.log(`[LoansService] Getting loan schedule for ${loanId}`);
+      // Use the hardcoded URL that matches the Python implementation
+      const url = `http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/${loanId}/schedules`;
+      console.log(`[Loans Service] Calling Temenos API URL: ${url}`);
       
-      // Get payment schedule from Temenos
-      const scheduleData = await this.temenosApi.getLoanSchedule(loanId);
+      const response = await axios.get(url, {
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
       
-      if (!scheduleData || !scheduleData.paymentSchedule) {
-        // Return a basic structure if no schedule data
-        return {
-          loanId,
-          paymentSchedule: [],
-          totalPayments: 0,
-          nextPaymentDate: null,
-          nextPaymentAmount: 0.0
-        };
+      console.log(`[Loans Service] Temenos API response status: ${response.status}`);
+      console.log(`[Loans Service] Temenos API response data:`, response.data);
+      
+      // Transform the response to match the expected format
+      if (response.data && response.data.body && Array.isArray(response.data.body)) {
+        const scheduleData = response.data.body.map(payment => ({
+          paymentDate: payment.paymentDate || '',
+          paymentNumber: payment.paymentNumber || 1,
+          principalAmount: parseFloat(payment.principalAmount || 0),
+          interestAmount: parseFloat(payment.interestAmount || 0),
+          totalAmount: parseFloat(payment.totalAmount || 0),
+          outstandingAmount: parseFloat(payment.outstandingAmount || 0)
+        }));
+        console.log(`[Loans Service] Transformed schedule data (${scheduleData.length} payments):`, scheduleData);
+        return scheduleData;
       }
       
-      // Transform the schedule data
-      const payments = scheduleData.paymentSchedule.map((payment, index) => ({
-        paymentNumber: index + 1,
-        dueDate: this.formatDate(payment.paymentDate),
-        principalAmount: parseFloat(payment.principalAmount || 0),
-        interestAmount: parseFloat(payment.interestAmount || 0),
-        totalAmount: parseFloat(payment.totalAmount || payment.principalAmount || 0) + 
-                    parseFloat(payment.interestAmount || 0),
-        status: payment.status || 'PENDING',
-        paidDate: payment.paidDate ? this.formatDate(payment.paidDate) : null,
-        remainingBalance: parseFloat(payment.remainingBalance || 0)
-      }));
-      
-      // Find next payment
-      const nextPayment = payments.find(p => p.status === 'PENDING');
-      
-      return {
-        loanId,
-        paymentSchedule: payments,
-        totalPayments: payments.length,
-        nextPaymentDate: nextPayment ? nextPayment.dueDate : null,
-        nextPaymentAmount: nextPayment ? nextPayment.totalAmount : 0.0,
-        currency: scheduleData.currency || bankingConfig.defaults.currency
-      };
-      
+      console.log(`[Loans Service] No schedule data found in response`);
+      return [];
     } catch (error) {
-      console.error(`[LoansService] Error getting loan schedule for ${loanId}:`, error.message);
-      // Return empty schedule on error
-      return {
-        loanId,
-        paymentSchedule: [],
-        totalPayments: 0,
-        nextPaymentDate: null,
-        nextPaymentAmount: 0.0,
-        currency: bankingConfig.defaults.currency
-      };
+      console.error(`[Loans Service] Error getting loan schedule for ${loanId}:`, error.message);
+      if (error.response) {
+        console.error(`[Loans Service] Temenos API error status: ${error.response.status}`);
+        console.error(`[Loans Service] Temenos API error data:`, error.response.data);
+      }
+      throw new Error(`Failed to fetch loan schedule: ${error.message}`);
     }
   }
 

@@ -77,62 +77,122 @@ class TemenosApiService {
   }
 
   /**
-   * Make a GET request to Temenos API
-   * @param {string} endpoint - API endpoint path
-   * @param {Object} params - URL parameters
-   * @param {Object} options - Additional request options
-   * @returns {Promise<Object>} - API response data
-   */
-  async get(endpoint, params = {}, options = {}) {
-    const url = temenosConfig.buildUrl(endpoint, params);
-    
-    try {
-      const response = await this.client.get(url, {
-        params: options.queryParams,
-        ...options
-      });
-      
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  /**
-   * Make a POST request to Temenos API
-   * @param {string} endpoint - API endpoint path
-   * @param {Object} data - Request body data
-   * @param {Object} params - URL parameters
-   * @param {Object} options - Additional request options
-   * @returns {Promise<Object>} - API response data
-   */
-  async post(endpoint, data = {}, params = {}, options = {}) {
-    const url = temenosConfig.buildUrl(endpoint, params);
-    
-    try {
-      const response = await this.client.post(url, data, options);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  /**
-   * Get party arrangements from Holdings API
-   * @param {string} partyId - Party/customer ID
+   * Get party arrangements
+   * @param {string} partyId - Party ID
    * @returns {Promise<Object>} - Arrangements data
    */
   async getPartyArrangements(partyId) {
-    return this.get(temenosConfig.endpoints.holdings.arrangements, { partyId });
+    console.log(`[Temenos API] getPartyArrangements called with partyId: ${partyId}`);
+    
+    try {
+      // Use the correct API endpoint that matches the Python implementation
+      const url = `http://modulardemo.northeurope.cloudapp.azure.com/ms-holdings-api/api/v1.0.0/holdings/parties/${partyId}/arrangements`;
+      console.log(`[Temenos API] Calling URL: ${url}`);
+      
+      const response = await axios.get(url, {
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+      
+      console.log(`[Temenos API] getPartyArrangements response:`, response.data);
+      return response.data;
+    } catch (error) {
+      console.error(`[Temenos API] getPartyArrangements error:`, error);
+      throw error;
+    }
   }
 
   /**
-   * Get account balances from Holdings API
+   * Get account balances
    * @param {string} accountId - Account ID
    * @returns {Promise<Object>} - Balance data
    */
   async getAccountBalances(accountId) {
-    return this.get(temenosConfig.endpoints.holdings.accountBalances, { accountId });
+    console.log(`[Temenos API] getAccountBalances called with accountId: ${accountId}`);
+    
+    try {
+      // Use the correct API endpoint that matches the Python implementation
+      const url = `http://modulardemo.northeurope.cloudapp.azure.com/ms-holdings-api/api/v3.0.0/holdings/accounts/${accountId}/balances`;
+      console.log(`[Temenos API] Calling URL: ${url}`);
+      
+      const response = await axios.get(url, {
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+      
+      console.log(`[Temenos API] getAccountBalances response:`, response.data);
+      return response.data;
+    } catch (error) {
+      console.error(`[Temenos API] getAccountBalances error for accountId ${accountId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get account transactions from Holdings API
+   * @param {string} accountId - Account ID
+   * @returns {Promise<Array>} - Array of transactions
+   */
+  async getAccountTransactions(accountId) {
+    console.log(`[Temenos API] getAccountTransactions called with accountId: ${accountId}`);
+    
+    try {
+      // Use the correct Holdings API URL
+      const url = `http://modulardemo.northeurope.cloudapp.azure.com/ms-holdings-api/api/v3.0.0/holdings/accounts/${accountId}/transactions`;
+      console.log(`[Temenos API] Calling URL: ${url}`);
+      
+      const response = await axios.get(url, {
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+      
+      console.log(`[Temenos API] Raw response status and data:`, {
+        status: response.status || 'N/A',
+        data: response.data
+      });
+      
+      // Handle different response formats
+      let transactions = [];
+      
+      if (Array.isArray(response.data)) {
+        // Direct array response
+        transactions = response.data;
+      } else if (response.data && response.data.items && Array.isArray(response.data.items)) {
+        // Response with items array
+        transactions = response.data.items;
+      } else if (response.data && response.data.body && Array.isArray(response.data.body)) {
+        // Response with body array
+        transactions = response.data.body;
+      } else if (response.data && Array.isArray(response.data.data)) {
+        // Response with data array
+        transactions = response.data.data;
+      }
+      
+      console.log(`[Temenos API] Processed ${transactions.length} transactions`);
+      
+      // Transform transactions to consistent format
+      const transformedTransactions = transactions.map(tx => ({
+        transactionId: tx.id || tx.transactionId || 'N/A',
+        date: tx.valueDate || tx.bookingDate || tx.date || new Date().toISOString(),
+        description: tx.narrative || tx.description || tx.transactionReference || 'Transaction',
+        amount: Math.abs(parseFloat(tx.amountInAccountCurrency || tx.transactionAmount || tx.amount || 0)),
+        type: (tx.paymentIndicator || tx.type || '').toUpperCase().includes('CREDIT') || 
+              (parseFloat(tx.amountInAccountCurrency || tx.transactionAmount || tx.amount || 0) > 0) ? 'CREDIT' : 'DEBIT',
+        balance: parseFloat(tx.balance || 0),
+        currency: tx.currency || 'USD',
+        reference: tx.transactionReference || tx.reference || tx.externalReference || 'N/A'
+      }));
+      
+      console.log(`[Temenos API] Processed ${transformedTransactions.length} transactions`);
+      return transformedTransactions;
+      
+    } catch (error) {
+      console.error(`[Temenos API] getAccountTransactions error:`, error);
+      throw error;
+    }
   }
 
   /**
@@ -204,6 +264,41 @@ class TemenosApiService {
     } catch (error) {
       console.error('[TemenosAPI] Health check failed:', error.message);
       return false;
+    }
+  }
+
+  /**
+   * Generic GET request handler
+   * @param {string} endpoint - API endpoint
+   * @param {Object} options - Request options
+   * @returns {Promise<Object>} - Response data
+   */
+  async get(endpoint, options = {}) {
+    const url = `${temenosConfig.baseUrl}${endpoint}`;
+    console.log(`[Temenos API] Making GET request to: ${url}`);
+    console.log(`[Temenos API] Request options:`, options);
+    
+    try {
+      const response = await this.client.get(url, {
+        params: options.queryParams,
+        ...options
+      });
+      
+      console.log(`[Temenos API] Response status: ${response.status} ${response.statusText}`);
+      console.log(`[Temenos API] Response headers:`, Object.fromEntries(response.headers.entries()));
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[Temenos API] HTTP Error ${response.status}: ${errorText}`);
+        throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
+      }
+
+      const data = await response.data;
+      console.log(`[Temenos API] Response data:`, data);
+      return data;
+    } catch (error) {
+      console.error(`[Temenos API] Request failed for ${url}:`, error);
+      throw error;
     }
   }
 }

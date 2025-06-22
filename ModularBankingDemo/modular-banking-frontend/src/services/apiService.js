@@ -67,12 +67,25 @@ const apiRequest = async (url, options = {}) => {
  * @returns {Promise<Array>} - Array of account objects
  */
 export const fetchAccounts = async (partyId) => {
-  if (!partyId || partyId.trim() === '') {
-    return Promise.resolve([]);
-  }
+  console.log(`[Frontend API] fetchAccounts called with partyId: ${partyId}`);
+  const url = `${BACKEND_BASE_URL}/api/banking/parties/${partyId}/accounts?_=${Date.now()}`;
+  console.log(`[Frontend API] Calling URL: ${url}`);
   
-  const url = `/api/parties/${partyId}/accounts?_=${Date.now()}`;
-  return apiRequest(url);
+  try {
+    const response = await fetch(url);
+    console.log(`[Frontend API] fetchAccounts response status: ${response.status}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log(`[Frontend API] fetchAccounts response data:`, data);
+    return data;
+  } catch (error) {
+    console.error(`[Frontend API] fetchAccounts error:`, error);
+    throw error;
+  }
 };
 
 /**
@@ -81,12 +94,25 @@ export const fetchAccounts = async (partyId) => {
  * @returns {Promise<Array>} - Array of loan objects
  */
 export const fetchLoans = async (partyId) => {
-  if (!partyId || partyId.trim() === '') {
-    return Promise.resolve([]);
-  }
+  console.log(`[Frontend API] fetchLoans called with partyId: ${partyId}`);
+  const url = `${BACKEND_BASE_URL}/api/banking/parties/${partyId}/loans?_=${Date.now()}`;
+  console.log(`[Frontend API] Calling URL: ${url}`);
   
-  const url = `/api/parties/${partyId}/loans?_=${Date.now()}`;
-  return apiRequest(url);
+  try {
+    const response = await fetch(url);
+    console.log(`[Frontend API] fetchLoans response status: ${response.status}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log(`[Frontend API] fetchLoans response data:`, data);
+    return data;
+  } catch (error) {
+    console.error(`[Frontend API] fetchLoans error:`, error);
+    throw error;
+  }
 };
 
 /**
@@ -95,12 +121,25 @@ export const fetchLoans = async (partyId) => {
  * @returns {Promise<Object>} - Customer profile object
  */
 export const fetchProfile = async (partyId) => {
-  if (!partyId || partyId.trim() === '') {
-    return Promise.resolve(null);
-  }
+  console.log(`[Frontend API] fetchProfile called with partyId: ${partyId}`);
+  const url = `${BACKEND_BASE_URL}/api/banking/parties/${partyId}?_=${Date.now()}`;
+  console.log(`[Frontend API] Calling URL: ${url}`);
   
-  const url = `/api/parties/${partyId}?_=${Date.now()}`;
-  return apiRequest(url);
+  try {
+    const response = await fetch(url);
+    console.log(`[Frontend API] fetchProfile response status: ${response.status}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log(`[Frontend API] fetchProfile response data:`, data);
+    return data;
+  } catch (error) {
+    console.error(`[Frontend API] fetchProfile error:`, error);
+    throw error;
+  }
 };
 
 /**
@@ -110,12 +149,25 @@ export const fetchProfile = async (partyId) => {
  * @returns {Promise<Array>} - Array of transaction objects
  */
 export const fetchTransactions = async (accountId, partyId) => {
-  if (!accountId) {
-    return Promise.resolve([]);
-  }
+  console.log(`[Frontend API] fetchTransactions called with accountId: ${accountId}, partyId: ${partyId}`);
+  const url = `${BACKEND_BASE_URL}/api/banking/accounts/${accountId}/transactions?partyId=${partyId}&_=${Date.now()}`;
+  console.log(`[Frontend API] Calling URL: ${url}`);
   
-  const url = `/api/accounts/${accountId}/transactions?partyId=${partyId}&_=${Date.now()}`;
-  return apiRequest(url);
+  try {
+    const response = await fetch(url);
+    console.log(`[Frontend API] fetchTransactions response status: ${response.status}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log(`[Frontend API] fetchTransactions response data:`, data);
+    return data;
+  } catch (error) {
+    console.error(`[Frontend API] fetchTransactions error:`, error);
+    throw error;
+  }
 };
 
 /**
@@ -124,12 +176,25 @@ export const fetchTransactions = async (accountId, partyId) => {
  * @returns {Promise<Object>} - Loan details object
  */
 export const fetchLoanDetails = async (loanId) => {
-  if (!loanId) {
-    return Promise.resolve(null);
-  }
+  console.log(`[Frontend API] fetchLoanDetails called with loanId: ${loanId}`);
+  const url = `${BACKEND_BASE_URL}/api/banking/loans/${loanId}`;
+  console.log(`[Frontend API] Calling URL: ${url}`);
   
-  const url = `/api/loans/${loanId}/details`;
-  return apiRequest(url);
+  try {
+    const response = await fetch(url);
+    console.log(`[Frontend API] fetchLoanDetails response status: ${response.status}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log(`[Frontend API] fetchLoanDetails response data:`, data);
+    return data;
+  } catch (error) {
+    console.error(`[Frontend API] fetchLoanDetails error:`, error);
+    throw error;
+  }
 };
 
 /**
@@ -138,16 +203,29 @@ export const fetchLoanDetails = async (loanId) => {
  * @returns {Promise<Object>} - Loan schedule object
  */
 export const fetchLoanSchedule = async (loanId) => {
-  if (!loanId) {
-    return Promise.resolve(null);
-  }
+  console.log(`[Frontend API] fetchLoanSchedule called with loanId: ${loanId}`);
+  const url = `${BACKEND_BASE_URL}/api/banking/loans/${loanId}/schedule`;
+  console.log(`[Frontend API] Calling URL: ${url}`);
   
-  const url = `/api/loans/${loanId}/schedule`;
-  return apiRequest(url, {
-    headers: {
-      'X-Client-Type': 'mobile'
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'X-Client-Type': 'mobile'
+      }
+    });
+    console.log(`[Frontend API] fetchLoanSchedule response status: ${response.status}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-  });
+    
+    const data = await response.json();
+    console.log(`[Frontend API] fetchLoanSchedule response data:`, data);
+    return data;
+  } catch (error) {
+    console.error(`[Frontend API] fetchLoanSchedule error:`, error);
+    throw error;
+  }
 };
 
 /**
