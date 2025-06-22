@@ -1,43 +1,63 @@
-# Migration Plan: Mobile App Screens
 
-This document outlines the plan to migrate four key screens from the old Python/jQuery application to the new React/Node.js stack.
 
-**Party ID for Testing:** `2516466195`
+# MobileApp Component Redesign Implementation Plan
 
-## 1. Discover Temenos API Endpoints & Verify with cURL
+## Step 1: Implement Failing Tests
+- Create test file for MobileApp component
+- Test for presence of key UI elements (navigation, content areas, forms)
+- Test for proper Temenos color usage (#5CB8B2, #8246AF, #283275)
+- Test responsive layout across different screen sizes
+- Test accessibility features (ARIA roles, semantic HTML)
+- Test keyboard navigation and focus management
 
-*   **Objective:** Identify the real, underlying Temenos API endpoints for the required features by inspecting the old application's source code. Stubbing is forbidden.
-*   **Action Items:**
-    1.  Read and analyze the old Python backend file: `/Users/gpanagiotopoulos/ModularDemo/app/routes/main_routes.py`. This file is expected to contain the logic that calls the core Temenos APIs.
-    2.  Identify the specific endpoints for:
-        *   Fetching customer information/profile.
-        *   Fetching account transactions.
-        *   Fetching loan details.
-        *   Fetching loan payment schedule.
-    3.  Once the endpoints are identified, I will formulate and execute `curl` commands against the live Temenos backend to verify they work and to understand the JSON data structure. I will use the provided party ID.
+## Step 2: Create New MobileApp Component Structure
+- Implement semantic HTML structure with proper ARIA roles
+- Create mobile-first responsive design using CSS Grid/Flexbox
+- Apply Temenos Color Template consistently
+- Implement proper heading hierarchy and landmarks
+- Add skip navigation links for accessibility
 
-## 2. Update Node.js Backend (`demoflow-backend`)
+## Step 3: Develop Reusable UI Components
+- Create accessible button components with proper focus states
+- Implement form input components with validation
+- Design navigation menu with keyboard support
+- Add loading indicators and skeleton screens
+- Implement subtle animations for user feedback
+- Ensure proper color contrast ratios
 
-*   **Objective:** Create new routes in the `server.js` application to act as a secure and managed proxy to the Temenos APIs.
-*   **Action Items:**
-    1.  I will inspect the existing Node.js backend structure, particularly `demoflow-backend/src/server.js` and any related routing files (e.g., `demoflow-backend/src/routes/banking.js`).
-    2.  I will add new API routes to the Express server that correspond to the features being migrated. These routes will likely be:
-        *   `GET /api/banking/parties/:partyId/profile`
-        *   `GET /api/banking/accounts/:accountId/transactions`
-        *   `GET /api/banking/loans/:loanId/details`
-        *   `GET /api/banking/loans/:loanId/schedule`
-    3.  The implementation for each route will involve making a secure HTTP request from the Node.js server to the corresponding Temenos API endpoint discovered in Step 1.
+## Step 4: Implement Error Handling and User Feedback
+- Create clear error message components
+- Implement form validation with contextual tips
+- Add autosave functionality for forms
+- Implement loading states and progress indicators
+- Create toast notifications for user feedback
 
-## 3. Update React Frontend (`modular-banking-frontend`)
+## Step 5: Apply Gestalt Principles
+- Group related elements using proximity and similarity
+- Create clear visual hierarchy with typography
+- Implement effective whitespace usage
+- Use consistent iconography and visual elements
+- Balance professionalism with approachability
 
-*   **Objective:** Create the necessary React components and UI logic within `MobileApp.js` to display the data for the four new screens.
-*   **Action Items:**
-    1.  I will analyze the existing `MobileApp.js` component and its state management.
-    2.  Based on the analysis, I will add the UI rendering logic for four new views/screens directly within `MobileApp.js`:
-        *   **Customer Information Screen:** A view to display the fetched profile data.
-        *   **Transactions Screen:** A view to list transactions for a selected account.
-        *   **Loan Details Screen:** A view to display the comprehensive details of a selected loan.
-        *   **Loan Schedule Screen:** A view to show the loan's repayment schedule.
-    3.  I will update the `apiService.js` file to add new functions that make calls to the new Node.js backend endpoints created in Step 2.
-    4.  I will wire up the UI, connecting buttons like "View Transactions" and "View Details" to the appropriate data-fetching functions and ensuring the application navigates to the correct screen upon receiving data.
-    5.  I will handle loading and error states gracefully to provide a good user experience. 
+## Step 6: Enhance Trust and Credibility
+- Add security indicators and privacy notices
+- Implement predictable user behaviors
+- Create confirmation steps for critical operations
+- Add tooltips and guided onboarding
+- Provide transparent data usage information
+
+## Step 7: Comprehensive Testing
+- Unit tests for all components
+- Integration tests for user workflows
+- End-to-end tests for complete scenarios
+- Accessibility testing with assistive technologies
+- Cross-device and cross-browser testing
+- Performance testing and optimization
+
+## Success Criteria
+- All tests pass successfully
+- WCAG 2.1 AA compliance achieved
+- Responsive design works across all target devices
+- Temenos branding applied consistently
+- Performance metrics meet requirements
+- User experience is intuitive and accessible 

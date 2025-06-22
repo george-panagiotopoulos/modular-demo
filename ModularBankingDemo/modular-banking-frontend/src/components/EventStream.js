@@ -13,42 +13,36 @@ const COMPONENT_CONFIGS = {
     name: 'Party/Customer - R24',
     version: 'R24',
     description: 'Customer identity and profile management services',
-    eventTypes: ['CUSTOMER.CREATED', 'CUSTOMER.UPDATED', 'CUSTOMER.DELETED', 'PROFILE.CHANGED'],
     kafkaTopics: ['party-events', 'customer-lifecycle']
   },
   'deposits': {
     name: 'Deposits R25',
     version: 'R25', 
     description: 'Deposit account management and transaction processing',
-    eventTypes: ['ACCOUNT.OPENED', 'ACCOUNT.CLOSED', 'TRANSACTION.POSTED', 'BALANCE.UPDATED'],
     kafkaTopics: ['deposits-events', 'account-lifecycle']
   },
   'lending': {
     name: 'Lending R24',
     version: 'R24',
     description: 'Loan origination, management and servicing platform',
-    eventTypes: ['LOAN.ORIGINATED', 'LOAN.APPROVED', 'PAYMENT.RECEIVED', 'LOAN.DEFAULTED'],
     kafkaTopics: ['lending-events', 'loan-lifecycle']
   },
   'eventstore': {
     name: 'Event Store R25',
     version: 'R25',
     description: 'Central event storage and replay service',
-    eventTypes: ['EVENT.STORED', 'EVENT.REPLAYED', 'SNAPSHOT.CREATED', 'STREAM.ARCHIVED'],
     kafkaTopics: ['eventstore-events', 'replay-requests']
   },
   'adapter': {
     name: 'Adapter Service R24',
     version: 'R24',
     description: 'External system integration and data transformation',
-    eventTypes: ['INTEGRATION.STARTED', 'DATA.TRANSFORMED', 'EXTERNAL.CALL', 'ADAPTER.ERROR'],
     kafkaTopics: ['adapter-events', 'integration-lifecycle']
   },
   'holdings': {
-    name: 'Holdings R25',
+    name: 'Holdings',
     version: 'R25',
     description: 'Investment and portfolio management services',
-    eventTypes: ['POSITION.OPENED', 'TRADE.EXECUTED', 'PORTFOLIO.REBALANCED', 'MARKET.UPDATE'],
     kafkaTopics: ['holdings-events', 'portfolio-lifecycle']
   }
 };
@@ -65,16 +59,31 @@ const getEventTypeColor = (eventType, eventTypeColors, colorAssignmentIndex) => 
 // Format timestamp for display
 const formatTimestamp = (timestamp) => {
   try {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString('en-US', { 
-      hour12: false, 
-      hour: '2-digit', 
-      minute: '2-digit', 
-      second: '2-digit',
-      fractionalSecondDigits: 3
-    });
+    // Extract event information - use timestamp from eventData, fallback to payload.time
+    let formattedTimestamp;
+    if (timestamp) {
+      // Backend sends timestamp as H:M:S format, convert to full datetime
+      const today = new Date();
+      const timeStr = timestamp;
+      const [hours, minutes, seconds] = timeStr.split(':');
+      today.setHours(parseInt(hours), parseInt(minutes), parseInt(seconds));
+      formattedTimestamp = today.toLocaleString('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      });
+    } else {
+      formattedTimestamp = new Date().toLocaleString();
+    }
+    
+    return formattedTimestamp;
   } catch (error) {
-    return timestamp;
+    console.error('Error formatting timestamp:', error, 'Original timestamp:', timestamp);
+    return new Date().toLocaleString();
   }
 };
 
@@ -249,10 +258,13 @@ const EventStream = () => {
               eventType = backendData.payload.eventType || backendData.payload.type || 'UNKNOWN.EVENT';
             }
             
+            // Simplified timestamp handling - use the original logic from headless_v3_app.js
+            let timestamp = backendData.timestamp || null;
+            
             const processedEvent = {
               id: `${componentKey}-${Date.now()}-${Math.random()}`,
               componentKey,
-              timestamp: backendData.timestamp || new Date().toISOString(),
+              timestamp: timestamp,
               topicName: backendData.topic || 'Unknown Topic',
               eventType: eventType,
               businessKey: backendData.key || 'N/A',
@@ -496,25 +508,6 @@ const EventStream = () => {
                 <div>
                   <h3>{component.name}</h3>
                   <div className="component-version">{component.version}</div>
-                </div>
-              </div>
-
-              <div className="component-config">
-                <div className="event-types">
-                  <strong>Event Types:</strong>
-                  <div className="event-type-tags">
-                    {(COMPONENT_CONFIGS[component.key]?.eventTypes || ['GENERIC.EVENT']).map((eventType, index) => (
-                      <span
-                        key={eventType}
-                        className="event-type-tag"
-                        style={{
-                          backgroundColor: getEventTypeColor(eventType, eventTypeColors, colorAssignmentIndexRef)
-                        }}
-                      >
-                        {eventType}
-                      </span>
-                    ))}
-                  </div>
                 </div>
               </div>
 

@@ -22,8 +22,8 @@ class LoansService {
     console.log(`[Loans Service] getLoanDetails called with loanId: ${loanId}`);
     
     try {
-      // Use the hardcoded URL that matches the Python implementation
-      const url = `http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/${loanId}/status`;
+      // Use the correct URL that matches the working endpoint
+      const url = `http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v1.0.0/holdings/loans/${loanId}`;
       console.log(`[Loans Service] Calling Temenos API URL: ${url}`);
       
       const response = await axios.get(url, {
@@ -33,13 +33,49 @@ class LoansService {
       });
       
       console.log(`[Loans Service] Temenos API response status: ${response.status}`);
-      console.log(`[Loans Service] Temenos API response data:`, response.data);
+      console.log(`[Loans Service] Temenos API response data:`, JSON.stringify(response.data, null, 2));
       
       // Transform the response to match the expected format
       if (response.data && response.data.body && Array.isArray(response.data.body) && response.data.body.length > 0) {
-        const loanData = response.data.body[0];
-        console.log(`[Loans Service] Transformed loan data:`, loanData);
-        return loanData;
+        const rawLoanData = response.data.body[0];
+        console.log(`[Loans Service] Raw loan data from Temenos:`, JSON.stringify(rawLoanData, null, 2));
+        
+        // Extract interest rate from the interests array
+        let interestRate = 0;
+        if (rawLoanData.interests && Array.isArray(rawLoanData.interests) && rawLoanData.interests.length > 0) {
+          const firstInterest = rawLoanData.interests[0];
+          if (firstInterest.interestRate) {
+            // Extract the first rate from the pipe-separated string (e.g., "1.75%|6%" -> 1.75)
+            const rateString = firstInterest.interestRate.split('|')[0];
+            interestRate = parseFloat(rateString.replace('%', ''));
+          }
+        }
+        
+        // Calculate next payment amount from schedules if available
+        let nextPaymentAmount = 0;
+        if (rawLoanData.schedules && Array.isArray(rawLoanData.schedules) && rawLoanData.schedules.length > 0) {
+          const firstSchedule = rawLoanData.schedules[0];
+          if (firstSchedule.schedulePaymentAmount) {
+            // Extract the payment amount from the pipe-separated string (e.g., "100%|1627.14||" -> 1627.14)
+            const amounts = firstSchedule.schedulePaymentAmount.split('|');
+            if (amounts.length > 1 && amounts[1] !== '') {
+              nextPaymentAmount = parseFloat(amounts[1]);
+            }
+          }
+        }
+        
+        // Transform to match frontend expectations with correct field mapping
+        const transformedLoanData = {
+          arrangementId: rawLoanData.arrangementId || loanId,
+          productDescription: 'Mortgage Product', // Default since not in response
+          outstandingBalance: parseFloat(rawLoanData.totalDue || 0),
+          interestRate: interestRate,
+          nextPaymentDate: rawLoanData.nextPaymentDate || null,
+          nextPaymentAmount: nextPaymentAmount
+        };
+        
+        console.log(`[Loans Service] Transformed loan data:`, transformedLoanData);
+        return transformedLoanData;
       }
       
       console.log(`[Loans Service] No loan data found in response`);
@@ -63,7 +99,7 @@ class LoansService {
     console.log(`[Loans Service] getLoanSchedule called with loanId: ${loanId}`);
     
     try {
-      // Use the hardcoded URL that matches the Python implementation
+      // Use the correct URL with v8.0.0 API version
       const url = `http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/${loanId}/schedules`;
       console.log(`[Loans Service] Calling Temenos API URL: ${url}`);
       
@@ -74,18 +110,23 @@ class LoansService {
       });
       
       console.log(`[Loans Service] Temenos API response status: ${response.status}`);
-      console.log(`[Loans Service] Temenos API response data:`, response.data);
+      console.log(`[Loans Service] Temenos API response data:`, JSON.stringify(response.data, null, 2));
       
       // Transform the response to match the expected format
       if (response.data && response.data.body && Array.isArray(response.data.body)) {
-        const scheduleData = response.data.body.map(payment => ({
-          paymentDate: payment.paymentDate || '',
-          paymentNumber: payment.paymentNumber || 1,
-          principalAmount: parseFloat(payment.principalAmount || 0),
-          interestAmount: parseFloat(payment.interestAmount || 0),
-          totalAmount: parseFloat(payment.totalAmount || 0),
-          outstandingAmount: parseFloat(payment.outstandingAmount || 0)
-        }));
+        const scheduleData = response.data.body.map((payment, index) => {
+          console.log(`[Loans Service] Processing payment ${index + 1}:`, JSON.stringify(payment, null, 2));
+          
+          return {
+            dueDate: payment.paymentDate || payment.dueDate || payment.date || '',
+            amount: parseFloat(payment.totalAmount || payment.amount || payment.paymentAmount || 0),
+            status: payment.status || payment.paymentStatus || 'Scheduled',
+            paymentNumber: payment.paymentNumber || payment.installmentNumber || index + 1,
+            principalAmount: parseFloat(payment.principalAmount || payment.principal || 0),
+            interestAmount: parseFloat(payment.interestAmount || payment.interest || 0),
+            outstandingAmount: parseFloat(payment.outstandingAmount || payment.outstanding || 0)
+          };
+        });
         console.log(`[Loans Service] Transformed schedule data (${scheduleData.length} payments):`, scheduleData);
         return scheduleData;
       }

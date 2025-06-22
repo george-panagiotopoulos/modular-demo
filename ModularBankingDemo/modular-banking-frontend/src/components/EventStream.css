@@ -384,7 +384,7 @@
   padding: 1rem;
   border: none;
   border-radius: var(--border-radius);
-  color: white;
+  color: black;
   font-family: var(--font-family);
   font-weight: 500;
   cursor: pointer;

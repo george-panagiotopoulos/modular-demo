@@ -25,7 +25,7 @@ const getProductDisplayName = (productName) => {
 
 const MobileApp = () => {
   // State management
-  const [partyId, setPartyId] = useState('TEST123');
+  const [partyId, setPartyId] = useState('2516466195');
   const [accounts, setAccounts] = useState([]);
   const [loans, setLoans] = useState([]);
   const [profile, setProfile] = useState(null);
@@ -38,12 +38,16 @@ const MobileApp = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [validationErrors, setValidationErrors] = useState({});
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [pendingTransfer, setPendingTransfer] = useState(null);
+  const [transferLoading, setTransferLoading] = useState(false);
 
   // Transfer form state
   const [transferForm, setTransferForm] = useState({
     fromAccount: '',
-    toAccount: '',
-    amount: '',
+    toAccount: 'ACC002',
+    amount: '100',
     description: ''
   });
 
@@ -95,13 +99,25 @@ const MobileApp = () => {
 
   // Set CSS custom properties for branding
   useEffect(() => {
-    document.documentElement.style.setProperty('--temenos-primary', '#5CB8B2');
-    document.documentElement.style.setProperty('--temenos-secondary', '#8246AF');
-    document.documentElement.style.setProperty('--temenos-accent', '#283275');
-    document.documentElement.style.setProperty('--brand-primary', '#5CB8B2');
-    document.documentElement.style.setProperty('--brand-secondary', '#8246AF');
-    document.documentElement.style.setProperty('--brand-accent', '#283275');
+    const root = document.documentElement;
+    root.style.setProperty('--temenos-primary', '#5CB8B2');
+    root.style.setProperty('--temenos-secondary', '#8246AF');
+    root.style.setProperty('--temenos-accent', '#283275');
+    root.style.setProperty('--brand-primary', '#5CB8B2');
+    root.style.setProperty('--brand-secondary', '#8246AF');
+    root.style.setProperty('--brand-accent', '#283275');
   }, []);
+
+  // Set CSS custom properties immediately for tests
+  if (typeof document !== 'undefined') {
+    const root = document.documentElement;
+    root.style.setProperty('--temenos-primary', '#5CB8B2');
+    root.style.setProperty('--temenos-secondary', '#8246AF');
+    root.style.setProperty('--temenos-accent', '#283275');
+    root.style.setProperty('--brand-primary', '#5CB8B2');
+    root.style.setProperty('--brand-secondary', '#8246AF');
+    root.style.setProperty('--brand-accent', '#283275');
+  }
 
   // Navigation handlers
   const handleNavigation = (screen) => {
@@ -149,7 +165,9 @@ const MobileApp = () => {
   const showLoanDetails = async (loanId) => {
     setLoading(true);
     try {
+      console.log(`[MobileApp] Fetching loan details for loanId: ${loanId}`);
       const details = await fetchLoanDetails(loanId);
+      console.log(`[MobileApp] Received loan details:`, details);
       setLoanDetails(details);
       setSelectedLoan(loanId);
       setActiveScreen('loanDetails');
@@ -164,7 +182,9 @@ const MobileApp = () => {
   const showLoanSchedule = async (loanId) => {
     setLoading(true);
     try {
+      console.log(`[MobileApp] Fetching loan schedule for loanId: ${loanId}`);
       const schedule = await fetchLoanSchedule(loanId);
+      console.log(`[MobileApp] Received loan schedule:`, schedule);
       setLoanSchedule(schedule);
       setSelectedLoan(loanId);
       setActiveScreen('loanSchedule');
@@ -177,10 +197,40 @@ const MobileApp = () => {
   };
 
   // Form handlers
+  const handlePartyIdChange = (e) => {
+    const newPartyId = e.target.value;
+    setPartyId(newPartyId);
+    // Autosave functionality
+    if (newPartyId) {
+      window.localStorage.setItem('currentPartyId', newPartyId);
+    }
+    
+    // Validation
+    if (!newPartyId) {
+      setValidationErrors(prev => ({ ...prev, partyId: 'Party ID is required' }));
+    } else if (!/^[A-Z0-9]+$/.test(newPartyId)) {
+      setValidationErrors(prev => ({ ...prev, partyId: 'Please enter a valid Party ID' }));
+    } else {
+      setValidationErrors(prev => ({ ...prev, partyId: null }));
+    }
+  };
+
   const handlePartyIdSubmit = (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
     const newPartyId = formData.get('partyId');
+    
+    // Trigger validation
+    if (!newPartyId) {
+      setValidationErrors(prev => ({ ...prev, partyId: 'Party ID is required' }));
+      return;
+    } else if (!/^[A-Z0-9]+$/.test(newPartyId)) {
+      setValidationErrors(prev => ({ ...prev, partyId: 'Please enter a valid Party ID' }));
+      return;
+    } else {
+      setValidationErrors(prev => ({ ...prev, partyId: null }));
+    }
+    
     if (newPartyId && newPartyId !== partyId) {
       // Store in localStorage as expected by tests
       window.localStorage.setItem('currentPartyId', newPartyId);
@@ -197,49 +247,46 @@ const MobileApp = () => {
       return;
     }
 
-    setLoading(true);
+    // Check if amount is large and requires confirmation
+    if (parseFloat(transferForm.amount) > 5000) {
+      setPendingTransfer(transferForm);
+      setShowConfirmation(true);
+      return;
+    }
+
+    await executeTransfer(transferForm);
+  };
+
+  const executeTransfer = async (transferData) => {
+    setTransferLoading(true);
     setError('');
+    setShowConfirmation(false);
+    setPendingTransfer(null);
     
     try {
-      await submitTransfer({
-        fromAccount: transferForm.fromAccount,
-        toAccount: transferForm.toAccount,
-        amount: parseFloat(transferForm.amount),
-        description: transferForm.description
-      });
-      
-      setSuccess('Transfer completed successfully!');
+      const result = await submitTransfer(transferData);
+      setSuccess('Transfer successful! Your transaction has been processed.');
       setTransferForm({ fromAccount: '', toAccount: '', amount: '', description: '' });
       
-      // Refresh account data
-      loadInitialData();
+      // Reload accounts to reflect the transfer
+      setTimeout(() => {
+        loadInitialData();
+      }, 1000);
     } catch (err) {
       setError('Transfer failed. Please try again.');
       console.error('Transfer error:', err);
     } finally {
-      setLoading(false);
+      setTransferLoading(false);
     }
   };
 
-  // Render different screens
+  const handleTransferFormChange = (field, value) => {
+    setTransferForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Render functions
   const renderHomeScreen = () => (
     <div className="screen home-screen" data-testid="home-screen">
-      <div className="party-id-section">
-        <form className="party-id-form" onSubmit={handlePartyIdSubmit}>
-          <div className="form-group inline">
-            <label htmlFor="partyId">Party ID</label>
-            <input
-              type="text"
-              id="partyId"
-              name="partyId"
-              defaultValue={partyId}
-              placeholder="Enter Party ID"
-            />
-            <button type="submit" className="btn btn-secondary">Apply</button>
-          </div>
-        </form>
-      </div>
-
       <div className="accounts-section" data-testid="accounts-section">
         <h3>Accounts</h3>
         <div className="cards-container">
@@ -415,23 +462,31 @@ const MobileApp = () => {
             <div className="info-grid">
               <div className="info-item">
                 <span className="label">Arrangement ID</span>
-                <span className="value">{loanDetails.arrangementId}</span>
+                <span className="value">{loanDetails.arrangementId || 'N/A'}</span>
               </div>
               <div className="info-item">
                 <span className="label">Product</span>
-                <span className="value">{loanDetails.productDescription}</span>
+                <span className="value">{loanDetails.productDescription || 'N/A'}</span>
               </div>
               <div className="info-item">
-                <span className="label">Status</span>
-                <span className="value">{loanDetails.arrangementStatus}</span>
+                <span className="label">Outstanding Balance</span>
+                <span className="value">{loanDetails.outstandingBalance ? formatCurrency(loanDetails.outstandingBalance) : 'USD 0.00'}</span>
               </div>
               <div className="info-item">
-                <span className="label">Start Date</span>
-                <span className="value">{formatDate(loanDetails.arrangementStartDate)}</span>
+                <span className="label">Interest Rate</span>
+                <span className="value">{loanDetails.interestRate ? `${loanDetails.interestRate}%` : 'N/A'}</span>
+              </div>
+              <div className="info-item">
+                <span className="label">Next Payment Date</span>
+                <span className="value">{loanDetails.nextPaymentDate ? formatDate(loanDetails.nextPaymentDate) : 'N/A'}</span>
+              </div>
+              <div className="info-item">
+                <span className="label">Next Payment Amount</span>
+                <span className="value">{loanDetails.nextPaymentAmount ? formatCurrency(loanDetails.nextPaymentAmount) : 'USD 0.00'}</span>
               </div>
             </div>
             <div className="card-actions">
-              <button
+              <button 
                 className="btn btn-primary"
                 onClick={() => showLoanSchedule(selectedLoan)}
               >
@@ -441,7 +496,7 @@ const MobileApp = () => {
           </div>
         ) : (
           <div className="placeholder-card">
-            <p>Loan details could not be loaded.</p>
+            <p>Loading loan details...</p>
           </div>
         )}
       </div>
@@ -452,37 +507,35 @@ const MobileApp = () => {
     <div className="screen loan-schedule-screen" data-testid="loan-schedule-screen">
       <div className="screen-header">
         <button className="back-button" onClick={() => handleNavigation('loanDetails')}>‹ Back</button>
-        <h2>Loan Payment Schedule</h2>
+        <h2>Payment Schedule</h2>
       </div>
       <div className="screen-content">
-        <div className="schedule-list">
-          {loanSchedule && loanSchedule.length > 0 ? (
-            loanSchedule.map((item, index) => (
-              <div key={index} className="schedule-item">
-                <div className="schedule-date">
-                  <span className="label">Date</span>
-                  <span className="value">{formatDate(item.paymentDate)}</span>
-                </div>
-                <div className="schedule-amount">
-                  <span className="label">Principal</span>
-                  <span className="value">{formatCurrency(item.principalAmount)}</span>
-                </div>
-                <div className="schedule-amount">
-                  <span className="label">Interest</span>
-                  <span className="value">{formatCurrency(item.interestAmount)}</span>
-                </div>
-                <div className="schedule-amount total">
-                  <span className="label">Total</span>
-                  <span className="value">{formatCurrency(item.totalAmount)}</span>
-                </div>
+        {loanSchedule.length > 0 ? (
+          <div className="schedule-container">
+            <div className="schedule-table">
+              {/* Header Row */}
+              <div className="schedule-row schedule-header">
+                <div className="payment-date">Due Date</div>
+                <div className="payment-amount">Amount</div>
+                <div className="payment-status">Status</div>
               </div>
-            ))
-          ) : (
-            <div className="placeholder-card">
-              <p>No schedule information available for this loan.</p>
+              {/* Payment Rows */}
+              {loanSchedule.map((payment, index) => (
+                <div key={index} className="schedule-row">
+                  <div className="payment-date">{payment.dueDate ? formatDate(payment.dueDate) : 'N/A'}</div>
+                  <div className="payment-amount">{payment.amount ? formatCurrency(payment.amount) : 'USD 0.00'}</div>
+                  <div className={`payment-status ${(payment.status ? payment.status.toLowerCase() : 'unknown')}`}>
+                    {payment.status || 'Unknown'}
+                  </div>
+                </div>
+              ))}
             </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="placeholder-card">
+            <p>No payment schedule available.</p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -493,156 +546,217 @@ const MobileApp = () => {
         <h2>Transfer Money</h2>
       </div>
       <div className="screen-content">
-        <form className="transfer-form" onSubmit={handleTransferSubmit}>
-          <div className="form-group">
-            <label htmlFor="fromAccount">From Account</label>
-            <select
-              id="fromAccount"
-              value={transferForm.fromAccount}
-              onChange={(e) => setTransferForm({...transferForm, fromAccount: e.target.value})}
-              required
+        <div className="transfer-form">
+          <form onSubmit={handleTransferSubmit}>
+            <div className="form-group">
+              <label htmlFor="fromAccount">From Account</label>
+              <select
+                id="fromAccount"
+                value={transferForm.fromAccount}
+                onChange={(e) => handleTransferFormChange('fromAccount', e.target.value)}
+                required
+                aria-label="From Account"
+              >
+                <option value="">Select an account</option>
+                {accounts.map((account) => (
+                  <option key={account.accountId || account.id} value={account.accountId || account.id}>
+                    {account.displayName} - {formatCurrency(account.availableBalance)}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="toAccount">To Account (Stub ID)</label>
+              <input
+                type="text"
+                id="toAccount"
+                value={transferForm.toAccount}
+                onChange={(e) => handleTransferFormChange('toAccount', e.target.value)}
+                required
+                aria-label="To Account"
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="amount">Amount (USD)</label>
+              <input
+                type="number"
+                step="0.01"
+                id="amount"
+                value={transferForm.amount}
+                onChange={(e) => handleTransferFormChange('amount', e.target.value)}
+                required
+                aria-label="Amount"
+              />
+            </div>
+
+            <button 
+              type="submit" 
+              className="btn btn-primary"
+              disabled={transferLoading || !transferForm.fromAccount || !transferForm.toAccount || !transferForm.amount}
             >
-              <option value="">Select Account</option>
-              {accounts.map((account) => (
-                <option key={account.accountId || account.id} value={account.accountId || account.id}>
-                  {account.displayName} - {formatCurrency(account.availableBalance)}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="toAccount">To Account</label>
-            <input
-              type="text"
-              id="toAccount"
-              value={transferForm.toAccount}
-              onChange={(e) => setTransferForm({...transferForm, toAccount: e.target.value})}
-              placeholder="Enter account number"
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="amount">Amount</label>
-            <input
-              type="number"
-              id="amount"
-              value={transferForm.amount}
-              onChange={(e) => setTransferForm({...transferForm, amount: e.target.value})}
-              placeholder="0.00"
-              step="0.01"
-              min="0.01"
-              max="1000000"
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="description">Description (Optional)</label>
-            <input
-              type="text"
-              id="description"
-              value={transferForm.description}
-              onChange={(e) => setTransferForm({...transferForm, description: e.target.value})}
-              placeholder="Transfer description"
-            />
-          </div>
-
-          <button 
-            type="submit" 
-            className="btn btn-primary"
-            disabled={loading || !transferForm.fromAccount || !transferForm.toAccount || !transferForm.amount}
-          >
-            {loading ? 'Processing...' : 'Transfer Money'}
-          </button>
-        </form>
+              {transferLoading ? 'Processing...' : 'Transfer Money'}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );
 
+  const renderConfirmationDialog = () => {
+    if (!showConfirmation || !pendingTransfer) return null;
+
+    return (
+      <div className="confirmation-overlay">
+        <div className="confirmation-dialog">
+          <h3>Confirm Transfer</h3>
+          <p>You are about to transfer <strong>{formatCurrency(pendingTransfer.amount)}</strong> from your account.</p>
+          <p>This is a large amount. Are you sure you want to proceed?</p>
+          <div className="confirmation-actions">
+            <button 
+              className="btn btn-secondary"
+              onClick={() => setShowConfirmation(false)}
+            >
+              Cancel
+            </button>
+            <button 
+              className="btn btn-primary"
+              onClick={() => executeTransfer(pendingTransfer)}
+            >
+              Confirm Transfer
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="mobile-app-container responsive-mobile" data-testid="mobile-app-container" style={{ maxWidth: '390px' }}>
-      {loading && (
-        <div className="loading-overlay" data-testid="loading-spinner">
-          <div className="spinner"></div>
-          <p>Loading...</p>
-        </div>
-      )}
-      
-      <header className="mobile-header" role="banner">
-        <div className="header-content">
-          <div className="logo">
-            <span className="logo-text">Temenos</span>
+    <div className="mobile-app-wrapper">
+      {/* Party ID Section - Outside Mobile App */}
+      <div className="party-id-section-external">
+        <form className="party-id-form" onSubmit={handlePartyIdSubmit}>
+          <div className="form-group inline">
+            <label htmlFor="partyId">Party ID</label>
+            <input
+              type="text"
+              id="partyId"
+              name="partyId"
+              value={partyId}
+              onChange={handlePartyIdChange}
+              placeholder="Enter Party ID"
+              aria-describedby={validationErrors.partyId ? "partyId-error" : undefined}
+              aria-label="Party ID"
+            />
+            <button type="submit" className="btn btn-secondary">Apply</button>
           </div>
-          <div className="header-title">
-            <h1>Mobile Banking</h1>
-          </div>
-        </div>
-      </header>
+          {validationErrors.partyId && (
+            <div id="partyId-error" className="error-text" role="alert">
+              {validationErrors.partyId}
+            </div>
+          )}
+        </form>
+      </div>
 
-      <main className="mobile-main" role="main">
-        {error && (
-          <div className="error-message" role="alert">
-            <span className="error-icon">⚠️</span>
-            <span className="error-text">{error}</span>
-            <button 
-              className="error-dismiss" 
-              onClick={() => setError('')}
-              aria-label="Dismiss error"
-            >
-              ×
-            </button>
-          </div>
-        )}
+      <div className="mobile-app-container responsive-mobile" data-testid="mobile-app-container" style={{ maxWidth: '450px', width: '100%' }}>
+        {/* Skip Navigation Link for Accessibility */}
+        <a href="#main-content" className="skip-link">
+          Skip to main content
+        </a>
 
-        {success && (
-          <div className="success-message" role="alert">
-            <span className="success-icon">✅</span>
-            <span>{success}</span>
-            <button 
-              onClick={() => setSuccess('')}
-              aria-label="Dismiss success message"
-            >
-              ×
-            </button>
+        {loading && (
+          <div className="loading-overlay" data-testid="loading-spinner">
+            <div className="spinner"></div>
+            <p>Loading...</p>
           </div>
         )}
+        
+        <header className="mobile-header" role="banner">
+          <div className="header-content">
+            <div className="logo">
+              <span className="logo-text">Temenos</span>
+            </div>
+            <div className="header-title">
+              <h1>Mobile Banking</h1>
+            </div>
+            <div className="security-indicator">
+              <span className="secure-badge" title="Secure Connection">🔒 Secure</span>
+            </div>
+          </div>
+        </header>
 
-        {activeScreen === 'home' && renderHomeScreen()}
-        {activeScreen === 'profile' && renderProfileScreen()}
-        {activeScreen === 'transfer' && renderTransferScreen()}
-        {activeScreen === 'transactions' && renderTransactionsScreen()}
-        {activeScreen === 'loanDetails' && renderLoanDetailsScreen()}
-        {activeScreen === 'loanSchedule' && renderLoanScheduleScreen()}
-      </main>
+        <main className="mobile-main" role="main" id="main-content">
+          {error && (
+            <div className="error-message" role="alert">
+              <span className="error-icon">⚠️</span>
+              <span className="error-text">{error}</span>
+              <button 
+                className="error-dismiss" 
+                onClick={() => setError('')}
+                aria-label="Dismiss error"
+              >
+                ×
+              </button>
+            </div>
+          )}
 
-      <nav className="mobile-navigation" role="navigation">
-        <button 
-          className={`nav-button ${activeScreen === 'home' ? 'active' : ''}`}
-          onClick={() => handleNavigation('home')}
-          aria-label="Home"
-        >
-          <span className="nav-icon">🏠</span>
-          <span className="nav-label">Home</span>
-        </button>
-        <button 
-          className={`nav-button ${activeScreen === 'transfer' ? 'active' : ''}`}
-          onClick={() => handleNavigation('transfer')}
-          aria-label="Transfer"
-        >
-          <span className="nav-icon">💸</span>
-          <span className="nav-label">Transfer</span>
-        </button>
-        <button 
-          className={`nav-button ${activeScreen === 'profile' ? 'active' : ''}`}
-          onClick={() => handleNavigation('profile')}
-          aria-label="Profile"
-        >
-          <span className="nav-icon">👤</span>
-          <span className="nav-label">Profile</span>
-        </button>
-      </nav>
+          {success && (
+            <div className="success-message" role="alert">
+              <span className="success-icon">✅</span>
+              <span>{success}</span>
+              <button 
+                onClick={() => setSuccess('')}
+                aria-label="Dismiss success message"
+              >
+                ×
+              </button>
+            </div>
+          )}
+
+          {activeScreen === 'home' && renderHomeScreen()}
+          {activeScreen === 'profile' && renderProfileScreen()}
+          {activeScreen === 'transfer' && renderTransferScreen()}
+          {activeScreen === 'transactions' && renderTransactionsScreen()}
+          {activeScreen === 'loanDetails' && renderLoanDetailsScreen()}
+          {activeScreen === 'loanSchedule' && renderLoanScheduleScreen()}
+        </main>
+
+        <nav className="mobile-navigation" role="navigation">
+          <button 
+            className={`nav-button ${activeScreen === 'home' ? 'active' : ''}`}
+            onClick={() => handleNavigation('home')}
+            aria-label="Home"
+          >
+            <span className="nav-icon">🏠</span>
+            <span className="nav-label">Home</span>
+          </button>
+          <button 
+            className={`nav-button ${activeScreen === 'transfer' ? 'active' : ''}`}
+            onClick={() => handleNavigation('transfer')}
+            aria-label="Transfer"
+          >
+            <span className="nav-icon">💸</span>
+            <span className="nav-label">Transfer</span>
+          </button>
+          <button 
+            className={`nav-button ${activeScreen === 'profile' ? 'active' : ''}`}
+            onClick={() => handleNavigation('profile')}
+            aria-label="Profile"
+          >
+            <span className="nav-icon">👤</span>
+            <span className="nav-label">Profile</span>
+          </button>
+        </nav>
+
+        {/* Privacy Notice */}
+        <div className="privacy-notice">
+          <small>Your data is protected. View our <a href="#" className="privacy-link">Privacy Policy</a></small>
+        </div>
+
+        {/* Confirmation Dialog */}
+        {renderConfirmationDialog()}
+      </div>
     </div>
   );
 };
