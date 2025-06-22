@@ -5,6 +5,7 @@ import Dashboard from './Dashboard';
 import SupportingServices from './SupportingServices';
 import ModularArchitecture from './ModularArchitecture';
 import DemoFlow from './DemoFlow';
+import EventStream from './components/EventStream';
 
 function AppContent() {
   const location = useLocation();
@@ -36,6 +37,7 @@ function AppContent() {
           <Route path="/supporting-services" element={<SupportingServices />} />
           <Route path="/modular-architecture" element={<ModularArchitecture />} />
           <Route path="/demo-flow" element={<DemoFlow />} />
+          <Route path="/event-stream" element={<EventStream />} />
         </Routes>
       </main>
     </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './ModularArchitecture.css';
 
@@ -10,14 +10,13 @@ const TopicButton = ({ topic, isActive, onClick, onKeyDown }) => (
     onKeyDown={onKeyDown}
     aria-pressed={isActive}
     tabIndex={0}
-    role="button"
   >
     {topic.title}
   </button>
 );
 
 // Content Pane Component
-const ContentPane = ({ selectedTopic, topics }) => {
+const ContentPane = ({ selectedTopic, topics, onDemoClick }) => {
   if (!selectedTopic) {
     return (
       <div className="content-placeholder">
@@ -53,14 +52,60 @@ const ContentPane = ({ selectedTopic, topics }) => {
             ))}
           </ul>
         </div>
+        
+        {/* Demo Cards for specific topics */}
+        {(topic.id === 'integration-patterns' || topic.id === 'api-event-design') && (
+          <div className="demo-cards-section">
+            <h3>Interactive Demos</h3>
+            <div className="demo-cards-container">
+              <DemoCard
+                title="Event-driven Architecture Demo"
+                description="Explore real-time event streaming and see how events flow between banking modules in our modular architecture."
+                icon="⚡"
+                onClick={onDemoClick}
+                className="event-stream-demo"
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
+  );
+};
+
+// Demo Card Component
+const DemoCard = ({ title, description, icon, onClick, className = '' }) => {
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onClick();
+    }
+  };
+
+  return (
+    <button
+      className={`demo-card ${className}`}
+      onClick={onClick}
+      onKeyDown={handleKeyDown}
+      aria-label={`Open ${title} demo`}
+      tabIndex={0}
+    >
+      <div className="demo-card-content">
+        <div className="demo-card-icon" aria-hidden="true">{icon}</div>
+        <div className="demo-card-text">
+          <h4 className="demo-card-title">{title}</h4>
+          <p className="demo-card-description">{description}</p>
+        </div>
+        <div className="demo-card-arrow" aria-hidden="true">→</div>
+      </div>
+    </button>
   );
 };
 
 // Main ModularArchitecture Component
 const ModularArchitecture = () => {
   const [selectedTopic, setSelectedTopic] = useState(null);
+  const navigate = useNavigate();
 
   // Topic data based on the Temenos Modular Banking document - 12 original buttons
   const topics = [
@@ -309,6 +354,10 @@ const ModularArchitecture = () => {
     }
   };
 
+  const handleDemoClick = () => {
+    navigate('/event-stream');
+  };
+
   return (
     <div 
       className="modular-architecture-container" 
@@ -338,7 +387,7 @@ const ModularArchitecture = () => {
           aria-live="polite"
           data-testid="content-pane"
         >
-          <ContentPane selectedTopic={selectedTopic} topics={topics} />
+          <ContentPane selectedTopic={selectedTopic} topics={topics} onDemoClick={handleDemoClick} />
         </div>
       </div>
     </div>

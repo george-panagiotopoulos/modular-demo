@@ -255,7 +255,7 @@ const PricingPane = () => (
   <div data-testid="pricing-pane" className="dashboard-pane">
     <h2>
       <span className="pane-icon" aria-hidden="true">📊</span>
-      Enterprise Pricing
+      Pricing
     </h2>
     <p>
       Comprehensive pricing engine that enables dynamic, real-time pricing across all banking products. 
@@ -341,9 +341,9 @@ const Dashboard = () => {
     },
     {
       id: 'pricing',
-      title: 'Enterprise Pricing',
+      title: 'Pricing',
       icon: '📊',
-      ariaLabel: 'Open Enterprise Pricing Interface - Comprehensive pricing engine and market intelligence',
+      ariaLabel: 'Open Pricing Interface - Comprehensive pricing engine and market intelligence',
       pane: <PricingPane />
     },
     {
