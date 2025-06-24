@@ -23,7 +23,7 @@ describe('Dashboard Component', () => {
     
     // Check for all four rectangles
     expect(screen.getByText('Deposits')).toBeInTheDocument();
-    expect(screen.getByText('Retail Lending')).toBeInTheDocument();
+    expect(screen.getByText('Lending')).toBeInTheDocument();
     expect(screen.getByText('Pricing')).toBeInTheDocument();
     expect(screen.getByText('Payments')).toBeInTheDocument();
   });

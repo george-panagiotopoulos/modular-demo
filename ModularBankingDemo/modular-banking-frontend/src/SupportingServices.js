@@ -93,14 +93,13 @@ const SupportingServices = () => {
       title: 'Party',
       type: 'business',
       ariaLabel: 'Select Party business service to view details',
-      description: 'Centralized customer and counterparty management service providing unified customer data, relationship management, and KYC compliance across all modular banking components.',
+      description: 'Acts as a proxy for static customer data required by other modular components, used when the bank does not support real-time and performant read API access to the master customer system.',
       features: [
-        'Unified customer profile management',
-        'Customer relationship mapping and hierarchy',
-        'KYC and compliance data management',
-        'Contact information and communication preferences',
-        'Risk profiling and customer segmentation',
-        'Cross-module customer data synchronization'
+        'Provides cached/static customer data to other modules',
+        'Ensures modular components can function without direct master data access',
+        'Supports scenarios where real-time master data APIs are unavailable or slow',
+        'Simplifies integration for banks with legacy or restricted customer systems',
+        'Improves reliability for customer data access in distributed deployments'
       ]
     },
     {
@@ -157,14 +156,14 @@ const SupportingServices = () => {
       title: 'Event Store',
       type: 'technical',
       ariaLabel: 'Select Event Store technical service to view details',
-      description: 'Event sourcing and streaming platform that captures, stores, and distributes all business events across the modular banking platform for audit, integration, and data synchronization.',
+      description: 'Central hub for recording, storing, and routing events across all microservices. Provides immutable storage, audit trail, and event replay for compliance, debugging, and historical analysis. Not an event sourcing system, but a backbone for event-driven communication.',
       features: [
-        'Event sourcing and immutable event storage',
-        'Real-time event streaming and distribution',
-        'Business event and data event processing',
-        'Event replay and system recovery capabilities',
-        'Cross-module event integration hub',
-        'Audit trail and compliance event tracking'
+        'Centralized event recording and routing',
+        'Immutable event storage for audit and compliance',
+        'Supports various event types (Command, Business, etc.)',
+        'Event replay for missed events and system recovery',
+        'Structured event ID conventions for traceability',
+        'API-based integration with all microservices'
       ]
     },
     {

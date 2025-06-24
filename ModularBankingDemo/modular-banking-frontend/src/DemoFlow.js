@@ -115,7 +115,7 @@ const DemoFlow = () => {
               <div className="feature-card">
                 <div className="feature-icon">📱</div>
                 <h3>Mobile Banking</h3>
-                <p>Customer-facing mobile application with complete banking functionality.</p>
+                <p>Customer-facing <span style={{ color: 'red' }}>demo</span> mobile application with complete banking functionality.</p>
                 <button 
                   className="feature-button"
                   onClick={() => setActiveTab('mobile-app')}

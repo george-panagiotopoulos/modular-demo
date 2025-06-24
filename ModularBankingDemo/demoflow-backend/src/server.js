@@ -167,8 +167,13 @@ if (require.main === module) {
     const sessionManager = getSessionManager();
     
     console.log('✅ Services initialized:');
-    console.log(`   - EventHub Service: ${eventHubService ? 'Ready' : 'Failed'}`);
+    console.log(`   - EventHub Service: ${eventHubService && eventHubService.isReady() ? 'Ready' : 'Not Ready'}`);
     console.log(`   - Session Manager: ${sessionManager ? 'Ready' : 'Failed'}`);
+    
+    if (eventHubService && !eventHubService.isReady()) {
+      console.log('⚠️  EventHub service is not ready. Event streaming may not work.');
+      console.log('   This could be due to network connectivity issues or missing configuration.');
+    }
   });
 
   // Handle server errors

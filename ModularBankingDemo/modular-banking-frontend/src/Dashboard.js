@@ -157,8 +157,8 @@ const SupportingServicesPane = () => {
       <div className="pane-features">
         <h3>Technical Services:</h3>
         <ul>
-          <li>Event Store - Event sourcing and streaming</li>
-          <li>Generic Configuration - Dynamic configuration</li>
+          <li>Event Store - Central event hub, immutable event storage, audit trail, and event replay for all modules</li>
+          <li>Generic Configuration - Dynamic configuration management</li>
         </ul>
       </div>
       <div className="pane-action">
@@ -204,7 +204,6 @@ const DepositsPane = () => (
         <li>Close of Business (CoB) operations</li>
         <li>Multi-company and multi-branch support</li>
         <li>Transaction recycling and error handling</li>
-        <li>Comprehensive audit trails and reporting</li>
       </ul>
     </div>
   </div>
@@ -214,7 +213,7 @@ const LendingPane = () => (
   <div data-testid="lending-pane" className="dashboard-pane">
     <h2>
       <span className="pane-icon" aria-hidden="true">💰</span>
-      Retail Lending
+      Lending
     </h2>
     <p>
       Modern retail lending platform supporting personal loans, mortgages, and consumer credit products. 
@@ -233,19 +232,17 @@ const LendingPane = () => (
     <div className="pane-features">
       <h3>Key Capabilities:</h3>
       <ul>
-        <li>Digital loan origination and processing</li>
-        <li>Automated credit scoring and risk assessment</li>
-        <li>Flexible repayment schedules and structures</li>
-        <li>Early settlement and partial payment handling</li>
-        <li>Regulatory compliance and reporting</li>
-        <li>Integration with external credit bureaus</li>
+        <li>Real-time balance updates and transaction processing</li>
+        <li>Automated interest calculation and posting</li>
+        <li>Close of Business (CoB) operations</li>
+        <li>Multi-company and multi-branch support</li>
+        <li>Transaction recycling and error handling</li>
       </ul>
     </div>
     <div className="pane-features">
       <h3>Note:</h3>
       <ul>
         <li>Limits and Collateral functionality externalized</li>
-        <li>Designed for standalone or integrated deployment</li>
       </ul>
     </div>
   </div>
@@ -276,7 +273,7 @@ const PricingPane = () => (
       <h3>Integration Features:</h3>
       <ul>
         <li>Seamless integration with Deposits module</li>
-        <li>Advanced pricing for Retail Lending products</li>
+        <li>Advanced pricing for Lending products</li>
         <li>Cross-product pricing strategies</li>
         <li>API-first architecture for external integrations</li>
         <li>Event-driven pricing updates</li>
@@ -334,9 +331,9 @@ const Dashboard = () => {
     },
     {
       id: 'lending',
-      title: 'Retail Lending',
+      title: 'Lending',
       icon: '💰',
-      ariaLabel: 'Open Retail Lending Interface - Modern retail lending platform and loan management',
+      ariaLabel: 'Open Lending Interface - Modern retail lending platform and loan management',
       pane: <LendingPane />
     },
     {
@@ -359,7 +356,7 @@ const Dashboard = () => {
     {
       id: 'modular-architecture',
       title: 'Modular Architecture',
-      subtitle: 'Microservices Design',
+      subtitle: 'A Blueprint for Progressive Renovation',
       className: 'left-circular-pane',
       ariaLabel: 'Open Modular Architecture Information - Learn about our microservices design principles',
       testId: 'modular-architecture-circle',
@@ -368,7 +365,7 @@ const Dashboard = () => {
     {
       id: 'supporting-services',
       title: 'Supporting Services',
-      subtitle: 'Infrastructure Layer',
+      subtitle: 'Microservices Design',
       className: 'right-circular-pane',
       ariaLabel: 'Open Supporting Services Information - Discover our infrastructure and security services',
       testId: 'supporting-services-circle',

@@ -21,6 +21,12 @@ class EventHubService {
     this.kafka = null;
     this.consumers = new Map(); // sessionId -> Map(component -> consumer)
     this.eventCallbacks = new Map(); // sessionId -> Map(component -> callback)
+    this.ready = false;
+    this.initializing = false;
+    this.connectionQueue = []; // Queue for connection requests
+    this.isProcessingQueue = false;
+    this.maxConcurrentConnections = 2; // Limit concurrent connections
+    this.activeConnections = 0;
     this.initialize();
   }
 
@@ -32,32 +38,84 @@ class EventHubService {
     if (!BOOTSTRAP_SERVERS || !CONNECTION_STRING) {
       console.error('EventHub configuration missing. Set BOOTSTRAP_SERVERS and CONNECTION_STRING environment variables.');
       this.kafka = null;
+      this.ready = false;
       return;
     }
 
-    // Create Kafka client for Azure Event Hub
+    // SSL configuration for corporate networks
+    const sslConfig = {
+      rejectUnauthorized: process.env.SSL_REJECT_UNAUTHORIZED === 'false' ? false : true,
+      servername: BOOTSTRAP_SERVERS.split(':')[0],
+    };
+
+    // Create Kafka client with optimized settings for corporate networks
     this.kafka = new Kafka({
       clientId: 'demoflow-backend',
       brokers: [BOOTSTRAP_SERVERS],
-      ssl: true,
+      ssl: sslConfig,
       sasl: {
         mechanism: 'plain',
         username: '$ConnectionString',
         password: CONNECTION_STRING,
       },
-      connectionTimeout: 30000,
-      requestTimeout: 30000,
+      connectionTimeout: 60000, // 60 seconds for corporate networks
+      requestTimeout: 60000,
+      retry: {
+        initialRetryTime: 300,
+        retries: 10,
+        factor: 2,
+        maxRetryTime: 30000
+      },
+      socketTimeout: 60000,
+      heartbeatInterval: 30000,
+      sessionTimeout: 60000,
     });
 
-    console.log('EventHub service initialized');
+    console.log('EventHub service initialized with SSL config:', sslConfig);
+    this.ready = true;
   }
 
   /**
-   * Connect to a component's event stream
+   * Process connection queue
+   */
+  async processConnectionQueue() {
+    if (this.isProcessingQueue || this.connectionQueue.length === 0) {
+      return;
+    }
+
+    this.isProcessingQueue = true;
+
+    while (this.connectionQueue.length > 0 && this.activeConnections < this.maxConcurrentConnections) {
+      const { sessionId, component, eventCallback, resolve, reject } = this.connectionQueue.shift();
+      
+      try {
+        this.activeConnections++;
+        console.log(`Processing connection for ${component} (${this.activeConnections}/${this.maxConcurrentConnections} active)`);
+        
+        const result = await this._connectToComponentInternal(sessionId, component, eventCallback);
+        resolve(result);
+      } catch (error) {
+        reject(error);
+      } finally {
+        this.activeConnections--;
+        console.log(`Connection completed for ${component} (${this.activeConnections}/${this.maxConcurrentConnections} active)`);
+      }
+    }
+
+    this.isProcessingQueue = false;
+    
+    // If there are still items in the queue, process them after a delay
+    if (this.connectionQueue.length > 0) {
+      setTimeout(() => this.processConnectionQueue(), 1000);
+    }
+  }
+
+  /**
+   * Connect to a component's event stream (queued version)
    */
   async connectToComponent(sessionId, component, eventCallback) {
-    if (!this.kafka) {
-      throw new Error('EventHub service not initialized');
+    if (!this.kafka || !this.ready) {
+      throw new Error('EventHub service not initialized or not ready');
     }
 
     const topic = KAFKA_TOPICS[component];
@@ -65,8 +123,34 @@ class EventHubService {
       throw new Error(`Unknown component: ${component}`);
     }
 
+    // Check if already connected
+    const sessionConsumers = this.consumers.get(sessionId);
+    if (sessionConsumers?.has(component)) {
+      console.log(`Already connected to ${component} for session ${sessionId}`);
+      return { success: true, topic, groupId: 'existing-connection' };
+    }
+
+    // Queue the connection request
+    return new Promise((resolve, reject) => {
+      this.connectionQueue.push({ sessionId, component, eventCallback, resolve, reject });
+      this.processConnectionQueue();
+    });
+  }
+
+  /**
+   * Internal connection method (actual connection logic)
+   */
+  async _connectToComponentInternal(sessionId, component, eventCallback) {
+    const topic = KAFKA_TOPICS[component];
+    
     // Clean up existing connection if any
     await this.disconnectFromComponent(sessionId, component);
+
+    // Add connection timeout
+    const connectionTimeout = 45000; // 45 seconds timeout
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(`Connection timeout for ${component} after ${connectionTimeout}ms`)), connectionTimeout);
+    });
 
     try {
       // Create unique consumer group for this session and component
@@ -77,41 +161,83 @@ class EventHubService {
         heartbeatInterval: 10000,
       });
 
-      await consumer.connect();
-      await consumer.subscribe({ topic, fromBeginning: false });
+      console.log(`Attempting to connect to ${component} (${topic}) for session ${sessionId}...`);
+      
+      // Race between connection and timeout
+      await Promise.race([
+        this._establishConnection(consumer, topic, sessionId, component, eventCallback, groupId),
+        timeoutPromise
+      ]);
 
-      // Store consumer and callback
-      if (!this.consumers.has(sessionId)) {
-        this.consumers.set(sessionId, new Map());
-        this.eventCallbacks.set(sessionId, new Map());
-      }
-      this.consumers.get(sessionId).set(component, consumer);
-      this.eventCallbacks.get(sessionId).set(component, eventCallback);
-
-      // Start consuming events
-      await consumer.run({
-        eachMessage: async ({ topic, partition, message }) => {
-          try {
-            const eventData = this.formatEventMessage(message, topic, partition);
-            
-            // Send to callback if still connected
-            const callback = this.eventCallbacks.get(sessionId)?.get(component);
-            if (callback) {
-              callback(eventData);
-            }
-          } catch (error) {
-            console.error(`Error processing message for ${component}:`, error);
-          }
-        },
-      });
-
-      console.log(`Connected to ${component} (${topic}) for session ${sessionId}`);
       return { success: true, topic, groupId };
 
     } catch (error) {
-      console.error(`Failed to connect to ${component}:`, error);
+      console.error(`❌ Failed to connect to ${component}:`, error.message);
+      
+      // Enhanced error logging for corporate network issues
+      if (error.message && error.message.includes('ECONNRESET')) {
+        console.error('Network connection reset detected. This may be due to:');
+        console.error('1. Corporate firewall/proxy blocking the connection');
+        console.error('2. SSL certificate issues with corporate proxy');
+        console.error('3. Network timeout or connectivity issues');
+        console.error('Try setting SSL_REJECT_UNAUTHORIZED=false in environment variables');
+      }
+      
+      if (error.message && error.message.includes('ENOTFOUND')) {
+        console.error('DNS resolution failed. Check network connectivity and DNS settings.');
+      }
+
+      if (error.message && error.message.includes('Connection timeout') || error.message.includes('ETIMEDOUT')) {
+        console.error('Connection timeout detected. This may be due to:');
+        console.error('1. Corporate firewall blocking port 9093');
+        console.error('2. Network proxy not configured for Kafka protocol');
+        console.error('3. Azure Event Hub endpoint not accessible from corporate network');
+        console.error('4. Network bandwidth or latency issues');
+        console.error('');
+        console.error('Troubleshooting steps:');
+        console.error('1. Check if port 9093 is open in corporate firewall');
+        console.error('2. Configure corporate proxy for Kafka connections');
+        console.error('3. Try connecting from outside corporate network');
+        console.error('4. Contact network administrator for Azure Event Hub access');
+      }
+      
       throw error;
     }
+  }
+
+  /**
+   * Establish the actual connection
+   */
+  async _establishConnection(consumer, topic, sessionId, component, eventCallback, groupId) {
+    await consumer.connect();
+    await consumer.subscribe({ topic, fromBeginning: false });
+
+    // Store consumer and callback
+    if (!this.consumers.has(sessionId)) {
+      this.consumers.set(sessionId, new Map());
+      this.eventCallbacks.set(sessionId, new Map());
+    }
+    this.consumers.get(sessionId).set(component, consumer);
+    this.eventCallbacks.get(sessionId).set(component, eventCallback);
+
+    // Start consuming events
+    await consumer.run({
+      eachMessage: async ({ topic, partition, message }) => {
+        try {
+          const eventData = this.formatEventMessage(message, topic, partition);
+          
+          // Send to callback if still connected
+          const callback = this.eventCallbacks.get(sessionId)?.get(component);
+          if (callback) {
+            callback(eventData);
+          }
+        } catch (error) {
+          console.error(`Error processing message for ${component}:`, error);
+        }
+      },
+    });
+
+    console.log(`✅ Connected to ${component} (${topic}) for session ${sessionId}`);
   }
 
   /**
@@ -228,6 +354,72 @@ class EventHubService {
   }
 
   /**
+   * Network diagnostic function
+   */
+  async diagnoseNetworkConnectivity() {
+    const BOOTSTRAP_SERVERS = process.env.BOOTSTRAP_SERVERS;
+    const hostname = BOOTSTRAP_SERVERS.split(':')[0];
+    const port = BOOTSTRAP_SERVERS.split(':')[1];
+    
+    console.log('🔍 Running network diagnostics...');
+    console.log(`Target: ${hostname}:${port}`);
+    
+    // Import required modules for diagnostics
+    const dns = require('dns').promises;
+    const net = require('net');
+    
+    try {
+      // Test DNS resolution
+      console.log('Testing DNS resolution...');
+      const addresses = await dns.resolve4(hostname);
+      console.log(`✅ DNS resolution successful: ${addresses.join(', ')}`);
+      
+      // Test basic TCP connectivity
+      console.log('Testing TCP connectivity...');
+      const socket = new net.Socket();
+      
+      const connectPromise = new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          socket.destroy();
+          reject(new Error('TCP connection timeout'));
+        }, 10000);
+        
+        socket.connect(port, hostname, () => {
+          clearTimeout(timeout);
+          socket.destroy();
+          resolve();
+        });
+        
+        socket.on('error', (err) => {
+          clearTimeout(timeout);
+          reject(err);
+        });
+      });
+      
+      await connectPromise;
+      console.log('✅ TCP connectivity successful');
+      
+    } catch (error) {
+      console.error('❌ Network diagnostic failed:', error.message);
+      
+      if (error.message.includes('ENOTFOUND')) {
+        console.error('DNS resolution failed - check network connectivity');
+      } else if (error.message.includes('ECONNREFUSED')) {
+        console.error('Connection refused - port may be blocked by firewall');
+      } else if (error.message.includes('timeout')) {
+        console.error('Connection timeout - corporate firewall likely blocking the connection');
+      }
+    }
+  }
+
+  /**
+   * Check if the service is ready
+   */
+  isReady() {
+    return this.ready && this.kafka !== null;
+  }
+
+  /**
    * Get service statistics
    */
   getStats() {
@@ -239,10 +431,29 @@ class EventHubService {
     }
 
     return {
+      ready: this.isReady(),
       sessions: { active: totalSessions },
-      connections: { total: totalConnections },
+      connections: { 
+        total: totalConnections,
+        active: this.activeConnections,
+        maxConcurrent: this.maxConcurrentConnections,
+        queued: this.connectionQueue.length
+      },
       topics: Object.keys(KAFKA_TOPICS)
     };
+  }
+
+  /**
+   * Clear connection queue
+   */
+  clearConnectionQueue() {
+    console.log(`Clearing connection queue with ${this.connectionQueue.length} pending connections`);
+    this.connectionQueue.forEach(({ reject }) => {
+      reject(new Error('Connection queue cleared'));
+    });
+    this.connectionQueue = [];
+    this.isProcessingQueue = false;
+    this.activeConnections = 0;
   }
 
   /**
@@ -250,6 +461,9 @@ class EventHubService {
    */
   async shutdown() {
     console.log('Shutting down EventHub service...');
+    
+    // Clear connection queue
+    this.clearConnectionQueue();
     
     for (const sessionId of this.consumers.keys()) {
       await this.cleanupSession(sessionId);

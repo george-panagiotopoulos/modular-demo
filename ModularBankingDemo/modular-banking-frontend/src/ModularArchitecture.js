@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './ModularArchitecture.css';
 
@@ -17,6 +17,21 @@ const TopicButton = ({ topic, isActive, onClick, onKeyDown }) => (
 
 // Content Pane Component
 const ContentPane = ({ selectedTopic, topics, onDemoClick }) => {
+  const [editableKeyPoints, setEditableKeyPoints] = useState([]);
+  const [editableBenefits, setEditableBenefits] = useState([]);
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Initialize editable content when topic changes
+  useEffect(() => {
+    if (selectedTopic === 'why-modularity') {
+      const topic = topics.find(t => t.id === selectedTopic);
+      if (topic) {
+        setEditableKeyPoints([...topic.keyPoints]);
+        setEditableBenefits([...topic.benefits]);
+      }
+    }
+  }, [selectedTopic, topics]);
+
   if (!selectedTopic) {
     return (
       <div className="content-placeholder">
@@ -29,28 +44,121 @@ const ContentPane = ({ selectedTopic, topics, onDemoClick }) => {
   const topic = topics.find(t => t.id === selectedTopic);
   if (!topic) return null;
 
+  const handleKeyPointChange = (index, value) => {
+    const newKeyPoints = [...editableKeyPoints];
+    newKeyPoints[index] = value;
+    setEditableKeyPoints(newKeyPoints);
+  };
+
+  const handleBenefitChange = (index, value) => {
+    const newBenefits = [...editableBenefits];
+    newBenefits[index] = value;
+    setEditableBenefits(newBenefits);
+  };
+
+  const handleAddKeyPoint = () => {
+    setEditableKeyPoints([...editableKeyPoints, '']);
+  };
+
+  const handleAddBenefit = () => {
+    setEditableBenefits([...editableBenefits, '']);
+  };
+
+  const handleRemoveKeyPoint = (index) => {
+    const newKeyPoints = editableKeyPoints.filter((_, i) => i !== index);
+    setEditableKeyPoints(newKeyPoints);
+  };
+
+  const handleRemoveBenefit = (index) => {
+    const newBenefits = editableBenefits.filter((_, i) => i !== index);
+    setEditableBenefits(newBenefits);
+  };
+
+  const isWhyModularity = topic.id === 'why-modularity';
+
   return (
     <div className="content-topic">
       <div className="content-header">
         <h2>{topic.title}</h2>
+        {isWhyModularity && (
+          <button
+            className="edit-toggle-btn"
+            onClick={() => setIsEditing(!isEditing)}
+            aria-label={isEditing ? "Exit edit mode" : "Enter edit mode"}
+          >
+            {isEditing ? "✕ Exit Edit" : "✏️ Edit Content"}
+          </button>
+        )}
       </div>
       <div className="content-body">
         <p className="content-description">{topic.description}</p>
         <div className="content-details">
           <h3>Key Points</h3>
-          <ul>
-            {topic.keyPoints.map((point, index) => (
-              <li key={index}>{point}</li>
-            ))}
-          </ul>
+          {isWhyModularity && isEditing ? (
+            <div className="editable-list">
+              {editableKeyPoints.map((point, index) => (
+                <div key={index} className="editable-item">
+                  <input
+                    type="text"
+                    value={point}
+                    onChange={(e) => handleKeyPointChange(index, e.target.value)}
+                    className="editable-input"
+                    placeholder="Enter key point..."
+                  />
+                  <button
+                    onClick={() => handleRemoveKeyPoint(index)}
+                    className="remove-btn"
+                    aria-label="Remove key point"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+              <button onClick={handleAddKeyPoint} className="add-btn">
+                + Add Key Point
+              </button>
+            </div>
+          ) : (
+            <ul>
+              {(isWhyModularity ? editableKeyPoints : topic.keyPoints).map((point, index) => (
+                <li key={index}>{point}</li>
+              ))}
+            </ul>
+          )}
         </div>
         <div className="content-benefits">
           <h3>Benefits</h3>
-          <ul>
-            {topic.benefits.map((benefit, index) => (
-              <li key={index}>{benefit}</li>
-            ))}
-          </ul>
+          {isWhyModularity && isEditing ? (
+            <div className="editable-list">
+              {editableBenefits.map((benefit, index) => (
+                <div key={index} className="editable-item">
+                  <input
+                    type="text"
+                    value={benefit}
+                    onChange={(e) => handleBenefitChange(index, e.target.value)}
+                    className="editable-input"
+                    placeholder="Enter benefit..."
+                  />
+                  <button
+                    onClick={() => handleRemoveBenefit(index)}
+                    className="remove-btn"
+                    aria-label="Remove benefit"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+              <button onClick={handleAddBenefit} className="add-btn">
+                + Add Benefit
+              </button>
+            </div>
+          ) : (
+            <ul>
+              {(isWhyModularity ? editableBenefits : topic.benefits).map((benefit, index) => (
+                <li key={index}>{benefit}</li>
+              ))}
+            </ul>
+          )}
         </div>
         
         {/* Demo Cards for specific topics */}
@@ -112,7 +220,7 @@ const ModularArchitecture = () => {
     {
       id: 'why-modularity',
       title: 'Why Modularity is needed',
-      description: 'Traditional monolithic banking systems face significant challenges in today\'s rapidly evolving financial landscape. Temenos has evolved from T24 to address these limitations through modular architecture.',
+      description: 'Traditional monolithic banking systems face significant challenges in today\'s rapidly evolving financial landscape. Temenos has evolved from Core to address these limitations through modular architecture.',
       keyPoints: [
         'Scalability limitations in monolithic T24 systems',
         'Difficulty in implementing new features quickly',
@@ -133,7 +241,7 @@ const ModularArchitecture = () => {
       title: 'What is modularity',
       description: 'Modularity in Temenos banking systems refers to the architectural approach of decomposing the monolithic T24 Core Banking into smaller, independent, and loosely coupled components focused on specific business domains.',
       keyPoints: [
-        'Decomposition of T24 monolith into focused business domains',
+        'Progressive renovation of a monolith to a (small) number of modules',
         'Independent deployment and scaling capabilities per module',
         'Clear separation of business concerns and responsibilities',
         'API-first design principles with REST and JSON',
@@ -156,7 +264,8 @@ const ModularArchitecture = () => {
         'Modular responsibility with single application owners',
         'Bounded context implementation for each banking module',
         'Domain expert collaboration in architectural design',
-        'Ubiquitous language implementation across teams'
+        'Ubiquitous language implementation across teams',
+        'Balanced number of components to allow modularity without overcomplicating interfaces'
       ],
       benefits: [
         'Better alignment between business and technology teams',
@@ -192,7 +301,7 @@ const ModularArchitecture = () => {
       keyPoints: [
         'Extensibility Framework for configuration-based customizations',
         'Environment-specific configuration handling and management',
-        'Python scripting for response formatting and customization',
+        'Java API hooks for business logic enhancements',
         'Apache Camel-based adapter framework for integrations',
         'Template-driven interface development and deployment'
       ],
@@ -248,7 +357,7 @@ const ModularArchitecture = () => {
       description: 'Temenos modular banking APIs are built with an API-first approach using REST and JSON, while events enable real-time data synchronization and loose coupling between modules.',
       keyPoints: [
         'REST architectural style with JSON data interchange',
-        'Product-specific API organization and lifecycle management',
+        'Aligned with BIAN and FDX standards',
         'Business events aligned with API data structures',
         'Real-time event streaming and processing capabilities',
         'System-agnostic design for flexible integration'
@@ -266,11 +375,10 @@ const ModularArchitecture = () => {
       title: 'User Experience',
       description: 'Temenos modular architecture enables superior user experiences through composability, allowing single user agents to access all licensed capabilities while maintaining consistent functionality.',
       keyPoints: [
-        'Single user agent for all licensed banking capabilities',
-        'Unified customer view across all banking modules',
-        'Consistent design system implementation across modules',
-        'Seamless fund transfers between different components',
-        'Graceful handling of component maintenance scenarios'
+        'Headless for operations, ready to integrate to bank\'s unified branch application',
+        'Product design with intuitive UX across modules',
+        'Standardized extensibility via Workbench',
+        'Operations user agent for managing CoB and monitoring'
       ],
       benefits: [
         'Simplified user experience and reduced training requirements',
