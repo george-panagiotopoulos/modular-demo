@@ -1,11 +1,14 @@
-/* Event Stream Component Styles - Matching Main App Design System */
+/* Event Stream Component Styles - Temenos Design System */
 
-/* Import CSS Variables from main app */
+/* ========================================
+   CSS Variables - Temenos Theme
+   ======================================== */
 :root {
   --temenos-teal: #5CB8B2;
   --temenos-purple: #8246AF;
   --temenos-navy: #283275;
-  --secondary-blue: #4A90E2;
+  --temenos-light-blue: #E6F3FF;
+  --temenos-dark-blue: #1B365D;
   --light-gray: #F8F9FA;
   --medium-gray: #E9ECEF;
   --dark-gray: #495057;
@@ -13,10 +16,8 @@
   --text-secondary: #6C757D;
   --white: #FFFFFF;
   --success-green: #28A745;
-  --warning-orange: #FFC107;
   --error-red: #DC3545;
   --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  --border-radius: 8px;
   --card-border-radius: 12px;
   --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   --card-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
@@ -28,26 +29,26 @@
    Main Container
    ======================================== */
 .event-stream-container {
-  min-height: 100vh;
-  background: linear-gradient(135deg, var(--light-gray) 0%, #f0f2f5 100%);
-  font-family: var(--font-family);
-  color: var(--text-primary);
-  width: 90vw; /* 90% of viewport width */
-  margin: 0 auto; /* Center the container */
+  width: 95vw;
+  margin: 0 auto;
   padding: 2rem;
-  box-sizing: border-box; /* Include padding in width calculation */
+  background: linear-gradient(135deg, var(--temenos-light-blue) 0%, #f8fafc 100%);
+  font-family: var(--font-family);
+  min-height: 100vh;
+  box-sizing: border-box;
 }
 
 /* ========================================
    Header Section
    ======================================== */
 .event-stream-header {
-  background: linear-gradient(135deg, var(--temenos-teal) 0%, var(--temenos-purple) 100%);
-  color: white;
   padding: 2rem;
-  border-radius: var(--card-border-radius);
-  margin-bottom: 2rem;
-  box-shadow: var(--card-shadow);
+  margin-bottom: 2.5rem;
+  background: var(--white);
+  border-radius: 1rem;
+  color: var(--temenos-navy);
+  border: 1px solid var(--temenos-teal);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -57,27 +58,175 @@
 
 .event-stream-header h2 {
   margin: 0;
-  font-size: 1.75rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  font-size: 2rem;
+  font-weight: 700;
 }
 
 .stats-summary {
   display: flex;
+  justify-content: center;
   gap: 1rem;
-  font-size: 0.9rem;
   flex-wrap: wrap;
 }
 
 .stats-summary span {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--temenos-light-blue);
+  color: var(--temenos-navy);
   padding: 0.5rem 1rem;
   border-radius: 20px;
-  backdrop-filter: blur(10px);
   font-weight: 500;
-  white-space: nowrap;
+}
+
+/* ========================================
+   Component Cards
+   ======================================== */
+.components-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.component-card {
+  background: var(--white);
+  border-radius: var(--card-border-radius);
+  border: 1px solid var(--medium-gray);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--card-shadow);
+  transition: var(--transition);
+}
+
+.component-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--hover-shadow);
+}
+
+.component-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--medium-gray);
+}
+
+.component-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: var(--temenos-navy);
+}
+
+.component-description {
+  margin-top: 0.5rem;
+  color: var(--text-secondary);
+}
+
+.component-body {
+  padding: 1.5rem;
+  flex-grow: 1;
+}
+
+.event-type-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.event-type-tag {
+  padding: 0.375rem 0.75rem;
+  border-radius: 16px;
+  font-size: 0.8rem;
+  color: var(--white);
+}
+
+/* ========================================
+   Component Actions
+   ======================================== */
+.component-actions {
+  padding: 1.5rem;
+  background: var(--light-gray);
+  border-top: 1px solid var(--medium-gray);
+}
+
+.connect-btn, .disconnect-btn {
+  width: 100%;
+  padding: 0.875rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.connect-btn {
+  background: var(--temenos-teal);
+  color: var(--white);
+}
+
+.connect-btn:hover {
+  background: var(--temenos-navy);
+}
+
+.disconnect-btn {
+  background: var(--error-red);
+  color: var(--white);
+}
+
+.disconnect-btn:hover {
+  background: #a82332;
+}
+
+/* ========================================
+   Event Stream Display
+   ======================================== */
+.event-stream {
+  border: 1px solid var(--medium-gray);
+  border-radius: 1rem;
+  overflow: hidden;
+  background: var(--white);
+}
+
+.stream-header {
+  padding: 1rem 1.5rem;
+  background: var(--light-gray);
+  color: var(--temenos-navy);
+  border-bottom: 1px solid var(--medium-gray);
+}
+
+.events-container {
+  height: 500px;
+  overflow-y: auto;
+  padding: 1rem;
+  background: var(--light-gray);
+}
+
+.event-item {
+  background: var(--white);
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  border-left: 4px solid var(--temenos-purple);
+  box-shadow: var(--box-shadow);
+}
+
+.event-summary-button {
+  width: 100%;
+  text-align: left;
+  padding: 1rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.event-details-container {
+  padding: 1rem;
+  background: #f0f2f5;
+}
+
+.payload-json {
+  background: var(--dark-gray);
+  color: var(--light-gray);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }
 
 /* ========================================
@@ -101,319 +250,10 @@
 }
 
 /* ========================================
-   Components Grid
-   ======================================== */
-.components-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr); /* Exactly 3 columns */
-  gap: 1.5rem; /* Reduced from 2rem to give more space to cards */
-  margin-bottom: 2rem;
-}
-
-/* ========================================
-   Component Cards
-   ======================================== */
-.component-card {
-  background: white;
-  border-radius: var(--card-border-radius);
-  padding: 0;
-  box-shadow: var(--card-shadow);
-  border: 1px solid #e2e8f0;
-  transition: var(--transition);
-  overflow: hidden;
-  position: relative;
-}
-
-.component-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--hover-shadow);
-}
-
-/* Drag and Drop Styles */
-.component-card.dragging {
-  transform: rotate(2deg);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
-  z-index: 1000;
-  opacity: 0.8;
-}
-
-.component-card.drag-over {
-  border: 2px dashed var(--temenos-teal);
-  background: rgba(92, 184, 178, 0.05);
-  transform: scale(1.02);
-}
-
-.drag-handle {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  color: var(--text-secondary);
-  font-size: 1.2rem;
-  cursor: grab;
-  opacity: 0.6;
-  transition: var(--transition);
-  user-select: none;
-}
-
-.drag-handle:hover {
-  opacity: 1;
-  color: var(--temenos-teal);
-}
-
-.drag-handle:active {
-  cursor: grabbing;
-}
-
-.component-header {
-  padding: 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  gap: 1rem;
-  position: relative;
-}
-
-.component-header h3 {
-  margin: 0;
-  color: var(--text-primary);
-  font-size: 1.25rem;
-  font-weight: 600;
-  line-height: 1.3;
-}
-
-.component-version {
-  background: var(--medium-gray);
-  color: var(--text-secondary);
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.component-description {
-  color: var(--text-secondary);
-  margin: 0.5rem 0 0 0;
-  line-height: 1.5;
-  font-size: 0.95rem;
-}
-
-/* ========================================
-   Component Configuration
-   ======================================== */
-.component-config {
-  padding: 0 1.5rem 1rem 1.5rem;
-}
-
-.event-types {
-  margin-bottom: 1rem;
-}
-
-.event-types strong {
-  color: var(--text-primary);
-  font-size: 0.9rem;
-  font-weight: 600;
-  display: block;
-  margin-bottom: 0.5rem;
-}
-
-.event-type-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.event-type-tag {
-  padding: 0.375rem 0.75rem;
-  border-radius: 16px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: white;
-  white-space: nowrap;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-/* ========================================
-   Component Actions
-   ======================================== */
-.component-actions {
-  padding: 0 1.5rem 1.5rem 1.5rem;
-}
-
-.connect-btn, .disconnect-btn {
-  width: 100%;
-  padding: 0.875rem 1.5rem;
-  border: none;
-  border-radius: var(--border-radius);
-  font-family: var(--font-family);
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: var(--transition);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-}
-
-.connect-btn {
-  background: linear-gradient(135deg, var(--success-green) 0%, #20c997 100%);
-  color: white;
-  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
-}
-
-.connect-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
-}
-
-.connect-btn:disabled {
-  background: var(--medium-gray);
-  color: var(--text-secondary);
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-.disconnect-btn {
-  background: linear-gradient(135deg, var(--error-red) 0%, #c82333 100%);
-  color: white;
-  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
-}
-
-.disconnect-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
-}
-
-/* ========================================
-   Event Stream Section
-   ======================================== */
-.event-stream {
-  border-top: 1px solid #e2e8f0;
-  background: #f8fafc;
-}
-
-.stream-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
-  background: white;
-}
-
-.stream-header h4 {
-  margin: 0;
-  color: var(--text-primary);
-  font-size: 1.1rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.event-count {
-  background: linear-gradient(135deg, var(--secondary-blue) 0%, #357abd 100%);
-  color: white;
-  padding: 0.375rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  box-shadow: 0 2px 4px rgba(74, 144, 226, 0.3);
-}
-
-/* ========================================
-   Events Container - Made Resizable
-   ======================================== */
-.events-container {
-  min-height: 600px; /* Increased from 450px for better visibility */
-  max-height: none; /* Remove max-height restriction */
-  height: 600px; /* Default height */
-  overflow-y: auto;
-  padding: 1rem 1.5rem;
-  background: #f8fafc;
-  resize: vertical; /* Make vertically resizable */
-  border: 1px solid #e2e8f0;
-  border-radius: var(--border-radius);
-  position: relative;
-}
-
-/* Add a subtle resize handle indicator */
-.events-container::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 16px;
-  height: 16px;
-  background: linear-gradient(-45deg, transparent 0%, transparent 30%, #94a3b8 30%, #94a3b8 35%, transparent 35%, transparent 65%, #94a3b8 65%, #94a3b8 70%, transparent 70%);
-  cursor: nw-resize;
-  pointer-events: none;
-}
-
-.no-events {
-  text-align: center;
-  padding: 3rem 1rem;
-  color: var(--text-secondary);
-}
-
-.no-events p {
-  margin: 0.5rem 0;
-  font-size: 1rem;
-}
-
-.help-text {
-  font-size: 0.9rem;
-  color: #94a3b8;
-  font-style: italic;
-}
-
-/* ========================================
    Event Visualization - Enhanced Design
    ======================================== */
 .event-wrapper {
   margin-bottom: 1rem;
-}
-
-.event-summary-button {
-  width: 100%;
-  text-align: left;
-  padding: 1rem;
-  border: none;
-  border-radius: var(--border-radius);
-  color: black;
-  font-family: var(--font-family);
-  font-weight: 500;
-  cursor: pointer;
-  transition: var(--transition);
-  font-size: 0.9rem;
-  line-height: 1.4;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  position: relative;
-  overflow: hidden;
-}
-
-.event-summary-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.1) 100%);
-  pointer-events: none;
-}
-
-.event-summary-button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-.event-summary-button:active {
-  transform: translateY(0);
 }
 
 .event-summary-timestamp {
@@ -434,17 +274,6 @@
 /* ========================================
    Event Details Container
    ======================================== */
-.event-details-container {
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: var(--border-radius);
-  padding: 1.25rem;
-  margin-top: 0.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  font-size: 0.9rem;
-  text-align: left;
-}
-
 .event-details-header {
   font-weight: 600;
   color: var(--temenos-teal);
@@ -505,24 +334,6 @@
 .payload-label::before {
   content: "📄";
   font-size: 1rem;
-}
-
-.payload-json {
-  background: #1e293b;
-  color: #e2e8f0;
-  padding: 1.5rem;
-  border-radius: var(--border-radius);
-  border: 1px solid #334155;
-  white-space: pre-wrap;
-  overflow-x: auto;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  font-size: 0.8rem;
-  line-height: 1.5;
-  min-height: 800px;
-  max-height: 1200px;
-  overflow-y: auto;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
-  text-align: left;
 }
 
 /* ========================================
@@ -653,94 +464,19 @@
 /* ========================================
    Responsive Design
    ======================================== */
-@media (max-width: 1400px) {
-  .components-grid {
-    gap: 1.25rem; /* Slightly smaller gap on smaller large screens */
-  }
-}
-
 @media (max-width: 1200px) {
   .components-grid {
-    grid-template-columns: repeat(2, 1fr); /* 2 columns on medium screens */
-    gap: 1.5rem;
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 768px) {
-  .event-stream-container {
-    padding: 1rem;
-    width: 95vw; /* Slightly wider on mobile for better use of space */
-  }
-  
-  .event-stream-header {
-    padding: 1.5rem;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-  
-  .event-stream-header h2 {
-    font-size: 1.5rem;
-  }
-  
-  .stats-summary {
-    width: 100%;
-    justify-content: space-between;
-  }
-  
   .components-grid {
-    grid-template-columns: 1fr; /* Single column on mobile */
-    gap: 1.5rem;
+    grid-template-columns: 1fr;
   }
-  
-  .component-header {
-    padding: 1rem;
+  .event-stream-header {
     flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .component-config,
-  .component-actions {
-    padding: 0 1rem 1rem 1rem;
-  }
-  
-  .stream-header {
-    padding: 0.75rem 1rem;
-  }
-  
-  .events-container {
-    padding: 0.75rem 1rem;
-    min-height: 400px; /* Smaller default height on mobile */
-    height: 400px;
-  }
-  
-  .event-summary-button {
-    padding: 0.875rem;
-  }
-  
-  .event-details-container {
-    padding: 1rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .event-stream-header h2 {
-    font-size: 1.25rem;
-  }
-  
-  .stats-summary {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .stats-summary span {
-    text-align: center;
-  }
-  
-  .event-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
+    align-items: stretch;
   }
 }
 

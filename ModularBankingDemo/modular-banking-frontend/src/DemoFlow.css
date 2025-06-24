@@ -168,6 +168,12 @@
   width: 100%;
 }
 
+/* Allow API Viewer to use full width when active */
+.demo-flow-content.api-viewer-active {
+  max-width: none;
+  width: 100%;
+}
+
 .welcome-section {
   text-align: center;
   margin-bottom: 3rem;

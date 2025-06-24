@@ -161,18 +161,21 @@ const ContentPane = ({ selectedTopic, topics, onDemoClick }) => {
           )}
         </div>
         
-        {/* Demo Cards for specific topics */}
-        {(topic.id === 'integration-patterns' || topic.id === 'api-event-design') && (
+        {/* Demo Cards for specific topics - now generic for any topic with demos */}
+        {topic.demos && (
           <div className="demo-cards-section">
             <h3>Interactive Demos</h3>
             <div className="demo-cards-container">
-              <DemoCard
-                title="Event-driven Architecture Demo"
-                description="Explore real-time event streaming and see how events flow between banking modules in our modular architecture."
-                icon="⚡"
-                onClick={onDemoClick}
-                className="event-stream-demo"
-              />
+              {topic.demos.map((demo) => (
+                <DemoCard
+                  key={demo.id}
+                  title={demo.title}
+                  description={demo.description}
+                  icon={demo.icon}
+                  onClick={() => onDemoClick(demo.path)}
+                  className={demo.className}
+                />
+              ))}
             </div>
           </div>
         )}
@@ -334,7 +337,7 @@ const ModularArchitecture = () => {
     },
     {
       id: 'integration-patterns',
-      title: 'Integration patterns',
+      title: 'Integration Patterns',
       description: 'Temenos modular solutions employ flexible integration patterns with externalized integration logic, supporting various middleware solutions and custom integration scenarios.',
       keyPoints: [
         'API and event-based communication patterns',
@@ -349,11 +352,29 @@ const ModularArchitecture = () => {
         'Improved maintainability and scalability',
         'Reduced integration complexity and implementation risk',
         'Faster implementation and deployment cycles'
+      ],
+      demos: [
+        {
+          id: 'event-stream-demo',
+          title: 'Event-driven Architecture Demo',
+          description: 'Explore real-time event streaming and see how events flow between banking modules.',
+          icon: '⚡',
+          path: '/event-stream',
+          className: 'event-stream-demo'
+        },
+        {
+          id: 'api-viewer-demo',
+          title: 'Live API Viewer',
+          description: 'Interact with our modular banking APIs in real-time using the Live API Viewer.',
+          icon: '🔬',
+          path: '/api-viewer',
+          className: 'api-viewer-demo'
+        }
       ]
     },
     {
       id: 'api-event-design',
-      title: 'API and Event design principles',
+      title: 'API and Event Design Principles',
       description: 'Temenos modular banking APIs are built with an API-first approach using REST and JSON, while events enable real-time data synchronization and loose coupling between modules.',
       keyPoints: [
         'REST architectural style with JSON data interchange',
@@ -368,6 +389,24 @@ const ModularArchitecture = () => {
         'Better system responsiveness and performance',
         'Simplified integration patterns and development',
         'Real-time business intelligence and analytics capabilities'
+      ],
+      demos: [
+        {
+          id: 'event-stream-demo',
+          title: 'Event-driven Architecture Demo',
+          description: 'Explore real-time event streaming and see how events flow between banking modules.',
+          icon: '⚡',
+          path: '/event-stream',
+          className: 'event-stream-demo'
+        },
+        {
+          id: 'api-viewer-demo',
+          title: 'Live API Viewer',
+          description: 'Interact with our modular banking APIs in real-time using the Live API Viewer.',
+          icon: '🔬',
+          path: '/api-viewer',
+          className: 'api-viewer-demo'
+        }
       ]
     },
     {
@@ -386,6 +425,16 @@ const ModularArchitecture = () => {
         'Better cross-platform consistency and reliability',
         'Reduced integration complexity and operational costs',
         'Improved system reliability and availability'
+      ],
+      demos: [
+        {
+          id: 'api-viewer-demo',
+          title: 'Live API Viewer',
+          description: 'Interact with our modular banking APIs in real-time using the Live API Viewer.',
+          icon: '🔬',
+          path: '/api-viewer',
+          className: 'api-viewer-demo'
+        }
       ]
     },
     {
@@ -462,8 +511,10 @@ const ModularArchitecture = () => {
     }
   };
 
-  const handleDemoClick = () => {
-    navigate('/event-stream');
+  const handleDemoClick = (path) => {
+    if (path) {
+      navigate(path);
+    }
   };
 
   return (

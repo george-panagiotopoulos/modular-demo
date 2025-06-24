@@ -407,7 +407,6 @@ body {
 }
 
 .learn-more-button {
-  background: linear-gradient(135deg, var(--temenos-purple) 0%, #6d3d8a 100%);
   color: white;
   border: none;
   padding: var(--spacing-md) var(--spacing-xl);
@@ -425,13 +424,32 @@ body {
   justify-content: center;
 }
 
-.learn-more-button:hover {
+.learn-more-button-teal {
+  background: linear-gradient(135deg, var(--temenos-teal) 0%, #4a9d96 100%);
+}
+
+.learn-more-button-teal:hover {
+  background: linear-gradient(135deg, #4a9d96 0%, var(--temenos-teal) 100%);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.learn-more-button-teal:focus {
+  outline: none;
+  box-shadow: var(--shadow-lg), 0 0 0 3px rgba(92, 184, 178, 0.5);
+}
+
+.learn-more-button-purple {
+  background: linear-gradient(135deg, var(--temenos-purple) 0%, #6d3d8a 100%);
+}
+
+.learn-more-button-purple:hover {
   background: linear-gradient(135deg, #6d3d8a 0%, var(--temenos-purple) 100%);
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
 }
 
-.learn-more-button:focus {
+.learn-more-button-purple:focus {
   outline: none;
   box-shadow: var(--shadow-lg), 0 0 0 3px rgba(130, 70, 175, 0.5);
 }

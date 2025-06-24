@@ -6,6 +6,7 @@ import SupportingServices from './SupportingServices';
 import ModularArchitecture from './ModularArchitecture';
 import DemoFlow from './DemoFlow';
 import EventStream from './components/EventStream';
+import APIViewer from './components/APIViewer';
 
 function AppContent() {
   const location = useLocation();
@@ -38,6 +39,7 @@ function AppContent() {
           <Route path="/modular-architecture" element={<ModularArchitecture />} />
           <Route path="/demo-flow" element={<DemoFlow />} />
           <Route path="/event-stream" element={<EventStream />} />
+          <Route path="/api-viewer" element={<APIViewer />} />
         </Routes>
       </main>
     </div>

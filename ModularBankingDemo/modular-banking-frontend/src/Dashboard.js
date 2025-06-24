@@ -86,9 +86,7 @@ const ModularArchitecturePane = () => {
         Modular Architecture
       </h2>
       <p>
-        Temenos has evolved from traditional monolithic T24 Core Banking to a modern, 
-        modular architecture that decomposes complex banking systems into focused, 
-        independent components while maintaining proven banking functionality.
+        Modular banking is a progressive modernization approach to a balanced distribtued architectrure.
       </p>
       <div className="pane-features">
         <h3>Core Principles:</h3>
@@ -113,7 +111,7 @@ const ModularArchitecturePane = () => {
       </div>
       <div className="pane-action">
         <button 
-          className="learn-more-button"
+          className="learn-more-button learn-more-button-teal"
           onClick={handleLearnMore}
           aria-label="Navigate to detailed Modular Architecture page"
         >
@@ -163,7 +161,7 @@ const SupportingServicesPane = () => {
       </div>
       <div className="pane-action">
         <button 
-          className="learn-more-button"
+          className="learn-more-button learn-more-button-purple"
           onClick={handleLearnMore}
           aria-label="Navigate to detailed Supporting Services page"
         >
@@ -543,7 +541,7 @@ const Dashboard = () => {
       {/* Temenos branding footer */}
       <footer className="dashboard-footer" role="contentinfo">
         <p className="footer-text">
-          Powered by <strong>Temenos</strong> - Leading Banking Software Solutions
+          Powered by <strong>Temenos</strong> - Leading Banking Forward
         </p>
       </footer>
     </div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import APIViewer from './components/APIViewer';
 import EventStream from './components/EventStream';
 import MobileApp from './components/MobileApp/MobileApp';
 import './DemoFlow.css';
@@ -54,6 +55,8 @@ const DemoFlow = () => {
   // Tab content renderer
   const renderTabContent = () => {
     switch (activeTab) {
+      case 'api-viewer':
+        return <APIViewer />;
       case 'event-stream':
         return <EventStream />;
       case 'mobile-app':
@@ -100,6 +103,18 @@ const DemoFlow = () => {
             </div>
 
             <div className="demo-features">
+              <div className="feature-card">
+                <div className="feature-icon">🔧</div>
+                <h3>API Viewer</h3>
+                <p>Interactive REST API testing interface for banking solutions with real-time request/response handling.</p>
+                <button 
+                  className="feature-button"
+                  onClick={() => setActiveTab('api-viewer')}
+                >
+                  Try API Viewer
+                </button>
+              </div>
+
               <div className="feature-card">
                 <div className="feature-icon">🚀</div>
                 <h3>Event Stream</h3>
@@ -202,6 +217,15 @@ const DemoFlow = () => {
             Overview
           </button>
           <button
+            className={`tab-button ${activeTab === 'api-viewer' ? 'active' : ''}`}
+            onClick={() => setActiveTab('api-viewer')}
+            role="tab"
+            aria-selected={activeTab === 'api-viewer'}
+          >
+            <span className="tab-icon">🔧</span>
+            API Viewer
+          </button>
+          <button
             className={`tab-button ${activeTab === 'event-stream' ? 'active' : ''}`}
             onClick={() => setActiveTab('event-stream')}
             role="tab"
@@ -254,7 +278,7 @@ const DemoFlow = () => {
 
       {/* Main Content */}
       <main className="demo-flow-main">
-        <div className={`demo-flow-content ${activeTab === 'event-stream' ? 'event-stream-active' : ''}`} role="tabpanel">
+        <div className={`demo-flow-content ${activeTab === 'event-stream' ? 'event-stream-active' : ''} ${activeTab === 'api-viewer' ? 'api-viewer-active' : ''}`} role="tabpanel">
           {renderTabContent()}
         </div>
       </main>

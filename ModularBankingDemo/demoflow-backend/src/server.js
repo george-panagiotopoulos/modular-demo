@@ -12,6 +12,16 @@ require('dotenv').config();
 // Import routes and services
 const eventStreamRoutes = require('./routes/eventStreamRoutes');
 const bankingRoutes = require('./routes/banking');
+
+let headlessRoutes;
+try {
+  headlessRoutes = require('./routes/headless');
+  console.log('✅ Headless routes imported successfully');
+} catch (error) {
+  console.error('❌ Error importing headless routes:', error.message);
+  console.error('   Stack trace:', error.stack);
+}
+
 const { getEventHubService } = require('./services/eventHubService');
 const { getSessionManager } = require('./services/sessionManager');
 
@@ -29,7 +39,15 @@ app.use(cors({
   origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3011', 'http://127.0.0.1:3011'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-session-id', 'x-client-type']
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization', 
+    'x-session-id', 
+    'x-client-type',
+    'x-endpoint',
+    'x-solution',
+    'Accept'
+  ]
 }));
 
 // Body parsing middleware
@@ -59,6 +77,13 @@ app.get('/health', (req, res) => {
 app.use('/api/event-stream', eventStreamRoutes);
 app.use('/api/banking', bankingRoutes);
 
+if (headlessRoutes) {
+  app.use('/api/headless', headlessRoutes);
+  console.log('✅ Headless routes registered at /api/headless');
+} else {
+  console.log('⚠️  Headless routes not available - skipping registration');
+}
+
 // Legacy route mapping for MobileApp compatibility
 // Map the old endpoints to new banking endpoints
 app.get('/api/parties/:partyId/accounts', (req, res) => {
@@ -75,20 +100,29 @@ app.get('/api/parties/:partyId/loans', (req, res) => {
 
 // Root endpoint
 app.get('/', (req, res) => {
+  const endpoints = {
+    health: '/health',
+    banking: '/api/banking',
+    eventStreamComponents: '/api/event-stream/components',
+    eventStreamConnect: '/api/event-stream/connect/:component',
+    eventStreamDisconnect: '/api/event-stream/disconnect/:component',
+    eventStreamEvents: '/api/event-stream/events/:component',
+    eventStreamStats: '/api/event-stream/stats',
+    sessionStatus: '/api/event-stream/session/:id/status',
+    sessionCleanup: '/api/event-stream/session/:id/cleanup'
+  };
+  
+  // Add headless endpoints if available
+  if (headlessRoutes) {
+    endpoints.headlessTrack = '/api/headless/track';
+    endpoints.headlessEndpoints = '/api/headless/endpoints';
+    endpoints.headlessStatus = '/api/headless/status';
+  }
+  
   res.json({
     message: 'Modular Banking Demo - Backend Server',
     version: '1.0.0',
-    endpoints: {
-      health: '/health',
-      banking: '/api/banking',
-      eventStreamComponents: '/api/event-stream/components',
-      eventStreamConnect: '/api/event-stream/connect/:component',
-      eventStreamDisconnect: '/api/event-stream/disconnect/:component',
-      eventStreamEvents: '/api/event-stream/events/:component',
-      eventStreamStats: '/api/event-stream/stats',
-      sessionStatus: '/api/event-stream/session/:id/status',
-      sessionCleanup: '/api/event-stream/session/:id/cleanup'
-    }
+    endpoints: endpoints
   });
 });
 
