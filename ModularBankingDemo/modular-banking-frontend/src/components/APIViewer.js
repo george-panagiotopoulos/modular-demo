@@ -1,5 +1,6 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import './APIViewer.css';
+import apiConfig from '../config/apiConfig';
 
 const APIViewer = () => {
   // State management
@@ -23,17 +24,17 @@ const APIViewer = () => {
   const uriInputRef = useRef(null);
   const payloadInputRef = useRef(null);
 
-  // Temenos services with their endpoints organized by service
-  const services = {
+  // API endpoints configuration using apiConfig
+  const apiEndpoints = {
     'party': {
-      name: 'Party',
+      name: 'Party Management',
       description: 'Customer/Party Management APIs',
       endpoints: [
         {
           id: 'create_party',
           name: 'Create Party/Customer',
           method: 'POST',
-          uri: 'http://modulardemo.northeurope.cloudapp.azure.com/ms-party-api/api/v5.0.0/party/parties',
+          uri: apiConfig.buildUrl('party', 'create'),
           requiresPayload: true,
           description: 'Create a new customer/party in the system'
         },
@@ -41,7 +42,7 @@ const APIViewer = () => {
           id: 'get_party_by_id',
           name: 'Get Party by ID',
           method: 'GET',
-          uri: 'http://modulardemo.northeurope.cloudapp.azure.com/ms-party-api/api/v5.0.0/party/parties/{partyId}',
+          uri: apiConfig.buildUrl('party', 'getById', { partyId: '{partyId}' }),
           requiresPayload: false,
           description: 'Retrieve party details by party ID'
         },
@@ -49,7 +50,7 @@ const APIViewer = () => {
           id: 'get_party_by_dob',
           name: 'Get Party by Date of Birth',
           method: 'GET',
-          uri: 'http://modulardemo.northeurope.cloudapp.azure.com/ms-party-api/api/v5.0.0/party/parties?dateOfBirth=1991-12-29',
+          uri: apiConfig.buildUrl('party', 'getByDateOfBirth', { dateOfBirth: '1991-12-29' }),
           requiresPayload: false,
           description: 'Search for parties by date of birth'
         },
@@ -57,7 +58,7 @@ const APIViewer = () => {
           id: 'get_party_by_lastname',
           name: 'Get Party by Last Name',
           method: 'GET',
-          uri: 'http://modulardemo.northeurope.cloudapp.azure.com/ms-party-api/api/v5.0.0/party/parties?lastName=Wilson',
+          uri: apiConfig.buildUrl('party', 'getByLastName', { lastName: 'Wilson' }),
           requiresPayload: false,
           description: 'Search for parties by last name'
         },
@@ -65,7 +66,7 @@ const APIViewer = () => {
           id: 'get_party_by_phone',
           name: 'Get Party by Phone',
           method: 'GET',
-          uri: 'http://modulardemo.northeurope.cloudapp.azure.com/ms-party-api/api/v5.0.0/party/parties?contactNumber=3666496860',
+          uri: apiConfig.buildUrl('party', 'getByPhone', { contactNumber: '3666496860' }),
           requiresPayload: false,
           description: 'Search for parties by phone number'
         },
@@ -73,7 +74,7 @@ const APIViewer = () => {
           id: 'get_party_by_email',
           name: 'Get Party by Email',
           method: 'GET',
-          uri: 'http://modulardemo.northeurope.cloudapp.azure.com/ms-party-api/api/v5.0.0/party/parties?emailId=ian.wilson@gmail.com',
+          uri: apiConfig.buildUrl('party', 'getByEmail', { emailId: 'ian.wilson@gmail.com' }),
           requiresPayload: false,
           description: 'Search for parties by email address'
         }
@@ -87,7 +88,7 @@ const APIViewer = () => {
           id: 'create_current_account',
           name: 'Create Current Account',
           method: 'POST',
-          uri: 'http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v2.0.0/holdings/accounts/currentAccounts',
+          uri: apiConfig.buildUrl('deposits', 'createCurrentAccount'),
           requiresPayload: true,
           description: 'Create a new current account for a party'
         },
@@ -95,7 +96,7 @@ const APIViewer = () => {
           id: 'get_account_balance',
           name: 'Get Account Balance',
           method: 'GET',
-          uri: 'http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v2.0.0/holdings/accounts/{accountReference}/balances',
+          uri: apiConfig.buildUrl('deposits', 'getAccountBalance', { accountReference: '{accountReference}' }),
           requiresPayload: false,
           description: 'Get current account balance and details'
         },
@@ -103,7 +104,7 @@ const APIViewer = () => {
           id: 'get_party_arrangements',
           name: 'Get Party Arrangements',
           method: 'GET',
-          uri: 'http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v1.0.0/holdings/parties/{partyId}/arrangements',
+          uri: apiConfig.buildUrl('deposits', 'getPartyArrangements', { partyId: '{partyId}' }),
           requiresPayload: false,
           description: 'Get all arrangements (accounts/loans) for a party'
         },
@@ -111,7 +112,7 @@ const APIViewer = () => {
           id: 'create_term_deposit',
           name: 'Create Term Deposit',
           method: 'POST',
-          uri: 'http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-deposits-container/api/v2.0.0/holdings/deposits/termDeposits',
+          uri: apiConfig.buildUrl('deposits', 'createTermDeposit'),
           requiresPayload: true,
           description: 'Create a term deposit account'
         },
@@ -119,7 +120,7 @@ const APIViewer = () => {
           id: 'debit_account',
           name: 'Debit Account Transaction',
           method: 'POST',
-          uri: 'http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v1.0.0/order/payments/debitAccount',
+          uri: apiConfig.buildUrl('deposits', 'debitAccount'),
           requiresPayload: true,
           description: 'Perform a debit transaction on an account'
         },
@@ -127,7 +128,7 @@ const APIViewer = () => {
           id: 'credit_account',
           name: 'Credit Account Transaction',
           method: 'POST',
-          uri: 'http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api/v1.0.0/order/payments/creditAccount',
+          uri: apiConfig.buildUrl('deposits', 'creditAccount'),
           requiresPayload: true,
           description: 'Perform a credit transaction on an account'
         }
@@ -141,7 +142,7 @@ const APIViewer = () => {
           id: 'create_mortgage_loan',
           name: 'Create Mortgage Loan',
           method: 'POST',
-          uri: 'http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/personalLoans',
+          uri: apiConfig.buildUrl('lending', 'createPersonalLoan'),
           requiresPayload: true,
           description: 'Create a new mortgage loan arrangement'
         },
@@ -149,7 +150,7 @@ const APIViewer = () => {
           id: 'create_consumer_loan',
           name: 'Create Consumer Loan',
           method: 'POST',
-          uri: 'http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/consumerLoans',
+          uri: apiConfig.buildUrl('lending', 'createConsumerLoan'),
           requiresPayload: true,
           description: 'Create a new consumer loan arrangement'
         },
@@ -157,7 +158,7 @@ const APIViewer = () => {
           id: 'get_loan_status',
           name: 'Get Loan Status',
           method: 'GET',
-          uri: 'http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/{loanArrangementId}/status',
+          uri: apiConfig.buildUrl('lending', 'getLoanStatus', { loanArrangementId: '{loanArrangementId}' }),
           requiresPayload: false,
           description: 'Get current status of a loan arrangement'
         },
@@ -165,7 +166,7 @@ const APIViewer = () => {
           id: 'get_loan_schedules',
           name: 'Get Loan Payment Schedules',
           method: 'GET',
-          uri: 'http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/{loanArrangementId}/schedules',
+          uri: apiConfig.buildUrl('lending', 'getLoanSchedules', { loanArrangementId: '{loanArrangementId}' }),
           requiresPayload: false,
           description: 'Get payment schedules for a loan'
         },
@@ -173,7 +174,7 @@ const APIViewer = () => {
           id: 'get_customer_arrangements',
           name: 'Get Customer Loan Arrangements',
           method: 'GET',
-          uri: 'http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v7.0.0/holdings/customers/{partyId}/arrangements',
+          uri: apiConfig.buildUrl('lending', 'getCustomerArrangements', { partyId: '{partyId}' }),
           requiresPayload: false,
           description: 'Get all loan arrangements for a customer'
         }
@@ -187,7 +188,7 @@ const APIViewer = () => {
           id: 'get_holdings_party_arrangements',
           name: 'Get Holdings Party Arrangements',
           method: 'GET',
-          uri: 'http://modulardemo.northeurope.cloudapp.azure.com/ms-holdings-api/api/v1.0.0/holdings/parties/{partyId}/arrangements',
+          uri: apiConfig.buildUrl('holdings', 'getPartyArrangements', { partyId: '{partyId}' }),
           requiresPayload: false,
           description: 'Get all holdings arrangements for a party'
         },
@@ -195,7 +196,7 @@ const APIViewer = () => {
           id: 'get_holdings_account_balances',
           name: 'Get Holdings Account Balances',
           method: 'GET',
-          uri: 'http://modulardemo.northeurope.cloudapp.azure.com/ms-holdings-api/api/v3.0.0/holdings/accounts/GB0010001-{accountReference}/balances',
+          uri: apiConfig.buildUrl('holdings', 'getAccountBalances', { accountReference: '{accountReference}' }),
           requiresPayload: false,
           description: 'Get account balances from holdings service'
         },
@@ -203,7 +204,7 @@ const APIViewer = () => {
           id: 'get_holdings_account_transactions',
           name: 'Get Holdings Account Transactions',
           method: 'GET',
-          uri: 'http://modulardemo.northeurope.cloudapp.azure.com/ms-holdings-api/api/v3.0.0/holdings/accounts/GB0010001-{accountReference}/transactions',
+          uri: apiConfig.buildUrl('holdings', 'getAccountTransactions', { accountReference: '{accountReference}' }),
           requiresPayload: false,
           description: 'Get account transaction history from holdings service'
         }
@@ -325,7 +326,7 @@ const APIViewer = () => {
     setSelectedEndpoint(value);
     
     if (value && selectedService) {
-      const endpoint = services[selectedService].endpoints.find(ep => ep.id === value);
+      const endpoint = apiEndpoints[selectedService].endpoints.find(ep => ep.id === value);
       if (endpoint) {
         // Set HTTP method
         setHttpMethod(endpoint.method);
@@ -424,7 +425,7 @@ const APIViewer = () => {
     
     // Update URI and payload if an endpoint is selected
     if (selectedEndpoint && selectedService) {
-      const endpoint = services[selectedService].endpoints.find(ep => ep.id === selectedEndpoint);
+      const endpoint = apiEndpoints[selectedService].endpoints.find(ep => ep.id === selectedEndpoint);
       if (endpoint) {
         // Update URI
         let processedUri = endpoint.uri;
@@ -577,7 +578,7 @@ const APIViewer = () => {
       };
       
       // Call the backend tracking endpoint which handles real API calls
-      const response = await fetch('http://localhost:5011/api/headless/track', {
+      const response = await fetch(`${apiConfig.backend}/api/headless/track`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -599,19 +600,19 @@ const APIViewer = () => {
         if (result.api_call.response) {
           setResponse(JSON.stringify(result.api_call.response, null, 2));
           setResponseStatus('success');
-          setSuccess(`✅ ${services[selectedService].name} API call executed successfully!`);
+          setSuccess(`✅ ${apiEndpoints[selectedService].name} API call executed successfully!`);
         } else if (result.api_call.error) {
           setError(`API Error: ${JSON.stringify(result.api_call.error, null, 2)}`);
           setResponseStatus('error');
         } else {
           setResponse(JSON.stringify(result, null, 2));
           setResponseStatus('success');
-          setSuccess(`✅ ${services[selectedService].name} API call completed!`);
+          setSuccess(`✅ ${apiEndpoints[selectedService].name} API call completed!`);
         }
       } else {
         setResponse(JSON.stringify(result, null, 2));
         setResponseStatus('success');
-        setSuccess(`✅ ${services[selectedService].name} API call completed!`);
+        setSuccess(`✅ ${apiEndpoints[selectedService].name} API call completed!`);
       }
       
       // Auto-dismiss success message after 5 seconds
@@ -789,7 +790,7 @@ const APIViewer = () => {
                 aria-required="true"
               >
                 <option value="">Select a service...</option>
-                {Object.entries(services).map(([key, service]) => (
+                {Object.entries(apiEndpoints).map(([key, service]) => (
                   <option key={key} value={key}>
                     {service.name} - {service.description}
                   </option>
@@ -814,7 +815,7 @@ const APIViewer = () => {
                   aria-required="true"
                 >
                   <option value="">Select an endpoint...</option>
-                  {services[selectedService].endpoints.map((endpoint) => (
+                  {apiEndpoints[selectedService].endpoints.map((endpoint) => (
                     <option key={endpoint.id} value={endpoint.id}>
                       [{endpoint.method}] {endpoint.name}
                     </option>
@@ -822,7 +823,7 @@ const APIViewer = () => {
                 </select>
                 {selectedEndpoint && (
                   <div className="endpoint-description">
-                    {services[selectedService].endpoints.find(ep => ep.id === selectedEndpoint)?.description}
+                    {apiEndpoints[selectedService].endpoints.find(ep => ep.id === selectedEndpoint)?.description}
                   </div>
                 )}
               </div>
@@ -861,7 +862,7 @@ const APIViewer = () => {
             )}
 
             {/* Request Payload */}
-            {selectedEndpoint && services[selectedService].endpoints.find(ep => ep.id === selectedEndpoint)?.requiresPayload && (
+            {selectedEndpoint && apiEndpoints[selectedService].endpoints.find(ep => ep.id === selectedEndpoint)?.requiresPayload && (
               <div className="form-group">
                 <label htmlFor="payload-input" className="form-label">
                   Request Payload (JSON)
@@ -904,7 +905,7 @@ const APIViewer = () => {
               ) : (
                 <>
                   <span className="execute-icon" aria-hidden="true">🚀</span>
-                  Execute {selectedService ? services[selectedService].name : ''} API
+                  Execute {selectedService ? apiEndpoints[selectedService].name : ''} API
                 </>
               )}
             </button>
@@ -953,7 +954,7 @@ const APIViewer = () => {
             {loading ? (
               <div className="response-content loading">
                 <div className="loading-spinner-large" aria-hidden="true"></div>
-                <p>Executing {selectedService ? services[selectedService].name : ''} API request...</p>
+                <p>Executing {selectedService ? apiEndpoints[selectedService].name : ''} API request...</p>
                 <p className="help-text">Connecting to Temenos service...</p>
               </div>
             ) : response ? (
