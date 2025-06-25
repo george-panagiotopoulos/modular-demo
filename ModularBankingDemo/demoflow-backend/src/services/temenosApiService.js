@@ -85,8 +85,8 @@ class TemenosApiService {
     console.log(`[Temenos API] getPartyArrangements called with partyId: ${partyId}`);
     
     try {
-      // Use the correct API endpoint that matches the Python implementation
-      const url = `http://modulardemo.northeurope.cloudapp.azure.com/ms-holdings-api/api/v1.0.0/holdings/parties/${partyId}/arrangements`;
+      // Use the new component-based configuration
+      const url = temenosConfig.buildUrl('holdings', 'partyArrangements', { partyId });
       console.log(`[Temenos API] Calling URL: ${url}`);
       
       const response = await axios.get(url, {
@@ -112,18 +112,77 @@ class TemenosApiService {
     console.log(`[Temenos API] getAccountBalances called with accountId: ${accountId}`);
     
     try {
-      // Use the correct API endpoint that matches the Python implementation
-      const url = `http://modulardemo.northeurope.cloudapp.azure.com/ms-holdings-api/api/v3.0.0/holdings/accounts/${accountId}/balances`;
-      console.log(`[Temenos API] Calling URL: ${url}`);
+      // Strip the prefix from account ID for deposits API (e.g., "GB0010001-1013719612" -> "1013719612")
+      const cleanAccountId = accountId.includes('-') ? accountId.split('-').pop() : accountId;
+      console.log(`[Temenos API] Using clean accountId: ${cleanAccountId}`);
       
-      const response = await axios.get(url, {
+      // Try deposits API first (working endpoint for some accounts)
+      try {
+        const url = temenosConfig.buildUrl('deposits', 'accountBalances', { arrangementId: cleanAccountId });
+        console.log(`[Temenos API] Trying deposits API: ${url}`);
+        
+        const response = await axios.get(url, {
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+        
+        // Check if we got valid balance data
+        if (response.data && Object.keys(response.data).length > 0 && 
+            (response.data.ledgerBalance !== undefined || response.data.availableBalance !== undefined)) {
+          console.log(`[Temenos API] Deposits API success:`, response.data);
+          
+          // Transform the response to match expected format for partiesService
+          const transformedResponse = {
+            items: [{
+              accountReference: response.data.accountReference || cleanAccountId,
+              onlineActualBalance: response.data.ledgerBalance || 0,
+              availableBalance: response.data.availableBalance || 0,
+              currency: response.data.currency || 'USD',
+              systemReference: 'deposits' // This helps identify it as a deposit account
+            }]
+          };
+          
+          return transformedResponse;
+        } else {
+          console.log(`[Temenos API] Deposits API returned empty data, trying holdings API...`);
+        }
+      } catch (depositsError) {
+        console.log(`[Temenos API] Deposits API failed: ${depositsError.message}, trying holdings API...`);
+      }
+      
+      // Fallback to holdings API with full account ID format
+      const fullAccountId = accountId.includes('-') ? accountId : `GB0010001-${accountId}`;
+      const holdingsUrl = `${temenosConfig.components.holdings.baseUrl}/v1.0.0/holdings/accounts/${fullAccountId}/balances`;
+      console.log(`[Temenos API] Trying holdings API: ${holdingsUrl}`);
+      
+      const holdingsResponse = await axios.get(holdingsUrl, {
         headers: {
           'Accept': 'application/json'
         }
       });
       
-      console.log(`[Temenos API] getAccountBalances response:`, response.data);
-      return response.data;
+      console.log(`[Temenos API] Holdings API response:`, holdingsResponse.data);
+      
+      // Holdings API returns the expected format already
+      if (holdingsResponse.data && holdingsResponse.data.items && holdingsResponse.data.items.length > 0) {
+        // Add systemReference to identify the source
+        holdingsResponse.data.items[0].systemReference = 'holdings';
+        return holdingsResponse.data;
+      }
+      
+      // If both APIs fail, return empty response
+      console.log(`[Temenos API] Both APIs failed or returned empty data for ${accountId}`);
+      return {
+        items: [{
+          accountReference: cleanAccountId,
+          onlineActualBalance: 0,
+          availableBalance: 0,
+          currency: 'USD',
+          systemReference: 'fallback'
+        }]
+      };
+      
     } catch (error) {
       console.error(`[Temenos API] getAccountBalances error for accountId ${accountId}:`, error);
       throw error;
@@ -139,8 +198,9 @@ class TemenosApiService {
     console.log(`[Temenos API] getAccountTransactions called with accountId: ${accountId}`);
     
     try {
-      // Use the correct Holdings API URL
-      const url = `http://modulardemo.northeurope.cloudapp.azure.com/ms-holdings-api/api/v3.0.0/holdings/accounts/${accountId}/transactions`;
+      // Use the holdings API v3.0.0 for transactions with full account ID format
+      const fullAccountId = accountId.includes('-') ? accountId : `GB0010001-${accountId}`;
+      const url = `${temenosConfig.components.holdings.baseUrl}/v3.0.0/holdings/accounts/${fullAccountId}/transactions`;
       console.log(`[Temenos API] Calling URL: ${url}`);
       
       const response = await axios.get(url, {
@@ -198,27 +258,45 @@ class TemenosApiService {
   /**
    * Get loan details from Holdings API
    * @param {string} arrangementId - Arrangement/Loan ID
-   * @returns {Promise<Object>} - Loan details data
+   * @returns {Promise<Object>} - Loan details
    */
   async getLoanDetails(arrangementId) {
-    return this.get(temenosConfig.endpoints.holdings.loanDetails, { arrangementId });
+    console.log(`[Temenos API] getLoanDetails called with arrangementId: ${arrangementId}`);
+    
+    try {
+      // Use the new component-based configuration
+      const url = temenosConfig.buildUrl('holdings', 'loanDetails', { arrangementId });
+      return this.get(url);
+    } catch (error) {
+      console.error(`[Temenos API] getLoanDetails error:`, error);
+      throw error;
+    }
   }
 
   /**
-   * Get loan schedule from Holdings API
+   * Get loan schedule/payment schedule
    * @param {string} arrangementId - Arrangement/Loan ID
-   * @returns {Promise<Object>} - Loan schedule data
+   * @returns {Promise<Object>} - Loan schedule
    */
   async getLoanSchedule(arrangementId) {
-    return this.get(temenosConfig.endpoints.holdings.loanSchedule, { arrangementId });
+    console.log(`[Temenos API] getLoanSchedule called with arrangementId: ${arrangementId}`);
+    
+    try {
+      // Use the new component-based configuration
+      const url = temenosConfig.buildUrl('holdings', 'loanSchedule', { arrangementId });
+      return this.get(url);
+    } catch (error) {
+      console.error(`[Temenos API] getLoanSchedule error:`, error);
+      throw error;
+    }
   }
 
   /**
-   * Retry a failed request with exponential backoff
-   * @param {Function} apiCall - The API call function to retry
+   * Retry mechanism for failed requests
+   * @param {Function} apiCall - Function that returns a Promise
    * @param {number} maxRetries - Maximum number of retries
-   * @param {number} baseDelay - Base delay in milliseconds
-   * @returns {Promise<Object>} - API response data
+   * @param {number} baseDelay - Base delay between retries in milliseconds
+   * @returns {Promise} - Result of successful API call
    */
   async retryRequest(apiCall, maxRetries = temenosConfig.request.retries, baseDelay = temenosConfig.request.retryDelay) {
     let lastError;
@@ -233,9 +311,10 @@ class TemenosApiService {
           break;
         }
         
-        // Exponential backoff
+        // Calculate exponential backoff delay
         const delay = baseDelay * Math.pow(2, attempt);
-        console.log(`[TemenosAPI] Retry attempt ${attempt + 1}/${maxRetries} after ${delay}ms`);
+        console.log(`[TemenosAPI] Attempt ${attempt + 1} failed, retrying in ${delay}ms...`);
+        
         await this.sleep(delay);
       }
     }
@@ -244,77 +323,82 @@ class TemenosApiService {
   }
 
   /**
-   * Sleep for specified milliseconds
+   * Sleep utility for delays
    * @param {number} ms - Milliseconds to sleep
-   * @returns {Promise<void>}
+   * @returns {Promise} - Promise that resolves after delay
    */
   sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   /**
-   * Check if the Temenos API is available
-   * @returns {Promise<boolean>} - True if API is available
+   * Health check for Temenos API
+   * @returns {Promise<boolean>} - True if API is healthy
    */
   async checkHealth() {
     try {
-      // Try a simple request to check connectivity
-      await this.client.get(temenosConfig.baseUrl, { timeout: 5000 });
+      // Use the base URL from holdings component for health check
+      const baseUrl = temenosConfig.components.holdings.baseUrl.replace('/api', '');
+      await this.client.get(baseUrl, { timeout: 5000 });
       return true;
     } catch (error) {
-      console.error('[TemenosAPI] Health check failed:', error.message);
+      console.warn('[TemenosAPI] Health check failed:', error.message);
       return false;
     }
   }
 
   /**
-   * Generic GET request handler
-   * @param {string} endpoint - API endpoint
-   * @param {Object} options - Request options
-   * @returns {Promise<Object>} - Response data
+   * Generic GET method with URL building
+   * @param {string} url - Complete URL or endpoint path
+   * @param {Object} options - Additional options
+   * @returns {Promise<Object>} - API response data
    */
-  async get(endpoint, options = {}) {
-    const url = `${temenosConfig.baseUrl}${endpoint}`;
-    console.log(`[Temenos API] Making GET request to: ${url}`);
-    console.log(`[Temenos API] Request options:`, options);
-    
+  async get(url, options = {}) {
     try {
-      const response = await this.client.get(url, {
-        params: options.queryParams,
-        ...options
-      });
-      
-      console.log(`[Temenos API] Response status: ${response.status} ${response.statusText}`);
-      console.log(`[Temenos API] Response headers:`, Object.fromEntries(response.headers.entries()));
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`[Temenos API] HTTP Error ${response.status}: ${errorText}`);
-        throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
+      // If it's not a complete URL, build it using the legacy method for compatibility
+      if (!url.startsWith('http')) {
+        const holdingsBaseUrl = temenosConfig.components.holdings.baseUrl;
+        url = `${holdingsBaseUrl}${url}`;
       }
-
-      const data = await response.data;
-      console.log(`[Temenos API] Response data:`, data);
-      return data;
+      
+      const response = await this.client.get(url, options);
+      return response.data;
     } catch (error) {
-      console.error(`[Temenos API] Request failed for ${url}:`, error);
+      console.error(`[TemenosAPI] GET ${url} failed:`, error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Generic POST method
+   * @param {string} url - Complete URL
+   * @param {Object} data - Request body
+   * @param {Object} options - Additional options
+   * @returns {Promise<Object>} - API response data
+   */
+  async post(url, data, options = {}) {
+    try {
+      const response = await this.client.post(url, data, options);
+      return response.data;
+    } catch (error) {
+      console.error(`[TemenosAPI] POST ${url} failed:`, error.message);
       throw error;
     }
   }
 }
 
-// Singleton instance
-let instance = null;
+// Create singleton instance
+let temenosApiServiceInstance = null;
 
 /**
  * Get singleton instance of TemenosApiService
  * @returns {TemenosApiService} - Service instance
  */
 function getTemenosApiService() {
-  if (!instance) {
-    instance = new TemenosApiService();
+  if (!temenosApiServiceInstance) {
+    temenosApiServiceInstance = new TemenosApiService();
   }
-  return instance;
+  return temenosApiServiceInstance;
 }
 
 module.exports = {

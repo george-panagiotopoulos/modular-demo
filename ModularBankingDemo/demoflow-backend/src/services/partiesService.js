@@ -128,69 +128,25 @@ class PartiesService {
       console.log(`[PartiesService] Getting accounts for party ${partyId}`);
       const arrangementsData = await this.temenosApi.getPartyArrangements(partyId);
       const accounts = [];
-      const loanIds = new Set(); // Track loan account IDs to exclude from accounts
   
       if (!arrangementsData?.arrangements) {
         return [];
       }
-  
-      // First pass: identify all loan accounts (EXACTLY like Python implementation)
-      for (const arrangement of arrangementsData.arrangements) {
-        // EXPLICITLY EXCLUDE DEPOSITS from loan detection
-        if (arrangement.productLine === 'DEPOSITS' || arrangement.systemReference === 'deposits') {
-          console.log(`Skipping deposit arrangement in loan detection: ${arrangement.arrangementId}`);
-          continue;
-        }
-        
-        // Get the account ID for balance checking
-        let accountId = null;
-        const contractRef = arrangement.contractReference || '';
-        
-        if (arrangement.alternateReferences) {
-          for (const ref of arrangement.alternateReferences) {
-            if (ref.alternateType === 'ACCOUNT') {
-              accountId = ref.alternateId;
-              break;
-            }
-          }
-        }
-        
-        // Check if this is a loan by checking the balance API systemReference
-        if (accountId) {
-          try {
-            const balanceResponse = await this.temenosApi.getAccountBalances(accountId);
-            if (balanceResponse?.items?.[0]) {
-              const balanceItem = balanceResponse.items[0];
-              const systemRef = balanceItem.systemReference || '';
-              
-              // If systemReference is 'lending' AND NOT 'deposits', this is a loan account
-              if (systemRef === 'lending' && systemRef !== 'deposits') {
-                loanIds.add(accountId);
-                console.log(`Identified loan account: ${accountId}`);
-              } else if (systemRef === 'deposits') {
-                console.log(`Confirmed deposit account (not loan): ${accountId}`);
-              }
-            }
-          } catch (error) {
-            console.error(`Error checking balance for account ${accountId}:`, error.message);
-          }
-        }
-        
-        // Also check traditional lending arrangements (but exclude deposits)
-        if (arrangement.productLine === 'LENDING' && 
-            arrangement.systemReference === 'lending' &&
-            arrangement.productLine !== 'DEPOSITS') {
-          if (accountId) {
-            loanIds.add(accountId);
-            console.log(`Identified traditional lending arrangement: ${accountId}`);
-          }
-        }
-      }
 
-      // Second pass: get all accounts from arrangements and filter out loans
+      console.log(`[PartiesService] Processing ${arrangementsData.arrangements.length} arrangements for accounts`);
+
+      // Process arrangements and filter out loans
       for (const arrangement of arrangementsData.arrangements) {
-        // Include both ACCOUNTS and DEPOSITS productLines
+        console.log(`[PartiesService] Checking arrangement: ${arrangement.arrangementId}, productLine: ${arrangement.productLine}, systemReference: ${arrangement.systemReference}`);
+        
+        // Include only ACCOUNTS and DEPOSITS productLines, exclude LENDING
         if (arrangement.productLine === 'ACCOUNTS' || arrangement.productLine === 'DEPOSITS') {
+          // Double-check: exclude if it's a lending arrangement
+          if (arrangement.systemReference === 'lending') {
+            console.log(`[PartiesService] Skipping lending arrangement in accounts: ${arrangement.arrangementId}`);
+            continue;
+          }
+          
           const contractRef = arrangement.contractReference || '';
           
           // Get the Holdings account ID (alternateId, not contractReference!)
@@ -204,11 +160,7 @@ class PartiesService {
             }
           }
           
-          // Skip if this account ID is identified as a loan
-          if (loanIds.has(holdingsAccountId)) {
-            console.log(`Skipping loan account ${holdingsAccountId} from accounts list`);
-            continue;
-          }
+          console.log(`[PartiesService] Processing account: ${holdingsAccountId} for arrangement ${arrangement.arrangementId}`);
           
           // Get balance data using the alternateId (same as Python)
           let balanceData = { balance: 0.0, availableBalance: 0.0 };
@@ -216,10 +168,29 @@ class PartiesService {
             const balanceResponse = await this.temenosApi.getAccountBalances(holdingsAccountId);
             if (balanceResponse?.items?.[0]) {
               const balanceItem = balanceResponse.items[0];
+              
+              // Check if this account belongs to the correct customer
+              const accountCustomerId = balanceItem.customerId;
+              if (accountCustomerId && accountCustomerId !== partyId) {
+                console.log(`[PartiesService] Skipping account ${holdingsAccountId} - belongs to different customer: ${accountCustomerId} (expected: ${partyId})`);
+                continue;
+              }
+              
+              // Handle negative balances - if balance is negative, this might be a loan account
+              const rawBalance = parseFloat(balanceItem.onlineActualBalance || 0);
+              const rawAvailableBalance = parseFloat(balanceItem.availableBalance || 0);
+              
+              // If both balances are negative, this is likely a loan account that got miscategorized
+              if (rawBalance < 0 && rawAvailableBalance < 0) {
+                console.log(`[PartiesService] Skipping account ${holdingsAccountId} - has negative balances (likely a loan): balance=${rawBalance}, available=${rawAvailableBalance}`);
+                continue;
+              }
+              
               balanceData = {
-                balance: parseFloat(balanceItem.onlineActualBalance || 0),
-                availableBalance: parseFloat(balanceItem.availableBalance || 0),
+                balance: Math.max(0, rawBalance), // Ensure non-negative
+                availableBalance: Math.max(0, rawAvailableBalance), // Ensure non-negative
               };
+              console.log(`[PartiesService] Got balance for ${holdingsAccountId}:`, balanceData);
             }
           } catch (error) {
             console.error(`[PartiesService] Could not fetch balance for account ${holdingsAccountId}:`, error.message);
@@ -244,12 +215,15 @@ class PartiesService {
             contractReference: contractRef,
             productLine: arrangement.productLine || 'ACCOUNTS'
           };
+          
+          console.log(`[PartiesService] Created account object:`, account);
           accounts.push(account);
+        } else {
+          console.log(`[PartiesService] Skipping non-account arrangement: productLine=${arrangement.productLine}`);
         }
       }
   
       console.log(`[PartiesService] Found ${accounts.length} accounts for party ${partyId}`);
-      console.log(`Loan account IDs excluded: ${Array.from(loanIds)}`);
       return accounts;
   
     } catch (error) {
@@ -270,78 +244,57 @@ class PartiesService {
       const loans = [];
 
       if (!arrangementsData?.arrangements) {
+        console.log(`[PartiesService] No arrangements data found`);
         return [];
       }
 
+      console.log(`[PartiesService] Processing ${arrangementsData.arrangements.length} arrangements for loans`);
+
       for (const arrangement of arrangementsData.arrangements) {
+        console.log(`[PartiesService] Checking arrangement: ${arrangement.arrangementId}, productLine: ${arrangement.productLine}, systemReference: ${arrangement.systemReference}`);
+        
         // EXPLICITLY EXCLUDE DEPOSITS - Skip if this is a deposit arrangement
         if (arrangement.productLine === 'DEPOSITS' || arrangement.systemReference === 'deposits') {
-          console.log(`Skipping deposit arrangement: ${arrangement.arrangementId}`);
+          console.log(`[PartiesService] Skipping deposit arrangement: ${arrangement.arrangementId}`);
           continue;
         }
         
-        // Check both lending arrangements and accounts with lending systemReference
-        let accountId = null;
-        if (arrangement.alternateReferences) {
-          for (const ref of arrangement.alternateReferences) {
-            if (ref.alternateType === 'ACCOUNT') {
-              accountId = ref.alternateId;
-              break;
-            }
-          }
-        }
-        
-        // Check if this is a loan based on balance API systemReference
-        let isLoan = false;
-        let outstandingBalance = 0.0;
-        const currency = arrangement.currency || 'USD';
-        
-        if (accountId) {
-          try {
-            const balanceResponse = await this.temenosApi.getAccountBalances(accountId);
-            if (balanceResponse?.items?.[0]) {
-              const balanceItem = balanceResponse.items[0];
-              const systemRef = balanceItem.systemReference || '';
-              
-              // This is a loan ONLY if systemReference is 'lending' AND NOT 'deposits'
-              if (systemRef === 'lending') {
-                isLoan = true;
-                // For loans, balance is typically negative, convert to positive outstanding
-                const rawBalance = parseFloat(balanceItem.onlineActualBalance || 0);
-                outstandingBalance = rawBalance < 0 ? Math.abs(rawBalance) : rawBalance;
-                console.log(`Loan ${accountId}: Raw balance = ${rawBalance}, Outstanding = ${outstandingBalance}`);
-              } else if (systemRef === 'deposits') {
-                // Explicitly skip deposits even if they somehow got this far
-                console.log(`Skipping deposit account in loan check: ${accountId}`);
-                continue;
+        // Check for LENDING arrangements only
+        if (arrangement.productLine === 'LENDING' && arrangement.systemReference === 'lending') {
+          console.log(`[PartiesService] Found lending arrangement: ${arrangement.arrangementId}`);
+          
+          // Get the account ID for balance lookup
+          let accountId = null;
+          if (arrangement.alternateReferences) {
+            for (const ref of arrangement.alternateReferences) {
+              if (ref.alternateType === 'ACCOUNT') {
+                accountId = ref.alternateId;
+                break;
               }
             }
-          } catch (error) {
-            console.error(`Error checking balance for potential loan ${accountId}:`, error.message);
           }
-        }
-        
-        // Also check traditional lending arrangements (but exclude deposits)
-        if (!isLoan && (arrangement.productLine === 'LENDING' && 
-            arrangement.systemReference === 'lending' &&
-            arrangement.productLine !== 'DEPOSITS')) {
-          isLoan = true;
-          // For traditional lending arrangements, try to get balance if we have account_id
+          
+          // Get loan balance if account ID is available
+          let outstandingBalance = 0.0;
+          const currency = arrangement.currency || 'USD';
+          
           if (accountId) {
             try {
+              console.log(`[PartiesService] Getting balance for loan account: ${accountId}`);
               const balanceResponse = await this.temenosApi.getAccountBalances(accountId);
               if (balanceResponse?.items?.[0]) {
                 const balanceItem = balanceResponse.items[0];
                 const rawBalance = parseFloat(balanceItem.onlineActualBalance || 0);
+                // For loans, balance might be negative, convert to positive outstanding
                 outstandingBalance = rawBalance < 0 ? Math.abs(rawBalance) : rawBalance;
+                console.log(`[PartiesService] Loan ${accountId}: Raw balance = ${rawBalance}, Outstanding = ${outstandingBalance}`);
               }
             } catch (error) {
-              console.error(`Error fetching balance for lending arrangement ${accountId}:`, error.message);
+              console.error(`[PartiesService] Error getting balance for loan ${accountId}:`, error.message);
+              // Continue processing even if balance fetch fails
             }
           }
-        }
-        
-        if (isLoan) {
+          
           // Extract loan ID from contract reference or arrangement ID
           const loanId = arrangement.contractReference || arrangement.arrangementId || '';
           
@@ -360,7 +313,11 @@ class PartiesService {
             startDate: arrangement.startDate || '',
             accountIdForTransactions: accountId  // Include account ID for transaction lookup
           };
+          
+          console.log(`[PartiesService] Created loan object:`, loan);
           loans.push(loan);
+        } else {
+          console.log(`[PartiesService] Skipping non-lending arrangement: productLine=${arrangement.productLine}, systemReference=${arrangement.systemReference}`);
         }
       }
 

@@ -7,7 +7,8 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 
 // Import routes and services
 const eventStreamRoutes = require('./routes/eventStreamRoutes');

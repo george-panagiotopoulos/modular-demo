@@ -48,9 +48,10 @@ router.post('/track', async (req, res) => {
       method: method.toLowerCase(),
       url: uri,
       headers: {
+        ...req.headers,
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'User-Agent': 'Modular-Banking-Demo/1.0.0'
+        'User-Agent': req.headers['user-agent'] || 'Modular-Banking-Demo/1.0.0'
       },
       timeout: 30000, // 30 second timeout
       validateStatus: function (status) {
@@ -63,11 +64,16 @@ router.post('/track', async (req, res) => {
       requestConfig.data = payload;
     }
     
+    // Remove headers that can cause issues when proxying
+    delete requestConfig.headers.host;
+    delete requestConfig.headers['content-length'];
+    
     // Execute the API call
     console.log(`[Headless API] Making request with config:`, {
       ...requestConfig,
       data: requestConfig.data ? '[PAYLOAD]' : undefined
     });
+    console.log('[Headless API] Full Axios Request Config:', JSON.stringify(requestConfig, null, 2));
     
     const startTime = Date.now();
     let apiResponse;
@@ -108,6 +114,9 @@ router.post('/track', async (req, res) => {
     const endTime = Date.now();
     const duration = endTime - startTime;
     
+    // Determine overall success
+    const isSuccess = !apiError && apiResponse && apiResponse.status >= 200 && apiResponse.status < 300;
+
     // Prepare tracking data
     const trackingData = {
       timestamp: new Date().toISOString(),
@@ -128,7 +137,7 @@ router.post('/track', async (req, res) => {
       error: apiError,
       performance: {
         duration: duration,
-        success: !apiError
+        success: isSuccess
       },
       client: {
         type: clientType,
@@ -136,8 +145,8 @@ router.post('/track', async (req, res) => {
       }
     };
     
-    // Send event to Event Hub if available
-    if (eventHubService && eventHubService.isReady()) {
+    // Send event to Event Hub if available and not in a test environment
+    if (process.env.NODE_ENV !== 'test' && eventHubService && eventHubService.isReady()) {
       try {
         await eventHubService.sendEvent('api-call', trackingData);
         console.log('[Headless API] Event sent to Event Hub');
@@ -148,7 +157,7 @@ router.post('/track', async (req, res) => {
     
     // Prepare response for the API Viewer
     const responsePayload = {
-      success: !apiError,
+      success: isSuccess,
       api_call: {
         request: trackingData.request,
         response: trackingData.response?.data,
@@ -157,7 +166,7 @@ router.post('/track', async (req, res) => {
         timestamp: trackingData.timestamp
       },
       tracking: {
-        event_sent: eventHubService?.isReady() || false,
+        event_sent: process.env.NODE_ENV !== 'test' && eventHubService?.isReady() || false,
         domain: domain,
         endpoint: endpointName
       }
@@ -184,21 +193,24 @@ router.post('/track', async (req, res) => {
 router.get('/endpoints', (req, res) => {
   console.log('[Headless API] GET /endpoints called');
   
+  const temenosConfig = require('../config/temenosConfig');
+  
+  // Define available endpoints grouped by component
   const endpoints = {
     party: [
       {
         id: 'create_party',
         name: 'Create Party/Customer',
         method: 'POST',
-        uri: 'http://modulardemo.northeurope.cloudapp.azure.com/ms-party-api/api/v5.0.0/party/parties',
-        description: 'Create a new customer/party in the system',
+        uri: temenosConfig.buildUrl('party', 'create'),
+        description: 'Create a new party (customer) in the Temenos system',
         requiresPayload: true
       },
       {
         id: 'get_party_by_id',
         name: 'Get Party by ID',
         method: 'GET',
-        uri: 'http://modulardemo.northeurope.cloudapp.azure.com/ms-party-api/api/v5.0.0/party/parties/{partyId}',
+        uri: temenosConfig.buildUrl('party', 'getById', { partyId: '{partyId}' }),
         description: 'Retrieve party details by party ID',
         requiresPayload: false
       }
@@ -208,9 +220,17 @@ router.get('/endpoints', (req, res) => {
         id: 'create_current_account',
         name: 'Create Current Account',
         method: 'POST',
-        uri: 'http://modulardemo.northeurope.cloudapp.azure.com/ms-currentaccount-api/api/v1.0.0/current-account/arrangements',
+        uri: temenosConfig.buildUrl('deposits', 'createCurrentAccount'),
         description: 'Create a new current account for a customer',
         requiresPayload: true
+      },
+      {
+        id: 'get_account_balances',
+        name: 'Get Account Balances',
+        method: 'GET',
+        uri: temenosConfig.buildUrl('deposits', 'accountBalances', { arrangementId: '{arrangementId}' }),
+        description: 'Retrieve account balances by arrangement ID',
+        requiresPayload: false
       }
     ],
     lending: [
@@ -218,18 +238,34 @@ router.get('/endpoints', (req, res) => {
         id: 'create_mortgage_loan',
         name: 'Create Mortgage Loan',
         method: 'POST',
-        uri: 'http://modulardemo.northeurope.cloudapp.azure.com/ms-loan-api/api/v1.0.0/loan/arrangements',
+        uri: temenosConfig.buildUrl('lending', 'createLoan'),
         description: 'Create a new mortgage loan arrangement',
         requiresPayload: true
+      },
+      {
+        id: 'get_loan_status',
+        name: 'Get Loan Status',
+        method: 'GET',
+        uri: temenosConfig.buildUrl('lending', 'loanStatus', { arrangementId: '{arrangementId}' }),
+        description: 'Retrieve loan status by arrangement ID',
+        requiresPayload: false
+      },
+      {
+        id: 'get_loan_schedules',
+        name: 'Get Loan Schedules',
+        method: 'GET',
+        uri: temenosConfig.buildUrl('lending', 'loanSchedules', { arrangementId: '{arrangementId}' }),
+        description: 'Retrieve loan payment schedules by arrangement ID',
+        requiresPayload: false
       }
     ],
     holdings: [
       {
-        id: 'get_holdings_arrangements',
-        name: 'Get Holdings Arrangements',
+        id: 'get_party_arrangements',
+        name: 'Get Party Arrangements',
         method: 'GET',
-        uri: 'http://modulardemo.northeurope.cloudapp.azure.com/ms-holdings-api/api/v2.0.0/holdings/arrangements',
-        description: 'Retrieve all holdings arrangements',
+        uri: temenosConfig.buildUrl('holdings', 'partyArrangements', { partyId: '{partyId}' }),
+        description: 'Retrieve all arrangements for a party',
         requiresPayload: false
       }
     ]

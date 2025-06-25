@@ -13,7 +13,8 @@ const KAFKA_TOPICS = {
   'lending': 'lending-event-topic',
   'eventstore': 'ms-eventstore-inbox-topic',
   'adapter': 'ms-adapterservice-event-topic',
-  'holdings': 'ms-holdings-event-topic'
+  'holdings': 'ms-holdings-event-topic',
+  'api-call': 'ms-apicall-topic' // New topic for API tracking
 };
 
 class EventHubService {
@@ -470,6 +471,42 @@ class EventHubService {
     }
 
     console.log('EventHub service shutdown complete');
+  }
+
+  /**
+   * Send a single event to a specific topic
+   */
+  async sendEvent(topicKey, eventData) {
+    if (!this.kafka || !this.ready) {
+      throw new Error('EventHub service not initialized or not ready');
+    }
+
+    const topic = KAFKA_TOPICS[topicKey];
+    if (!topic) {
+      throw new Error(`Unknown topic key: ${topicKey}`);
+    }
+
+    const producer = this.kafka.producer({
+        maxInFlightRequests: 1,
+        idempotent: true,
+        transactionalId: `demoflow-producer-${Date.now()}`
+    });
+
+    try {
+      await producer.connect();
+      await producer.send({
+        topic: topic,
+        messages: [
+          {
+            key: eventData.request?.uri || `event-${Date.now()}`,
+            value: JSON.stringify(eventData)
+          }
+        ],
+      });
+      console.log(`Event sent to topic: ${topic}`);
+    } finally {
+      await producer.disconnect();
+    }
   }
 }
 

@@ -25,7 +25,7 @@ const getProductDisplayName = (productName) => {
 
 const MobileApp = () => {
   // State management
-  const [partyId, setPartyId] = useState('2516466195');
+  const [partyId, setPartyId] = useState('2517636814');
   const [accounts, setAccounts] = useState([]);
   const [loans, setLoans] = useState([]);
   const [profile, setProfile] = useState(null);

@@ -15,9 +15,9 @@ const APIViewer = () => {
   const [responseStatus, setResponseStatus] = useState(null);
   
   // Configuration values with defaults from demooutput.txt
-  const [partyId, setPartyId] = useState('2516466195');
-  const [accountReference, setAccountReference] = useState('1013719612');
-  const [loanArrangementId, setLoanArrangementId] = useState('AA25073P8VVP');
+  const [partyId, setPartyId] = useState('2517636814');
+  const [accountReference, setAccountReference] = useState('1013720122');
+  const [loanArrangementId, setLoanArrangementId] = useState('AA25073BRT40');
   
   // Refs for form elements
   const uriInputRef = useRef(null);
@@ -195,7 +195,7 @@ const APIViewer = () => {
           id: 'get_holdings_account_balances',
           name: 'Get Holdings Account Balances',
           method: 'GET',
-          uri: 'http://modulardemo.northeurope.cloudapp.azure.com/ms-holdings-api/api/v3.0.0/holdings/accounts/{accountReference}/balances',
+          uri: 'http://modulardemo.northeurope.cloudapp.azure.com/ms-holdings-api/api/v3.0.0/holdings/accounts/GB0010001-{accountReference}/balances',
           requiresPayload: false,
           description: 'Get account balances from holdings service'
         },
@@ -203,7 +203,7 @@ const APIViewer = () => {
           id: 'get_holdings_account_transactions',
           name: 'Get Holdings Account Transactions',
           method: 'GET',
-          uri: 'http://modulardemo.northeurope.cloudapp.azure.com/ms-holdings-api/api/v3.0.0/holdings/accounts/{accountReference}/transactions',
+          uri: 'http://modulardemo.northeurope.cloudapp.azure.com/ms-holdings-api/api/v3.0.0/holdings/accounts/GB0010001-{accountReference}/transactions',
           requiresPayload: false,
           description: 'Get account transaction history from holdings service'
         }
@@ -231,7 +231,7 @@ const APIViewer = () => {
       }]
     },
     'create_current_account': {
-      "parties": [{"partyId": "2516466195", "partyRole": "OWNER"}],
+      "parties": [{"partyId": "2517636814", "partyRole": "OWNER"}],
       "accountName": "current",
       "openingDate": "20250314",
       "productId": "CHECKING.ACCOUNT",
@@ -242,17 +242,17 @@ const APIViewer = () => {
     'create_mortgage_loan': {
       "header": {},
       "body": {
-        "partyIds": [{"partyId": "2516466195", "partyRole": "OWNER"}],
+        "partyIds": [{"partyId": "2517636814", "partyRole": "OWNER"}],
         "productId": "MORTGAGE.PRODUCT",
         "currency": "USD",
         "arrangementEffectiveDate": "",
         "commitment": [{"amount": "178777", "term": "10Y"}],
         "schedule": [{"payment": [{}, {"paymentFrequency": "e0Y e1M e0W e0D e0F"}]}],
         "settlement": [{
-          "payout": [{"payoutSettlement": "YES", "property": [{"payoutAccount": "DDAComposable|GB0010001|1013719612"}]}],
+          "payout": [{"payoutSettlement": "YES", "property": [{"payoutAccount": "DDAComposable|GB0010001|1013720122"}]}],
           "assocSettlement": [
-            {"payinSettlement": "YES", "reference": [{"payinAccount": "DDAComposable|GB0010001|1013719612"}]},
-            {"payinSettlement": "YES", "reference": [{"payinAccount": "DDAComposable|GB0010001|1013719612"}]}
+            {"payinSettlement": "YES", "reference": [{"payinAccount": "DDAComposable|GB0010001|1013720122"}]},
+            {"payinSettlement": "YES", "reference": [{"payinAccount": "DDAComposable|GB0010001|1013720122"}]}
           ]
         }]
       }
@@ -260,43 +260,53 @@ const APIViewer = () => {
     'create_consumer_loan': {
       "header": {},
       "body": {
-        "partyIds": [{"partyId": "2516466195", "partyRole": "OWNER"}],
+        "partyIds": [{"partyId": "2517636814", "partyRole": "OWNER"}],
         "productId": "GS.FIXED.LOAN",
         "currency": "USD",
         "arrangementEffectiveDate": "",
         "commitment": [{"amount": "5000", "term": "2Y"}],
         "schedule": [{"payment": [{}, {"paymentFrequency": "e0Y e1M e0W e0D e0F"}]}],
         "settlement": [{
-          "payout": [{"payoutSettlement": "YES", "property": [{"payoutAccount": "DDAComposable|GB0010001|1013719612"}]}],
+          "payout": [{"payoutSettlement": "YES", "property": [{"payoutAccount": "DDAComposable|GB0010001|1013720122"}]}],
           "assocSettlement": [
-            {"payinSettlement": "YES", "reference": [{"payinAccount": "DDAComposable|GB0010001|1013719612"}]},
-            {"payinSettlement": "YES", "reference": [{"payinAccount": "DDAComposable|GB0010001|1013719612"}]}
+            {"payinSettlement": "YES", "reference": [{"payinAccount": "DDAComposable|GB0010001|1013720122"}]},
+            {"payinSettlement": "YES", "reference": [{"payinAccount": "DDAComposable|GB0010001|1013720122"}]}
           ]
         }]
       }
     },
     'create_term_deposit': {
-      "partyId": "2516466195",
-      "productId": "TERM.DEPOSIT",
+      "parties": [{"partyId": "2517636814", "partyRole": "OWNER"}],
+      "accountName": "MyDepositAccount",
+      "productId": "TermDepositWor",
+      "openingDate": "20250314",
       "currency": "USD",
-      "maturityDate": "20270314",
+      "branchCode": "01123",
+      "quotationReference": "QUOTABC123",
       "depositAmount": "10000",
-      "interestRate": "2.5",
-      "accountReference": "1013719612"
+      "depositTerm": "1Y",
+      "interestPayoutOption": "Settle at Scheduled Frequency",
+      "interestPayoutFrequency": "Monthly",
+      "fundingAccount": "1013720122",
+      "payoutAccount": "1013720122"
     },
     'debit_account': {
-      "accountReference": "1013719612",
-      "transactionAmount": "250.00",
-      "currency": "USD",
-      "reason": "Utility Bill Payment",
-      "reference": "TXN_UTILITYBIL_1713974400_123"
+      "paymentTransactionReference": "DEBIT_UTILITYBIL_1234567890123_456",
+      "paymentReservationReference": "DEBIT_UTILITYBIL_1234567890123_456",
+      "paymentValueDate": "20250415",
+      "debitAccount": "1013720122",
+      "debitCurrency": "USD",
+      "paymentAmount": "250",
+      "paymentDescription": "Utility Bill Payment"
     },
     'credit_account': {
-      "accountReference": "1013719612", 
-      "transactionAmount": "1500.00",
-      "currency": "USD",
-      "reason": "Salary Deposit",
-      "reference": "TXN_SALARYDEPO_1713974400_456"
+      "paymentTransactionReference": "CREDIT_SALARY_1234567890123_789",
+      "paymentReservationReference": "CREDIT_SALARY_1234567890123_789",
+      "paymentValueDate": "20250415",
+      "creditAccount": "1013720122",
+      "creditCurrency": "USD",
+      "paymentAmount": "1500",
+      "paymentDescription": "Salary Deposit"
     }
   };
 
@@ -343,8 +353,51 @@ const APIViewer = () => {
           if (updatedPayload.body && updatedPayload.body.partyIds && updatedPayload.body.partyIds[0]) {
             updatedPayload.body.partyIds[0].partyId = partyId;
           }
+          
+          // Update account references in payload
           if (updatedPayload.accountReference) {
             updatedPayload.accountReference = accountReference;
+          }
+          if (updatedPayload.debitAccount) {
+            updatedPayload.debitAccount = accountReference;
+          }
+          if (updatedPayload.creditAccount) {
+            updatedPayload.creditAccount = accountReference;
+          }
+          if (updatedPayload.fundingAccount) {
+            updatedPayload.fundingAccount = accountReference;
+          }
+          if (updatedPayload.payoutAccount) {
+            updatedPayload.payoutAccount = accountReference;
+          }
+          
+          // Update DDAComposable account references in loan payloads
+          if (updatedPayload.body && updatedPayload.body.settlement) {
+            const settlementArray = updatedPayload.body.settlement;
+            settlementArray.forEach(settlement => {
+              if (settlement.payout) {
+                settlement.payout.forEach(payout => {
+                  if (payout.property) {
+                    payout.property.forEach(prop => {
+                      if (prop.payoutAccount) {
+                        prop.payoutAccount = `DDAComposable|GB0010001|${accountReference}`;
+                      }
+                    });
+                  }
+                });
+              }
+              if (settlement.assocSettlement) {
+                settlement.assocSettlement.forEach(assoc => {
+                  if (assoc.reference) {
+                    assoc.reference.forEach(ref => {
+                      if (ref.payinAccount) {
+                        ref.payinAccount = `DDAComposable|GB0010001|${accountReference}`;
+                      }
+                    });
+                  }
+                });
+              }
+            });
           }
           
           setPayload(JSON.stringify(updatedPayload, null, 2));
@@ -399,8 +452,51 @@ const APIViewer = () => {
           if (updatedPayload.body && updatedPayload.body.partyIds && updatedPayload.body.partyIds[0]) {
             updatedPayload.body.partyIds[0].partyId = newPartyId;
           }
+          
+          // Update account references in payload
           if (updatedPayload.accountReference) {
             updatedPayload.accountReference = newAccountRef;
+          }
+          if (updatedPayload.debitAccount) {
+            updatedPayload.debitAccount = newAccountRef;
+          }
+          if (updatedPayload.creditAccount) {
+            updatedPayload.creditAccount = newAccountRef;
+          }
+          if (updatedPayload.fundingAccount) {
+            updatedPayload.fundingAccount = newAccountRef;
+          }
+          if (updatedPayload.payoutAccount) {
+            updatedPayload.payoutAccount = newAccountRef;
+          }
+          
+          // Update DDAComposable account references in loan payloads
+          if (updatedPayload.body && updatedPayload.body.settlement) {
+            const settlementArray = updatedPayload.body.settlement;
+            settlementArray.forEach(settlement => {
+              if (settlement.payout) {
+                settlement.payout.forEach(payout => {
+                  if (payout.property) {
+                    payout.property.forEach(prop => {
+                      if (prop.payoutAccount) {
+                        prop.payoutAccount = `DDAComposable|GB0010001|${newAccountRef}`;
+                      }
+                    });
+                  }
+                });
+              }
+              if (settlement.assocSettlement) {
+                settlement.assocSettlement.forEach(assoc => {
+                  if (assoc.reference) {
+                    assoc.reference.forEach(ref => {
+                      if (ref.payinAccount) {
+                        ref.payinAccount = `DDAComposable|GB0010001|${newAccountRef}`;
+                      }
+                    });
+                  }
+                });
+              }
+            });
           }
           
           setPayload(JSON.stringify(updatedPayload, null, 2));
