@@ -27,7 +27,10 @@ const temenosConfig = {
       baseUrl: process.env.TEMENOS_DEPOSITS_BASE_URL || 'http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api',
       endpoints: {
         createCurrentAccount: process.env.TEMENOS_DEPOSITS_CREATE_CURRENT_ACCOUNT_ENDPOINT || '/v2.0.0/holdings/accounts/currentAccounts',
-        accountBalances: process.env.TEMENOS_DEPOSITS_ACCOUNT_BALANCES_ENDPOINT || '/v2.0.0/holdings/accounts/{arrangementId}/balances'
+        accountBalances: process.env.TEMENOS_DEPOSITS_ACCOUNT_BALANCES_ENDPOINT || '/v2.0.0/holdings/accounts/{arrangementId}/balances',
+        termDeposits: process.env.TEMENOS_DEPOSITS_TERM_DEPOSITS_ENDPOINT || '/v2.0.0/holdings/deposits/termDeposits',
+        debitAccount: process.env.TEMENOS_DEPOSITS_DEBIT_ACCOUNT_ENDPOINT || '/v1.0.0/order/payments/debitAccount',
+        creditAccount: process.env.TEMENOS_DEPOSITS_CREDIT_ACCOUNT_ENDPOINT || '/v1.0.0/order/payments/creditAccount'
       }
     },
     
@@ -36,8 +39,13 @@ const temenosConfig = {
       baseUrl: process.env.TEMENOS_LENDING_BASE_URL || 'http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api',
       endpoints: {
         createLoan: process.env.TEMENOS_LENDING_CREATE_LOAN_ENDPOINT || '/v1.0.0/loan/arrangements',
+        loanDetails: process.env.TEMENOS_LENDING_LOAN_DETAILS_ENDPOINT || '/v1.0.0/holdings/loans/{arrangementId}',
         loanStatus: process.env.TEMENOS_LENDING_LOAN_STATUS_ENDPOINT || '/v8.0.0/holdings/loans/{arrangementId}/status',
-        loanSchedules: process.env.TEMENOS_LENDING_LOAN_SCHEDULES_ENDPOINT || '/v8.0.0/holdings/loans/{arrangementId}/schedules'
+        loanSchedules: process.env.TEMENOS_LENDING_LOAN_SCHEDULES_ENDPOINT || '/v8.0.0/holdings/loans/{arrangementId}/schedules',
+        personalLoans: process.env.TEMENOS_LENDING_PERSONAL_LOANS_ENDPOINT || '/v8.0.0/holdings/loans/personalLoans',
+        consumerLoans: process.env.TEMENOS_LENDING_CONSUMER_LOANS_ENDPOINT || '/v8.0.0/holdings/loans/consumerLoans',
+        customerArrangements: process.env.TEMENOS_LENDING_CUSTOMER_ARRANGEMENTS_ENDPOINT || '/v7.0.0/holdings/customers/{customerId}/arrangements',
+        loanBalances: process.env.TEMENOS_LENDING_LOAN_BALANCES_ENDPOINT || '/v8.0.0/holdings/loans/balances?arrangementId={arrangementId}'
       }
     },
     
@@ -47,7 +55,7 @@ const temenosConfig = {
       endpoints: {
         partyArrangements: process.env.TEMENOS_HOLDINGS_PARTY_ARRANGEMENTS_ENDPOINT || '/v1.0.0/holdings/parties/{partyId}/arrangements',
         accountBalances: process.env.TEMENOS_HOLDINGS_ACCOUNT_BALANCES_ENDPOINT || '/v1.0.0/holdings/accounts/{accountId}/balances',
-        transactions: process.env.TEMENOS_HOLDINGS_TRANSACTIONS_ENDPOINT || '/v1.0.0/holdings/accounts/{accountId}/transactions',
+        transactions: process.env.TEMENOS_HOLDINGS_ACCOUNT_TRANSACTIONS_ENDPOINT || '/v1.0.0/holdings/accounts/{accountId}/transactions',
         loanDetails: process.env.TEMENOS_HOLDINGS_LOAN_DETAILS_ENDPOINT || '/v1.0.0/holdings/loans/{arrangementId}',
         loanSchedule: process.env.TEMENOS_HOLDINGS_LOAN_SCHEDULE_ENDPOINT || '/v1.0.0/holdings/loans/{arrangementId}/schedule'
       }

@@ -5,6 +5,7 @@
 
 const axios = require('axios'); // Import axios for direct calls
 const { getTemenosApiService } = require('./temenosApiService');
+const temenosConfig = require('../config/temenosConfig');
 const Loan = require('../models/Loan');
 const bankingConfig = require('../config/bankingConfig');
 
@@ -22,8 +23,8 @@ class LoansService {
     console.log(`[Loans Service] getLoanDetails called with loanId: ${loanId}`);
     
     try {
-      // Use the correct URL that matches the working endpoint
-      const url = `http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v1.0.0/holdings/loans/${loanId}`;
+      // Use the new component-based configuration
+      const url = temenosConfig.buildUrl('lending', 'loanDetails', { arrangementId: loanId });
       console.log(`[Loans Service] Calling Temenos API URL: ${url}`);
       
       const response = await axios.get(url, {
@@ -99,8 +100,8 @@ class LoansService {
     console.log(`[Loans Service] getLoanSchedule called with loanId: ${loanId}`);
     
     try {
-      // Use the correct URL with v8.0.0 API version
-      const url = `http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api/v8.0.0/holdings/loans/${loanId}/schedules`;
+      // Use the new component-based configuration
+      const url = temenosConfig.buildUrl('lending', 'loanSchedules', { arrangementId: loanId });
       console.log(`[Loans Service] Calling Temenos API URL: ${url}`);
       
       const response = await axios.get(url, {

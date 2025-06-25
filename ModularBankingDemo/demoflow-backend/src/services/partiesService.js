@@ -9,6 +9,7 @@ const Loan = require('../models/Loan');
 const Party = require('../models/Party');
 const bankingConfig = require('../config/bankingConfig');
 const axios = require('axios');
+const temenosConfig = require('../config/temenosConfig');
 
 class PartiesService {
   constructor() {
@@ -24,8 +25,8 @@ class PartiesService {
     console.log(`[PartiesService] Getting party details for ${partyId}`);
     
     try {
-      // Use the same API endpoint as the Python implementation
-      const url = `http://modulardemo.northeurope.cloudapp.azure.com/ms-party-api/api/v5.0.0/party/parties/${partyId}`;
+      // Use the new component-based configuration
+      const url = temenosConfig.buildUrl('party', 'getById', { partyId });
       console.log(`[PartiesService] Calling URL: ${url}`);
       
       const response = await axios.get(url, {
@@ -363,4 +364,4 @@ function getPartiesService() {
 module.exports = {
   PartiesService,
   getPartiesService
-}; 
+};

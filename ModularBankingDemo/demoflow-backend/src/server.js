@@ -37,7 +37,7 @@ app.use(helmet({
 
 // CORS configuration for frontend
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3011', 'http://127.0.0.1:3011'],
+  origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3011', 'http://127.0.0.1:3011'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: [
@@ -192,9 +192,9 @@ module.exports = app;
 if (require.main === module) {
   const server = app.listen(PORT, () => {
     console.log(`🚀 Modular Banking Demo Backend Server running on port ${PORT}`);
-    console.log(`📊 Health check: http://localhost:${PORT}/health`);
-    console.log(`🏦 Banking API: http://localhost:${PORT}/api/banking/`);
-    console.log(`🔗 Event Stream API: http://localhost:${PORT}/api/event-stream/`);
+    console.log(`📊 Health check: ${process.env.BACKEND_BASE_URL ? process.env.BACKEND_BASE_URL + '/health' : `http://localhost:${PORT}/health`}`);
+    console.log(`🏦 Banking API: ${process.env.BACKEND_BASE_URL ? process.env.BACKEND_BASE_URL + '/api/banking/' : `http://localhost:${PORT}/api/banking/`}`);
+    console.log(`🔗 Event Stream API: ${process.env.BACKEND_BASE_URL ? process.env.BACKEND_BASE_URL + '/api/event-stream/' : `http://localhost:${PORT}/api/event-stream/`}`);
     console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
     
     // Initialize services

@@ -54,7 +54,7 @@ describe('API Viewer (Headless) End-to-End Tests', () => {
       .set('User-Agent', 'Mozilla/5.0 (Modular-Banking-Demo-Test)')
       .send({
         method: 'GET',
-        uri: 'http://modulardemo.northeurope.cloudapp.azure.com/non-existent-api',
+        uri: process.env.TEST_NON_EXISTENT_API_URL || 'http://modulardemo.northeurope.cloudapp.azure.com/non-existent-api',
         domain: 'test',
         endpoint: 'test_endpoint',
       })

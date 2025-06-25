@@ -1,0 +1,41 @@
+# API Endpoint Environment Variable Refactoring Plan
+
+## Step 1: Implement a failing test for reading API endpoints from .env file
+- Create a new test file named 'envConfigTest.js' in the test directory
+- Write a test that attempts to read an API endpoint from process.env and expects it to be defined
+- This test should fail initially as we haven't set up the .env file or modified any JavaScript files yet
+
+## Step 2: Create and configure the .env file
+- In the root directory of the project, create a new file named '.env'
+- Identify all hardcoded API endpoints in the JavaScript files within the /Users/gpanagiotopoulos/ModularDemo/ModularBankingDemo directory
+- For each unique endpoint, add a corresponding entry in the .env file using the format API_ENDPOINT_NAME=https://api.example.com/endpoint
+- Ensure that each endpoint has a descriptive and unique name
+
+## Step 3: Install and set up dotenv package
+- If not already present, install the dotenv package using npm or yarn
+- In the main entry point of the application (likely app.js or index.js), import and configure dotenv at the very top of the file with require('dotenv').config()
+- This step ensures that the environment variables from the .env file are loaded into process.env before any other code runs
+
+## Step 4: Refactor the first JavaScript file to use environment variables
+- Choose one JavaScript file from the /Users/gpanagiotopoulos/ModularDemo/ModularBankingDemo directory
+- Identify all hardcoded API endpoints in this file
+- For each endpoint, replace the hardcoded URL with process.env.API_ENDPOINT_NAME, where API_ENDPOINT_NAME corresponds to the name you gave the endpoint in the .env file
+- Ensure that no other code is modified during this process
+- After refactoring, run the test created in Step 1 to verify that the endpoints are now being read from the environment variables
+
+## Step 5: Systematically refactor remaining JavaScript files
+- Repeat the process from Step 4 for each remaining JavaScript file in the /Users/gpanagiotopoulos/ModularDemo/ModularBankingDemo directory
+- For each file, identify hardcoded endpoints, replace them with references to process.env variables, and ensure no other code is altered
+- After each file is refactored, run all tests to ensure functionality remains unchanged and that endpoints are correctly read from environment variables
+
+## Step 6: Review and validate changes
+- After all files have been refactored, perform a comprehensive review of the changes
+- Use git diff or a similar tool to inspect each modified file, ensuring that only the intended changes related to API endpoint refactoring have been made
+- Verify that no other functionality or code unrelated to URL refactoring has been altered
+- Run the full test suite to confirm that all tests pass and the application's behavior remains consistent with its pre-refactored state
+
+## Step 7: Update documentation and finalize
+- Update any relevant documentation, including README files or inline comments, to reflect the new use of environment variables for API endpoints
+- Add instructions for setting up the .env file in the project's documentation
+- Commit the changes, including the new .env.example file (with placeholder values) but excluding the actual .env file from version control
+- Finally, run a last round of manual testing to ensure the application functions correctly with the refactored endpoint configuration 

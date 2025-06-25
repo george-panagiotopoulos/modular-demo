@@ -471,7 +471,7 @@ describe('Frontend-Backend Integration Tests', () => {
     test('should handle CORS preflight requests', async () => {
       await request(app)
         .options('/api/event-stream/components')
-        .set('Origin', 'http://localhost:3000')
+        .set('Origin', process.env.TEST_ALLOWED_ORIGIN || 'http://localhost:3000')
         .set('Access-Control-Request-Method', 'GET')
         .expect(204);
     });
@@ -479,7 +479,7 @@ describe('Frontend-Backend Integration Tests', () => {
     test('should include CORS headers in responses', async () => {
       const response = await request(app)
         .get('/api/event-stream/components')
-        .set('Origin', 'http://localhost:3000')
+        .set('Origin', process.env.TEST_ALLOWED_ORIGIN || 'http://localhost:3000')
         .expect(200);
 
       expect(response.headers).toHaveProperty('access-control-allow-origin');
@@ -491,7 +491,7 @@ describe('Frontend-Backend Integration Tests', () => {
 
       const response = await request(app)
         .post(`/api/event-stream/connect/${component}`)
-        .set('Origin', 'http://localhost:3000')
+        .set('Origin', process.env.TEST_ALLOWED_ORIGIN || 'http://localhost:3000')
         .set('x-session-id', sessionId)
         .expect(200);
 

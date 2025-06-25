@@ -198,9 +198,9 @@ class TemenosApiService {
     console.log(`[Temenos API] getAccountTransactions called with accountId: ${accountId}`);
     
     try {
-      // Use the holdings API v3.0.0 for transactions with full account ID format
+      // Use the new component-based configuration with proper endpoint
       const fullAccountId = accountId.includes('-') ? accountId : `GB0010001-${accountId}`;
-      const url = `${temenosConfig.components.holdings.baseUrl}/v3.0.0/holdings/accounts/${fullAccountId}/transactions`;
+      const url = temenosConfig.buildUrl('holdings', 'transactions', { accountId: fullAccountId });
       console.log(`[Temenos API] Calling URL: ${url}`);
       
       const response = await axios.get(url, {
@@ -355,10 +355,9 @@ class TemenosApiService {
    */
   async get(url, options = {}) {
     try {
-      // If it's not a complete URL, build it using the legacy method for compatibility
+      // If it's not a complete URL, use the legacy method for compatibility
       if (!url.startsWith('http')) {
-        const holdingsBaseUrl = temenosConfig.components.holdings.baseUrl;
-        url = `${holdingsBaseUrl}${url}`;
+        url = temenosConfig.buildLegacyUrl(url);
       }
       
       const response = await this.client.get(url, options);
