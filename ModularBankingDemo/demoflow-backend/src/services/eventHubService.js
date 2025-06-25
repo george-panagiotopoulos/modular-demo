@@ -4,7 +4,11 @@
  */
 
 const { Kafka } = require('kafkajs');
-require('dotenv').config();
+const { EventHubProducerClient } = require('@azure/event-hubs');
+const { EventHubConsumerClient } = require('@azure/event-hubs');
+const { ContainerClient } = require('@azure/storage-blob');
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../../../.env') });
 
 // Topic mapping
 const KAFKA_TOPICS = {

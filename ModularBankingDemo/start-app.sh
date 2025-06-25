@@ -131,20 +131,13 @@ start_backend() {
     
     cd "$BACKEND_DIR"
     
-    # Create .env file if it doesn't exist
-    if [ ! -f ".env" ]; then
-        log_info "Creating .env file for backend..."
-        cat > .env << EOF
-PORT=$BACKEND_PORT
-NODE_ENV=development
-# Add your Azure Event Hub connection string here
-# AZURE_EVENT_HUB_CONNECTION_STRING=your_connection_string_here
-# AZURE_EVENT_HUB_NAME=your_event_hub_name_here
-EOF
-        log_success "Created .env file"
+    # Use the main .env file from the root directory
+    if [ ! -f "../.env" ]; then
+        log_error "Main .env file not found in root directory"
+        exit 1
     fi
     
-    # Start backend in background
+    # Start backend in background with environment from main .env file
     PORT=$BACKEND_PORT npm start > ../backend.log 2>&1 &
     BACKEND_PID=$!
     echo $BACKEND_PID > ../backend.pid

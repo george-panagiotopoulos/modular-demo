@@ -7,57 +7,65 @@
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../../../.env') });
 
+// Validation function to check required environment variables
+const validateEnvVar = (name, value) => {
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+  return value;
+};
+
 const temenosConfig = {
   // Base configuration
-  baseUrl: process.env.TEMENOS_BASE_URL || 'http://modulardemo.northeurope.cloudapp.azure.com',
+  baseUrl: validateEnvVar('TEMENOS_BASE_URL', process.env.TEMENOS_BASE_URL),
   
   // Component-based API endpoints - only working endpoints included
   components: {
     // Party Component (✅ Working)
     party: {
-      baseUrl: process.env.TEMENOS_PARTY_BASE_URL || 'http://modulardemo.northeurope.cloudapp.azure.com/ms-party-api/api',
+      baseUrl: validateEnvVar('TEMENOS_PARTY_BASE_URL', process.env.TEMENOS_PARTY_BASE_URL),
       endpoints: {
-        create: process.env.TEMENOS_PARTY_CREATE_ENDPOINT || '/v5.0.0/party/parties',
-        getById: process.env.TEMENOS_PARTY_GET_BY_ID_ENDPOINT || '/v5.0.0/party/parties/{partyId}'
+        create: validateEnvVar('TEMENOS_PARTY_CREATE_ENDPOINT', process.env.TEMENOS_PARTY_CREATE_ENDPOINT),
+        getById: validateEnvVar('TEMENOS_PARTY_GET_BY_ID_ENDPOINT', process.env.TEMENOS_PARTY_GET_BY_ID_ENDPOINT)
       }
     },
     
     // Deposits Component (✅ Working - Balance only)
     deposits: {
-      baseUrl: process.env.TEMENOS_DEPOSITS_BASE_URL || 'http://deposits-sandbox.northeurope.cloudapp.azure.com/irf-TBC-accounts-container/api',
+      baseUrl: validateEnvVar('TEMENOS_DEPOSITS_BASE_URL', process.env.TEMENOS_DEPOSITS_BASE_URL),
       endpoints: {
-        createCurrentAccount: process.env.TEMENOS_DEPOSITS_CREATE_CURRENT_ACCOUNT_ENDPOINT || '/v2.0.0/holdings/accounts/currentAccounts',
-        accountBalances: process.env.TEMENOS_DEPOSITS_ACCOUNT_BALANCES_ENDPOINT || '/v2.0.0/holdings/accounts/{arrangementId}/balances',
-        termDeposits: process.env.TEMENOS_DEPOSITS_TERM_DEPOSITS_ENDPOINT || '/v2.0.0/holdings/deposits/termDeposits',
-        debitAccount: process.env.TEMENOS_DEPOSITS_DEBIT_ACCOUNT_ENDPOINT || '/v1.0.0/order/payments/debitAccount',
-        creditAccount: process.env.TEMENOS_DEPOSITS_CREDIT_ACCOUNT_ENDPOINT || '/v1.0.0/order/payments/creditAccount'
+        createCurrentAccount: validateEnvVar('TEMENOS_DEPOSITS_CREATE_CURRENT_ACCOUNT_ENDPOINT', process.env.TEMENOS_DEPOSITS_CREATE_CURRENT_ACCOUNT_ENDPOINT),
+        accountBalances: validateEnvVar('TEMENOS_DEPOSITS_ACCOUNT_BALANCES_ENDPOINT', process.env.TEMENOS_DEPOSITS_ACCOUNT_BALANCES_ENDPOINT),
+        termDeposits: validateEnvVar('TEMENOS_DEPOSITS_TERM_DEPOSITS_ENDPOINT', process.env.TEMENOS_DEPOSITS_TERM_DEPOSITS_ENDPOINT),
+        debitAccount: validateEnvVar('TEMENOS_DEPOSITS_DEBIT_ACCOUNT_ENDPOINT', process.env.TEMENOS_DEPOSITS_DEBIT_ACCOUNT_ENDPOINT),
+        creditAccount: validateEnvVar('TEMENOS_DEPOSITS_CREDIT_ACCOUNT_ENDPOINT', process.env.TEMENOS_DEPOSITS_CREDIT_ACCOUNT_ENDPOINT)
       }
     },
     
     // Lending Component (✅ Working)
     lending: {
-      baseUrl: process.env.TEMENOS_LENDING_BASE_URL || 'http://lendings-sandbox.northeurope.cloudapp.azure.com/irf-TBC-lending-container/api',
+      baseUrl: validateEnvVar('TEMENOS_LENDING_BASE_URL', process.env.TEMENOS_LENDING_BASE_URL),
       endpoints: {
-        createLoan: process.env.TEMENOS_LENDING_CREATE_LOAN_ENDPOINT || '/v1.0.0/loan/arrangements',
-        loanDetails: process.env.TEMENOS_LENDING_LOAN_DETAILS_ENDPOINT || '/v1.0.0/holdings/loans/{arrangementId}',
-        loanStatus: process.env.TEMENOS_LENDING_LOAN_STATUS_ENDPOINT || '/v8.0.0/holdings/loans/{arrangementId}/status',
-        loanSchedules: process.env.TEMENOS_LENDING_LOAN_SCHEDULES_ENDPOINT || '/v8.0.0/holdings/loans/{arrangementId}/schedules',
-        personalLoans: process.env.TEMENOS_LENDING_PERSONAL_LOANS_ENDPOINT || '/v8.0.0/holdings/loans/personalLoans',
-        consumerLoans: process.env.TEMENOS_LENDING_CONSUMER_LOANS_ENDPOINT || '/v8.0.0/holdings/loans/consumerLoans',
-        customerArrangements: process.env.TEMENOS_LENDING_CUSTOMER_ARRANGEMENTS_ENDPOINT || '/v7.0.0/holdings/customers/{customerId}/arrangements',
-        loanBalances: process.env.TEMENOS_LENDING_LOAN_BALANCES_ENDPOINT || '/v8.0.0/holdings/loans/balances?arrangementId={arrangementId}'
+        createLoan: validateEnvVar('TEMENOS_LENDING_CREATE_LOAN_ENDPOINT', process.env.TEMENOS_LENDING_CREATE_LOAN_ENDPOINT),
+        loanDetails: validateEnvVar('TEMENOS_LENDING_LOAN_DETAILS_ENDPOINT', process.env.TEMENOS_LENDING_LOAN_DETAILS_ENDPOINT),
+        loanStatus: validateEnvVar('TEMENOS_LENDING_LOAN_STATUS_ENDPOINT', process.env.TEMENOS_LENDING_LOAN_STATUS_ENDPOINT),
+        loanSchedules: validateEnvVar('TEMENOS_LENDING_LOAN_SCHEDULES_ENDPOINT', process.env.TEMENOS_LENDING_LOAN_SCHEDULES_ENDPOINT),
+        personalLoans: validateEnvVar('TEMENOS_LENDING_PERSONAL_LOANS_ENDPOINT', process.env.TEMENOS_LENDING_PERSONAL_LOANS_ENDPOINT),
+        consumerLoans: validateEnvVar('TEMENOS_LENDING_CONSUMER_LOANS_ENDPOINT', process.env.TEMENOS_LENDING_CONSUMER_LOANS_ENDPOINT),
+        customerArrangements: validateEnvVar('TEMENOS_LENDING_CUSTOMER_ARRANGEMENTS_ENDPOINT', process.env.TEMENOS_LENDING_CUSTOMER_ARRANGEMENTS_ENDPOINT),
+        loanBalances: validateEnvVar('TEMENOS_LENDING_LOAN_BALANCES_ENDPOINT', process.env.TEMENOS_LENDING_LOAN_BALANCES_ENDPOINT)
       }
     },
     
     // Holdings Component (✅ Working)
     holdings: {
-      baseUrl: process.env.TEMENOS_HOLDINGS_BASE_URL || 'http://modulardemo.northeurope.cloudapp.azure.com/ms-holdings-api/api',
+      baseUrl: validateEnvVar('TEMENOS_HOLDINGS_BASE_URL', process.env.TEMENOS_HOLDINGS_BASE_URL),
       endpoints: {
-        partyArrangements: process.env.TEMENOS_HOLDINGS_PARTY_ARRANGEMENTS_ENDPOINT || '/v1.0.0/holdings/parties/{partyId}/arrangements',
-        accountBalances: process.env.TEMENOS_HOLDINGS_ACCOUNT_BALANCES_ENDPOINT || '/v1.0.0/holdings/accounts/{accountId}/balances',
-        transactions: process.env.TEMENOS_HOLDINGS_ACCOUNT_TRANSACTIONS_ENDPOINT || '/v1.0.0/holdings/accounts/{accountId}/transactions',
-        loanDetails: process.env.TEMENOS_HOLDINGS_LOAN_DETAILS_ENDPOINT || '/v1.0.0/holdings/loans/{arrangementId}',
-        loanSchedule: process.env.TEMENOS_HOLDINGS_LOAN_SCHEDULE_ENDPOINT || '/v1.0.0/holdings/loans/{arrangementId}/schedule'
+        partyArrangements: validateEnvVar('TEMENOS_HOLDINGS_PARTY_ARRANGEMENTS_ENDPOINT', process.env.TEMENOS_HOLDINGS_PARTY_ARRANGEMENTS_ENDPOINT),
+        accountBalances: validateEnvVar('TEMENOS_HOLDINGS_ACCOUNT_BALANCES_ENDPOINT', process.env.TEMENOS_HOLDINGS_ACCOUNT_BALANCES_ENDPOINT),
+        transactions: validateEnvVar('TEMENOS_HOLDINGS_ACCOUNT_TRANSACTIONS_ENDPOINT', process.env.TEMENOS_HOLDINGS_ACCOUNT_TRANSACTIONS_ENDPOINT),
+        loanDetails: validateEnvVar('TEMENOS_HOLDINGS_LOAN_DETAILS_ENDPOINT', process.env.TEMENOS_HOLDINGS_LOAN_DETAILS_ENDPOINT),
+        loanSchedule: validateEnvVar('TEMENOS_HOLDINGS_LOAN_SCHEDULE_ENDPOINT', process.env.TEMENOS_HOLDINGS_LOAN_SCHEDULE_ENDPOINT)
       }
     }
   },

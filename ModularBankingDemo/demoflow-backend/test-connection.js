@@ -5,7 +5,14 @@
  * Tests basic connectivity to the Event Hub endpoint
  */
 
-require('dotenv').config();
+const axios = require('axios');
+const { EventHubProducerClient } = require('@azure/event-hubs');
+const { ContainerClient } = require('@azure/storage-blob');
+const path = require('path');
+
+// Load environment variables from the main .env file
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+
 const dns = require('dns').promises;
 const net = require('net');
 

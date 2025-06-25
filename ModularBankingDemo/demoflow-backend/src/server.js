@@ -8,6 +8,9 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const path = require('path');
+const fs = require('fs');
+
+// Load environment variables from the main .env file
 require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 
 // Import routes and services
