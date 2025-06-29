@@ -7,6 +7,7 @@
 # Configuration
 FRONTEND_PORT=3011
 BACKEND_PORT=5011
+JOLT_PORT=8081
 
 # Colors for output
 RED='\033[0;31m'
@@ -84,11 +85,30 @@ stop_by_pid() {
     else
         log_info "No backend PID file found"
     fi
+
+    if [ -f "jolt.pid" ]; then
+        JOLT_PID=$(cat jolt.pid)
+        if kill -0 $JOLT_PID 2>/dev/null; then
+            log_info "Stopping JOLT service (PID: $JOLT_PID)..."
+            kill $JOLT_PID 2>/dev/null
+            sleep 2
+            if kill -0 $JOLT_PID 2>/dev/null; then
+                log_warning "Force killing JOLT service process..."
+                kill -9 $JOLT_PID 2>/dev/null
+            fi
+            log_success "JOLT service stopped"
+        else
+            log_warning "JOLT service process not running"
+        fi
+        rm -f jolt.pid
+    else
+        log_info "No JOLT service PID file found"
+    fi
 }
 
 # Function to kill processes on specific ports
 cleanup_ports() {
-    log_info "Cleaning up processes on ports $FRONTEND_PORT and $BACKEND_PORT..."
+    log_info "Cleaning up processes on ports $FRONTEND_PORT, $BACKEND_PORT, and $JOLT_PORT..."
     
     if [[ "$OS" == "mac" ]]; then
         # macOS - use lsof
@@ -101,6 +121,11 @@ cleanup_ports() {
             log_warning "Killing remaining processes on port $BACKEND_PORT"
             lsof -ti:$BACKEND_PORT | xargs kill -9 2>/dev/null || true
         fi
+        
+        if lsof -ti:$JOLT_PORT >/dev/null 2>&1; then
+            log_warning "Killing remaining processes on port $JOLT_PORT"
+            lsof -ti:$JOLT_PORT | xargs kill -9 2>/dev/null || true
+        fi
     elif [[ "$OS" == "linux" ]]; then
         # Linux - use netstat and kill
         if netstat -tlnp 2>/dev/null | grep ":$FRONTEND_PORT " >/dev/null; then
@@ -111,6 +136,11 @@ cleanup_ports() {
         if netstat -tlnp 2>/dev/null | grep ":$BACKEND_PORT " >/dev/null; then
             log_warning "Killing remaining processes on port $BACKEND_PORT"
             fuser -k $BACKEND_PORT/tcp 2>/dev/null || true
+        fi
+        
+        if netstat -tlnp 2>/dev/null | grep ":$JOLT_PORT " >/dev/null; then
+            log_warning "Killing remaining processes on port $JOLT_PORT"
+            fuser -k $JOLT_PORT/tcp 2>/dev/null || true
         fi
     else
         log_warning "Port cleanup not implemented for $OS"
@@ -144,6 +174,11 @@ main() {
     if [ -f "backend.log" ]; then
         rm -f backend.log
         log_info "Removed backend.log"
+    fi
+    
+    if [ -f "jolt.log" ]; then
+        rm -f jolt.log
+        log_info "Removed jolt.log"
     fi
     
     echo ""

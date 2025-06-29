@@ -402,6 +402,12 @@
   
   .feature-list li {
     padding: 0.75rem;
+    font-size: 0.9rem;
+  }
+  
+  .additional-assets-button {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
   }
 }
 
@@ -668,4 +674,44 @@
   .tab-content {
     padding: 1rem;
   }
-} 
+  
+  .additional-assets-button {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+  }
+}
+
+/* ========================================
+   Additional Demo Assets Section
+   ======================================== */
+.additional-assets-section {
+  margin-top: 3rem;
+  text-align: center;
+}
+
+.additional-assets-button {
+  background: linear-gradient(135deg, #0066CC 0%, #004B99 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  box-shadow: 0 2px 8px rgba(0, 102, 204, 0.3);
+}
+
+.additional-assets-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.4);
+}
+
+.additional-assets-icon {
+  font-size: 1.2rem;
+}
+
+/* Responsive Design */ 

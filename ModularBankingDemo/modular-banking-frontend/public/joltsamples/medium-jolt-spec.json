@@ -1,0 +1,52 @@
+[
+    {
+        "operation": "shift",
+        "spec": {
+            "header": {
+                "eventId": "eventId",
+                "eventSize": "eventSize",
+                "eventIndex": "eventIndex",
+                "emittedTime": "emittedTime",
+                "processingTime": "processingTime",
+                "context": "context",
+                "entityName": "entityName",
+                "entityId": "entityId",
+                "application": "application"
+            },
+            "enrichment": {
+                "partyId": "payload.customerId",
+                "externalRef": "payload.companyId"
+            },
+            "rawEvent": {
+                "payload": {
+                    "id": "payload.accountId",
+                    "nominalCode": "payload.accountNumber",
+                    "fullyQualifiedName": "payload.accountName",
+                    "fullyQualifiedCategory": "payload.accountCategory",
+                    "type": "payload.accountType",
+                    "status": "payload.accountStatus",
+                    "currency": "payload.currency",
+                    "currentBalance": "payload.balance",
+                    "isBankAccount": "payload.isBankAccount",
+                    "sourceModifiedDate": "payload.processingDate",
+                    "description": "payload.accountDescription"
+                }
+            }
+        }
+    },
+    {
+        "operation": "default",
+        "spec": {
+            "payload": {
+                "creationTime": "2024-01-01T00:00:00Z",
+                "bankDate": "2024-01-01"
+            }
+        }
+    },
+    {
+        "operation": "remove",
+        "spec": {
+            "payload.processingDate": ""
+        }
+    }
+]

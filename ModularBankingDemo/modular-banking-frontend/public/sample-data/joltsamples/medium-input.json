@@ -1,0 +1,52 @@
+{
+    "header": {
+        "eventId": "87338a32-7059-4ac4-8e9a-f3def8c3e3ac",
+        "eventSize": "1",
+        "eventIndex": "0",
+        "emittedTime": "1655807448",
+        "processingTime": "1655807448",
+        "context": {
+        },
+        "entityName": "accounts",
+        "entityId": "CODAT_UAT",
+        "application": "accounts"
+    },
+    "enrichment": {
+        "partyId": "123456",
+        "externalRef": "7715f35d-c548-4c64-ba3a-148b807a9358"
+    },
+    "metadata": {
+        "companyId": "7715f35d-c548-4c64-ba3a-148b807a9358",
+        "dataType": "accounts",
+        "externalSystemId": "CODAT_UAT"
+    },
+    "rawEvent": {
+        "payload": {
+            "id": "15",
+            "name": "Office Expenses",
+            "description": "Expense Account",
+            "nominalCode": "2349340",
+            "fullyQualifiedCategory": "Expense.Expense.OfficeGeneralAdministrativeExpenses",
+            "fullyQualifiedName": "Expense.Expense.OfficeGeneralAdministrativeExpenses.Office Expenses",
+            "currency": "USD",
+            "currentBalance": 230134.2,
+            "type": "Expense",
+            "status": "Active",
+            "isBankAccount": false,
+            "modifiedDate": "2021-05-13T13:50:24Z",
+            "sourceModifiedDate": "2021-04-06T21:42:07Z",
+            "validDatatypeLinks": [
+                {
+                    "property": "Id",
+                    "links": [
+                        "Bill.LineItems.AccountRef.Id",
+                        "BillCreditNote.LineItems.AccountRef.Id",
+                        "JournalEntry.JournalLines.AccountRef.Id",
+                        "Item.InvoiceItem.AccountRef.Id",
+                        "Item.BillItem.AccountRef.Id"
+                    ]
+                }
+            ]
+        }
+    }
+}

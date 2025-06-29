@@ -1,10 +1,21 @@
 #!/bin/bash
 
+# Source .env for configuration
+set -a
+[ -f .env ] && . .env
+set +a
+
+# Set project root
+PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
+
 # Configuration
-FRONTEND_PORT=3011
-BACKEND_PORT=5011
-FRONTEND_DIR="modular-banking-frontend"
-BACKEND_DIR="demoflow-backend"
+FRONTEND_PORT=${FRONTEND_PORT:-3011}
+BACKEND_PORT=${BACKEND_PORT:-5011}
+JOLT_PORT=${JOLT_PORT:-8081}
+FRONTEND_DIR="${FRONTEND_DIR:-modular-banking-frontend}"
+BACKEND_DIR="${BACKEND_DIR:-demoflow-backend}"
+JOLT_DIR="${JOLT_DIR:-tools/jolt-service}"
+MAVEN_BIN="$PROJECT_ROOT/tools/maven/apache-maven-3.9.6/bin/mvn"
 
 # Colors for output
 RED='\033[0;31m'
@@ -95,6 +106,18 @@ check_prerequisites() {
         exit 1
     fi
     
+    # Check Java
+    if ! command -v java >/dev/null 2>&1; then
+        log_error "Java is not installed. Please install Java 11 or higher first."
+        exit 1
+    fi
+    
+    # Check Maven (local)
+    if [ ! -x "$MAVEN_BIN" ]; then
+        log_error "Local Maven binary not found or not executable at $MAVEN_BIN. Please check your tools/maven installation."
+        exit 1
+    fi
+    
     log_success "Prerequisites check passed"
 }
 
@@ -104,6 +127,9 @@ install_dependencies() {
     local service_name=$2
     
     log_info "Installing dependencies for $service_name..."
+    
+    # Ensure we're in the project root directory
+    cd "$PROJECT_ROOT"
     
     if [ -d "$dir" ]; then
         cd "$dir"
@@ -125,11 +151,59 @@ install_dependencies() {
     fi
 }
 
+# Install Maven dependencies
+install_maven_dependencies() {
+    local dir=$1
+    local service_name=$2
+    
+    log_info "Installing Maven dependencies for $service_name..."
+    
+    # Ensure we're in the project root directory
+    cd "$PROJECT_ROOT"
+    
+    if [ -d "$dir" ]; then
+        cd "$dir"
+        if [ -f "pom.xml" ]; then
+            "$MAVEN_BIN" clean compile
+            if [ $? -eq 0 ]; then
+                log_success "Maven dependencies installed for $service_name"
+            else
+                log_error "Failed to install Maven dependencies for $service_name"
+                exit 1
+            fi
+        else
+            log_warning "No pom.xml found in $dir"
+        fi
+        cd ..
+    else
+        log_error "Directory $dir not found"
+        exit 1
+    fi
+}
+
 # Start backend
 start_backend() {
     log_info "Starting backend server on port $BACKEND_PORT..."
     
+    # Ensure we're in the project root directory
+    cd "$PROJECT_ROOT"
+    
+    # Debug output
+    echo "DEBUG: BACKEND_DIR='$BACKEND_DIR'"
+    ls -ld "$BACKEND_DIR"
+    
+    if [ ! -d "$BACKEND_DIR" ]; then
+        log_error "Backend directory $BACKEND_DIR not found"
+        exit 1
+    fi
+    
     cd "$BACKEND_DIR"
+    
+    # Check if package.json exists
+    if [ ! -f "package.json" ]; then
+        log_error "package.json not found in $BACKEND_DIR"
+        exit 1
+    fi
     
     # Use the main .env file from the root directory
     if [ ! -f "../.env" ]; then
@@ -160,7 +234,21 @@ start_backend() {
 start_frontend() {
     log_info "Starting frontend server on port $FRONTEND_PORT..."
     
+    # Ensure we're in the project root directory
+    cd "$PROJECT_ROOT"
+    
+    if [ ! -d "$FRONTEND_DIR" ]; then
+        log_error "Frontend directory $FRONTEND_DIR not found"
+        exit 1
+    fi
+    
     cd "$FRONTEND_DIR"
+    
+    # Check if package.json exists
+    if [ ! -f "package.json" ]; then
+        log_error "package.json not found in $FRONTEND_DIR"
+        exit 1
+    fi
     
     # Set environment variables for frontend
     export PORT=$FRONTEND_PORT
@@ -185,16 +273,64 @@ start_frontend() {
     fi
 }
 
+# Start JOLT service
+start_jolt_service() {
+    log_info "Starting JOLT service on port $JOLT_PORT..."
+    
+    # Ensure we're in the project root directory
+    cd "$PROJECT_ROOT"
+    
+    if [ ! -d "$JOLT_DIR" ]; then
+        log_error "JOLT directory $JOLT_DIR not found"
+        exit 1
+    fi
+    
+    cd "$JOLT_DIR"
+    
+    # Check if pom.xml exists
+    if [ ! -f "pom.xml" ]; then
+        log_error "pom.xml not found in $JOLT_DIR"
+        exit 1
+    fi
+    
+    # Build the JAR file
+    "$MAVEN_BIN" clean package -DskipTests
+    if [ $? -ne 0 ]; then
+        log_error "Failed to build JOLT service"
+        exit 1
+    fi
+    
+    # Start JOLT service in background
+    java -jar target/jolt-service-0.0.1-SNAPSHOT.jar > ../jolt.log 2>&1 &
+    JOLT_PID=$!
+    echo $JOLT_PID > ../jolt.pid
+    
+    cd ..
+    
+    # Wait a moment for server to start
+    sleep 5
+    
+    # Check if JOLT service is running
+    if kill -0 $JOLT_PID 2>/dev/null; then
+        log_success "JOLT service started (PID: $JOLT_PID)"
+    else
+        log_error "Failed to start JOLT service"
+        exit 1
+    fi
+}
+
 # Display status
 display_status() {
     log_info "Application Status:"
     echo "=================================="
     echo "Frontend: http://localhost:$FRONTEND_PORT"
     echo "Backend:  http://localhost:$BACKEND_PORT"
+    echo "JOLT Service: http://localhost:$JOLT_PORT"
     echo "Backend Health: http://localhost:$BACKEND_PORT/health"
+    echo "JOLT Transform: http://localhost:$JOLT_PORT/transform"
     echo "=================================="
-    log_info "Logs are being written to frontend.log and backend.log"
-    log_info "PIDs are stored in frontend.pid and backend.pid"
+    log_info "Logs are being written to frontend.log, backend.log, and jolt.log"
+    log_info "PIDs are stored in frontend.pid, backend.pid, and jolt.pid"
 }
 
 # Cleanup function for graceful shutdown
@@ -219,9 +355,19 @@ cleanup() {
         rm -f backend.pid
     fi
     
+    if [ -f "jolt.pid" ]; then
+        JOLT_PID=$(cat jolt.pid)
+        if kill -0 $JOLT_PID 2>/dev/null; then
+            kill $JOLT_PID
+            log_success "JOLT service stopped"
+        fi
+        rm -f jolt.pid
+    fi
+    
     # Final port cleanup
     cleanup_ports $FRONTEND_PORT "Frontend"
     cleanup_ports $BACKEND_PORT "Backend"
+    cleanup_ports $JOLT_PORT "JOLT Service"
     
     log_success "Cleanup completed"
     exit 0
@@ -237,6 +383,7 @@ main() {
     # Clean up any existing processes
     cleanup_ports $FRONTEND_PORT "Frontend"
     cleanup_ports $BACKEND_PORT "Backend"
+    cleanup_ports $JOLT_PORT "JOLT Service"
     
     # Check prerequisites
     check_prerequisites
@@ -245,9 +392,13 @@ main() {
     install_dependencies "$BACKEND_DIR" "Backend"
     install_dependencies "$FRONTEND_DIR" "Frontend"
     
+    # Install Maven dependencies
+    install_maven_dependencies "$JOLT_DIR" "JOLT Service"
+    
     # Start services
     start_backend
     start_frontend
+    start_jolt_service
     
     # Display status
     display_status
@@ -257,7 +408,7 @@ main() {
     log_info "Tailing logs (Press Ctrl+C to stop)..."
     
     # Tail both log files
-    tail -f frontend.log backend.log 2>/dev/null &
+    tail -f frontend.log backend.log jolt.log 2>/dev/null &
     TAIL_PID=$!
     
     # Wait for interrupt

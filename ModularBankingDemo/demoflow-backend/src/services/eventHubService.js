@@ -3,7 +3,7 @@
  * Handles real Azure Event Hub connections using Kafka protocol
  */
 
-const { Kafka } = require('kafkajs');
+const { Kafka, logLevel } = require('kafkajs');
 const { EventHubProducerClient } = require('@azure/event-hubs');
 const { EventHubConsumerClient } = require('@azure/event-hubs');
 const { ContainerClient } = require('@azure/storage-blob');
@@ -27,57 +27,85 @@ class EventHubService {
     this.consumers = new Map(); // sessionId -> Map(component -> consumer)
     this.eventCallbacks = new Map(); // sessionId -> Map(component -> callback)
     this.ready = false;
+    this.isInitialized = false; // Track initialization state
     this.initializing = false;
     this.connectionQueue = []; // Queue for connection requests
     this.isProcessingQueue = false;
     this.maxConcurrentConnections = 2; // Limit concurrent connections
     this.activeConnections = 0;
+    this.stats = {
+      totalConnections: 0,
+      activeConnections: 0,
+      totalMessages: 0,
+      errors: 0
+    };
     this.initialize();
   }
 
   initialize() {
-    // Check environment variables dynamically
-    const BOOTSTRAP_SERVERS = process.env.BOOTSTRAP_SERVERS;
-    const CONNECTION_STRING = process.env.CONNECTION_STRING;
+    console.log('🔧 [EventHubService] Initializing EventHub service...');
     
-    if (!BOOTSTRAP_SERVERS || !CONNECTION_STRING) {
-      console.error('EventHub configuration missing. Set BOOTSTRAP_SERVERS and CONNECTION_STRING environment variables.');
-      this.kafka = null;
+    const servers = process.env.BOOTSTRAP_SERVERS;
+    const connectionString = process.env.CONNECTION_STRING;
+    
+    console.log('🔍 [EventHubService] Environment check:', {
+      BOOTSTRAP_SERVERS: servers ? `${servers.substring(0, 50)}...` : 'NOT SET',
+      CONNECTION_STRING: connectionString ? `SET (length: ${connectionString.length})` : 'NOT SET'
+    });
+
+    if (!servers || !connectionString) {
+      console.warn('⚠️  [EventHubService] Environment variables not yet available. Service will retry initialization when needed.');
+      this.isInitialized = false;
       this.ready = false;
       return;
     }
 
-    // SSL configuration for corporate networks
-    const sslConfig = {
-      rejectUnauthorized: process.env.SSL_REJECT_UNAUTHORIZED === 'false' ? false : true,
-      servername: BOOTSTRAP_SERVERS.split(':')[0],
-    };
+    try {
+      // SSL configuration
+      const sslRejectUnauthorized = process.env.SSL_REJECT_UNAUTHORIZED;
+      const sslConfig = {
+        rejectUnauthorized: sslRejectUnauthorized !== 'false',
+        servername: servers.split(':')[0],
+      };
+      
+      console.log('🔐 [EventHubService] SSL Configuration:', sslConfig);
 
-    // Create Kafka client with optimized settings for corporate networks
-    this.kafka = new Kafka({
-      clientId: 'demoflow-backend',
-      brokers: [BOOTSTRAP_SERVERS],
-      ssl: sslConfig,
-      sasl: {
-        mechanism: 'plain',
-        username: '$ConnectionString',
-        password: CONNECTION_STRING,
-      },
-      connectionTimeout: 60000, // 60 seconds for corporate networks
-      requestTimeout: 60000,
-      retry: {
-        initialRetryTime: 300,
-        retries: 10,
-        factor: 2,
-        maxRetryTime: 30000
-      },
-      socketTimeout: 60000,
-      heartbeatInterval: 30000,
-      sessionTimeout: 60000,
-    });
+      // Initialize Kafka client with Azure Event Hub configuration
+      this.kafka = new Kafka({
+        clientId: 'demoflow-backend',
+        brokers: [servers],
+        ssl: sslConfig,
+        sasl: {
+          mechanism: 'plain',
+          username: '$ConnectionString',
+          password: connectionString,
+        },
+        connectionTimeout: 60000,
+        requestTimeout: 60000,
+        retry: {
+          initialRetryTime: 300,
+          retries: 10,
+          factor: 2,
+          maxRetryTime: 30000
+        },
+        socketTimeout: 60000,
+        heartbeatInterval: 30000,
+        sessionTimeout: 60000,
+        logLevel: logLevel.INFO,
+        logCreator: (level) => ({ namespace, label, log }) => {
+          const { message, ...extra } = log;
+          console.log(`[KafkaJS ${label}] ${message}`, extra);
+        }
+      });
 
-    console.log('EventHub service initialized with SSL config:', sslConfig);
-    this.ready = true;
+      this.isInitialized = true;
+      this.ready = true;
+      console.log('✅ [EventHubService] EventHub service initialized successfully');
+    } catch (error) {
+      console.error('❌ [EventHubService] Failed to initialize EventHub service:', error);
+      this.isInitialized = false;
+      this.ready = false;
+    }
   }
 
   /**
@@ -119,8 +147,18 @@ class EventHubService {
    * Connect to a component's event stream (queued version)
    */
   async connectToComponent(sessionId, component, eventCallback) {
-    if (!this.kafka || !this.ready) {
-      throw new Error('EventHub service not initialized or not ready');
+    // Retry initialization if not yet initialized
+    if (!this.isInitialized) {
+      console.log('🔄 [EventHubService] Service not initialized, retrying initialization...');
+      this.initialize();
+      
+      if (!this.isInitialized) {
+        throw new Error('EventHub service initialization failed - check environment variables');
+      }
+    }
+
+    if (!this.ready) {
+      throw new Error('EventHub service not ready');
     }
 
     const topic = KAFKA_TOPICS[component];
@@ -160,6 +198,7 @@ class EventHubService {
     try {
       // Create unique consumer group for this session and component
       const groupId = `event-stream-${component}-${sessionId}-${Date.now()}`;
+      
       const consumer = this.kafka.consumer({ 
         groupId,
         sessionTimeout: 30000,
@@ -214,35 +253,40 @@ class EventHubService {
    * Establish the actual connection
    */
   async _establishConnection(consumer, topic, sessionId, component, eventCallback, groupId) {
-    await consumer.connect();
-    await consumer.subscribe({ topic, fromBeginning: false });
+    try {
+      await consumer.connect();
+      await consumer.subscribe({ topic, fromBeginning: false });
 
-    // Store consumer and callback
-    if (!this.consumers.has(sessionId)) {
-      this.consumers.set(sessionId, new Map());
-      this.eventCallbacks.set(sessionId, new Map());
-    }
-    this.consumers.get(sessionId).set(component, consumer);
-    this.eventCallbacks.get(sessionId).set(component, eventCallback);
+      // Store consumer and callback
+      if (!this.consumers.has(sessionId)) {
+        this.consumers.set(sessionId, new Map());
+        this.eventCallbacks.set(sessionId, new Map());
+      }
+      this.consumers.get(sessionId).set(component, consumer);
+      this.eventCallbacks.get(sessionId).set(component, eventCallback);
 
-    // Start consuming events
-    await consumer.run({
-      eachMessage: async ({ topic, partition, message }) => {
-        try {
-          const eventData = this.formatEventMessage(message, topic, partition);
-          
-          // Send to callback if still connected
-          const callback = this.eventCallbacks.get(sessionId)?.get(component);
-          if (callback) {
-            callback(eventData);
+      // Start consuming events - don't await this as it runs indefinitely
+      consumer.run({
+        eachMessage: async ({ topic, partition, message }) => {
+          try {
+            const eventData = this.formatEventMessage(message, topic, partition);
+            
+            // Send to callback if still connected
+            const callback = this.eventCallbacks.get(sessionId)?.get(component);
+            if (callback) {
+              callback(eventData);
+            }
+          } catch (error) {
+            console.error(`Error processing message for ${component}:`, error);
           }
-        } catch (error) {
-          console.error(`Error processing message for ${component}:`, error);
-        }
-      },
-    });
+        },
+      });
 
-    console.log(`✅ Connected to ${component} (${topic}) for session ${sessionId}`);
+      console.log(`✅ Connected to ${component} (${topic}) for session ${sessionId}`);
+    } catch (error) {
+      console.error(`❌ Error in _establishConnection for ${component}:`, error);
+      throw error;
+    }
   }
 
   /**

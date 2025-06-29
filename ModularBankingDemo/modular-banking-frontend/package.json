@@ -4,6 +4,8 @@
   "private": true,
   "dependencies": {
     "@testing-library/dom": "^10.4.0",
+    "jolt": "^5.1.4",
+    "jolt-core": "^2.8.9",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.6.2",

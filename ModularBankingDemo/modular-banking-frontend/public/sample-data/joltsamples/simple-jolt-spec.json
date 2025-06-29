@@ -1,0 +1,13 @@
+[
+    {
+        "operation": "shift",
+        "spec": {
+            "users": {
+                "*": {
+                    "$": "users[#2].firstName",
+                    "@": "users[#2].userId"
+                }
+            }
+        }
+    }
+]

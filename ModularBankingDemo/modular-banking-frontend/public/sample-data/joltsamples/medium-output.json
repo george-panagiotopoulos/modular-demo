@@ -1,0 +1,28 @@
+{
+    "eventId" : "87338a32-7059-4ac4-8e9a-f3def8c3e3ac",
+    "eventSize" : "1",
+    "eventIndex" : "0",
+    "emittedTime" : "1655807448",
+    "processingTime" : "1655807448",
+    "context" : { },
+    "entityName" : "accounts",
+    "entityId" : "CODAT_UAT",
+    "application" : "accounts",
+    "payload" : {
+        "customerId" : "123456",
+        "companyId" : "7715f35d-c548-4c64-ba3a-148b807a9358",
+        "accountId" : "15",
+        "accountNumber" : "2349340",
+        "accountName" : "Expense.Expense.OfficeGeneralAdministrativeExpenses.Office Expenses",
+        "accountCategory" : "Expense.Expense.OfficeGeneralAdministrativeExpenses",
+        "accountType" : "Expense",
+        "accountStatus" : "Active",
+        "currency" : "USD",
+        "balance" : 230134.2,
+        "isBankAccount" : false,
+        "processingDate" : "2021-04-06T21:42:07Z",
+        "accountDescription" : "Expense Account",
+        "creationTime" : 1617745327000,
+        "bankDate" : "2021-04-06"
+    }
+}

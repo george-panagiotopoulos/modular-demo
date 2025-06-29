@@ -178,6 +178,17 @@ const DemoFlow = () => {
                 </button>
               </div>
             </div>
+            
+            {/* Additional Demo Assets Section */}
+            <div className="additional-assets-section">
+              <button 
+                className="additional-assets-button"
+                onClick={() => navigate('/additional-demos')}
+              >
+                <span className="additional-assets-icon">🔧</span>
+                Additional Demo Assets
+              </button>
+            </div>
           </div>
         );
     }

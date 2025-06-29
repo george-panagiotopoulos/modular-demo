@@ -1,0 +1,60 @@
+[
+    {
+        "operation": "shift",
+        "spec": {
+            "header": {
+                "eventId": "eventId",
+                "eventSize": "eventSize",
+                "eventIndex": "eventIndex",
+                "emittedTime": "emittedTime",
+                "processingTime": "processingTime",
+                "context": "context",
+                "entityName": "entityName",
+                "entityId": "entityId",
+                "application": "application"
+            },
+            "enrichment": {
+                "partyId": "payload.customerId",
+                "externalRef": "payload.companyId"
+            },
+            "rawEvent": {
+                "payload": {
+                    "id": "payload.accountId",
+                    "nominalCode": "payload.accountNumber",
+                    "fullyQualifiedName": "payload.accountName",
+                    "fullyQualifiedCategory": "payload.accountCategory",
+                    "type": "payload.accountType",
+                    "status": "payload.accountStatus",
+                    "currency": "payload.currency",
+                    "currentBalance": "payload.balance",
+                    "isBankAccount": "payload.isBankAccount",
+                    "sourceModifiedDate": "payload.processingDate",
+                    "description": "payload.accountDescription"
+                }
+            }
+        }
+    },
+    {
+        "operation": "com.temenos.ecosystem.transforms.jolt.DateToEpochTime",
+        "spec": {
+            "sourceName": "payload/processingDate",
+            "sourceFormat": "yyyy-MM-dd'T'HH:mm:ss'Z'|yyyy-MM-dd'T'HH:mm:ss|yyyy-MM-dd'T'HH:mm:ssXXXXX|yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+            "targetName": "payload/creationTime"
+        }
+    },
+    {
+        "operation": "com.temenos.ecosystem.transforms.jolt.DateToDate",
+        "spec": {
+            "sourceName": "payload/processingDate",
+            "sourceFormat": "yyyy-MM-dd'T'HH:mm:ss'Z'|yyyy-MM-dd'T'HH:mm:ss|yyyy-MM-dd'T'HH:mm:ssXXXXX|yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+            "targetName": "payload/bankDate",
+            "targetFormat": "yyyy-MM-dd"
+        }
+    },
+    {
+        "operation": "remove",
+        "spec": {
+            "payload.processingDate": ""
+        }
+    }
+]
