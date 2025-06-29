@@ -15,6 +15,13 @@ const JoltMapper = () => {
   const [loading, setLoading] = useState(true);
   const [simpleOutput, setSimpleOutput] = useState('');
   const [complexOutput, setComplexOutput] = useState('');
+  
+  // New state for JOLT Spec Generator
+  const [generatorInputJson, setGeneratorInputJson] = useState('');
+  const [generatorOutputJson, setGeneratorOutputJson] = useState('');
+  const [generatedJoltSpec, setGeneratedJoltSpec] = useState('');
+  const [generatorErrors, setGeneratorErrors] = useState({});
+  
   const navigate = useNavigate();
 
   // Fetch and set sample data
@@ -91,6 +98,63 @@ const JoltMapper = () => {
     }
   };
 
+  // New function to validate JSON input
+  const validateJsonInput = (jsonString, fieldName) => {
+    try {
+      if (!jsonString.trim()) {
+        return `${fieldName} cannot be empty`;
+      }
+      JSON.parse(jsonString);
+      return null;
+    } catch (error) {
+      return `Invalid JSON in ${fieldName}: ${error.message}`;
+    }
+  };
+
+  // New function to generate JOLT specification
+  const generateJoltSpecification = () => {
+    setGeneratorErrors({});
+    
+    // Validate inputs
+    const inputError = validateJsonInput(generatorInputJson, 'Input JSON');
+    const outputError = validateJsonInput(generatorOutputJson, 'Output JSON');
+    
+    if (inputError || outputError) {
+      setGeneratorErrors({
+        input: inputError,
+        output: outputError
+      });
+      return;
+    }
+
+    try {
+      const inputData = JSON.parse(generatorInputJson);
+      const outputData = JSON.parse(generatorOutputJson);
+      
+      // Basic JOLT spec generation logic (simplified for MVP)
+      const generatedSpec = generateBasicJoltSpec(inputData, outputData);
+      setGeneratedJoltSpec(JSON.stringify(generatedSpec, null, 2));
+    } catch (error) {
+      setGeneratorErrors({
+        general: `Error generating JOLT spec: ${error.message}`
+      });
+    }
+  };
+
+  // Basic JOLT spec generation (MVP implementation)
+  const generateBasicJoltSpec = (input, output) => {
+    // This is a simplified implementation for the MVP
+    // In a full implementation, this would be much more sophisticated
+    return [
+      {
+        "operation": "shift",
+        "spec": {
+          "*": "&"
+        }
+      }
+    ];
+  };
+
   // Run transformation when spec or input changes
   useEffect(() => {
     if (!loading && sampleData.simple.input && Object.keys(sampleData.simple.input).length > 0) {
@@ -155,6 +219,73 @@ const JoltMapper = () => {
                   View Generic Configuration
                 </button>
               </div>
+            </div>
+          </div>
+        );
+      
+      case 'generator':
+        return (
+          <div className="jolt-spec-generator-section">
+            <div className="jolt-mapper-header">
+              <h2>JOLT specification generator</h2>
+              <p>Provide input JSON and target output JSON then press Generate JOLT</p>
+            </div>
+
+            {generatorErrors.general && (
+              <div className="jolt-error-message">
+                {generatorErrors.general}
+              </div>
+            )}
+
+            <div className="jolt-generator-grid">
+              <div className="jolt-generator-panel">
+                <h3>Input JSON</h3>
+                <textarea
+                  className="jolt-json-input"
+                  value={generatorInputJson}
+                  onChange={(e) => setGeneratorInputJson(e.target.value)}
+                  placeholder="Enter your input JSON here..."
+                  rows={15}
+                />
+                {generatorErrors.input && (
+                  <div className="jolt-field-error">{generatorErrors.input}</div>
+                )}
+              </div>
+
+              <div className="jolt-generator-panel">
+                <h3>Target Output JSON</h3>
+                <textarea
+                  className="jolt-json-input"
+                  value={generatorOutputJson}
+                  onChange={(e) => setGeneratorOutputJson(e.target.value)}
+                  placeholder="Enter your desired output JSON here..."
+                  rows={15}
+                />
+                {generatorErrors.output && (
+                  <div className="jolt-field-error">{generatorErrors.output}</div>
+                )}
+              </div>
+
+              <div className="jolt-generator-panel">
+                <h3>Generated JOLT Specification</h3>
+                <textarea
+                  className="jolt-spec-output"
+                  value={generatedJoltSpec}
+                  readOnly
+                  placeholder="Generated JOLT spec will appear here..."
+                  rows={15}
+                />
+              </div>
+            </div>
+
+            <div className="jolt-generator-actions">
+              <button 
+                className="jolt-generate-button"
+                onClick={generateJoltSpecification}
+                disabled={!generatorInputJson.trim() || !generatorOutputJson.trim()}
+              >
+                Generate JOLT
+              </button>
             </div>
           </div>
         );
@@ -304,130 +435,33 @@ const JoltMapper = () => {
           </div>
         );
       
-      case 'mapping':
+      case 'reference':
         return (
-          <div className="jolt-mapping-section">
-            <h3>JOLT Operations Reference</h3>
-            <p>Comprehensive guide to JOLT transformation operations</p>
+          <div className="jolt-documentation">
+            <h3>JOLT Reference Documentation</h3>
+            <p>Comprehensive guide to JOLT transformation operations and syntax</p>
             
-            <div className="jolt-documentation">
-              <div className="jolt-doc-section">
-                <h4>Core JOLT Operations</h4>
-                
-                <div className="jolt-operation">
-                  <h5>shift</h5>
-                  <p>Moves data from one location to another in the JSON structure. This is the most commonly used operation.</p>
-                  <div className="jolt-example-simple">
-                    <code>{`{`}</code>
-                    <code>  "operation": "shift",</code>
-                    <code>  "spec": {`{`}</code>
-                    <code>    "oldField": "newField"</code>
-                    <code>  {`}`}</code>
-                    <code>{`}`}</code>
-                    <p>Moves 'oldField' to 'newField' in the output</p>
-                  </div>
-                </div>
-
-                <div className="jolt-operation">
-                  <h5>default</h5>
-                  <p>Sets default values for fields that don't exist in the input or are null/undefined.</p>
-                  <div className="jolt-example-simple">
-                    <code>{`{`}</code>
-                    <code>  "operation": "default",</code>
-                    <code>  "spec": {`{`}</code>
-                    <code>    "status": "ACTIVE",</code>
-                    <code>    "createdDate": "2024-01-01"</code>
-                    <code>  {`}`}</code>
-                    <code>{`}`}</code>
-                    <p>Sets default values for status and createdDate</p>
-                  </div>
-                </div>
-
-                <div className="jolt-operation">
-                  <h5>remove</h5>
-                  <p>Removes specified fields from the JSON structure.</p>
-                  <div className="jolt-example-simple">
-                    <code>{`{`}</code>
-                    <code>  "operation": "remove",</code>
-                    <code>  "spec": ["field1", "field2"]</code>
-                    <code>{`}`}</code>
-                    <p>Removes field1 and field2 from the output</p>
-                  </div>
-                </div>
-
-                <div className="jolt-operation">
-                  <h5>sort</h5>
-                  <p>Sorts arrays in the JSON structure based on specified criteria.</p>
-                  <div className="jolt-example-simple">
-                    <code>{`{`}</code>
-                    <code>  "operation": "sort",</code>
-                    <code>  "spec": {`{`}</code>
-                    <code>    "transactions": "date"</code>
-                    <code>  {`}`}</code>
-                    <code>{`}`}</code>
-                    <p>Sorts transactions array by date field</p>
-                  </div>
-                </div>
-
-                <div className="jolt-operation">
-                  <h5>cardinality</h5>
-                  <p>Converts single values to arrays or arrays to single values.</p>
-                  <div className="jolt-example-simple">
-                    <code>{`{`}</code>
-                    <code>  "operation": "cardinality",</code>
-                    <code>  "spec": {`{`}</code>
-                    <code>    "singleField": "MANY",</code>
-                    <code>    "arrayField": "ONE"</code>
-                    <code>  {`}`}</code>
-                    <code>{`}`}</code>
-                    <p>Converts singleField to array, arrayField to single value</p>
-                  </div>
-                </div>
-
-                <div className="jolt-operation">
-                  <h5>modify</h5>
-                  <p>Modifies values using various functions like toUpper, toLower, concat, etc.</p>
-                  <div className="jolt-example-simple">
-                    <code>{`{`}</code>
-                    <code>  "operation": "modify-overwrite-beta",</code>
-                    <code>  "spec": {`{`}</code>
-                    <code>    "name": "=toUpper"</code>
-                    <code>  {`}`}</code>
-                    <code>{`}`}</code>
-                    <p>Converts name field to uppercase</p>
-                  </div>
-                </div>
-
-                <div className="jolt-operation">
-                  <h5>concat</h5>
-                  <p>Concatenates multiple fields or values into a single string.</p>
-                  <div className="jolt-example-simple">
-                    <code>{`{`}</code>
-                    <code>  "operation": "modify-overwrite-beta",</code>
-                    <code>  "spec": {`{`}</code>
-                    <code>    "fullName": "=concat(@(1,firstName),' ',@(1,lastName))"</code>
-                    <code>  {`}`}</code>
-                    <code>{`}`}</code>
-                    <p>Combines firstName and lastName with space</p>
-                  </div>
-                </div>
-
-                <div className="jolt-operation">
-                  <h5>conditional</h5>
-                  <p>Applies transformations based on conditions using if-then-else logic.</p>
-                  <div className="jolt-example-simple">
-                    <code>{`{`}</code>
-                    <code>  "operation": "shift",</code>
-                    <code>  "spec": {`{`}</code>
-                    <code>    "balance": {`{`}</code>
-                    <code>      "$(balance,&lt;1000)": "lowBalance",</code>
-                    <code>      "$(balance,&gt;=1000)": "highBalance"</code>
-                    <code>    {`}`}</code>
-                    <code>  {`}`}</code>
-                    <code>{`}`}</code>
-                    <p>Routes balance to different fields based on amount</p>
-                  </div>
-                </div>
+            <div className="jolt-doc-section">
+              <h4>Core Operations</h4>
+              
+              <div className="jolt-operation">
+                <h5>shift</h5>
+                <p>Moves data from the input tree and places it in the output tree</p>
+              </div>
+              
+              <div className="jolt-operation">
+                <h5>default</h5>
+                <p>Applies default values when data is missing from the input</p>
+              </div>
+              
+              <div className="jolt-operation">
+                <h5>remove</h5>
+                <p>Removes data from the input tree</p>
+              </div>
+              
+              <div className="jolt-operation">
+                <h5>sort</h5>
+                <p>Sorts any arrays present in the input JSON</p>
               </div>
             </div>
           </div>
@@ -441,23 +475,33 @@ const JoltMapper = () => {
   return (
     <div className="jolt-mapper-container">
       <div className="jolt-mapper-sidebar">
-        <button
+        <button 
           className={`jolt-nav-button ${activeSection === 'overview' ? 'active' : ''}`}
           onClick={() => setActiveSection('overview')}
         >
           <span className="jolt-nav-icon">🏠</span>
           Overview
         </button>
-        <button
+        
+        <button 
           className={`jolt-nav-button ${activeSection === 'transformer' ? 'active' : ''}`}
           onClick={() => setActiveSection('transformer')}
         >
           <span className="jolt-nav-icon">🔄</span>
           Transformer
         </button>
-        <button
-          className={`jolt-nav-button ${activeSection === 'mapping' ? 'active' : ''}`}
-          onClick={() => setActiveSection('mapping')}
+
+        <button 
+          className={`jolt-nav-button ${activeSection === 'generator' ? 'active' : ''}`}
+          onClick={() => setActiveSection('generator')}
+        >
+          <span className="jolt-nav-icon">🧠</span>
+          JOLT Spec Generator
+        </button>
+        
+        <button 
+          className={`jolt-nav-button ${activeSection === 'reference' ? 'active' : ''}`}
+          onClick={() => setActiveSection('reference')}
         >
           <span className="jolt-nav-icon">📊</span>
           Reference
