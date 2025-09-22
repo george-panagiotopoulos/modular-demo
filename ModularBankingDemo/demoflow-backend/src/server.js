@@ -16,6 +16,7 @@ require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 // Import routes and services
 const eventStreamRoutes = require('./routes/eventStreamRoutes');
 const bankingRoutes = require('./routes/banking');
+const joltRoutes = require('./routes/joltRoutes');
 
 let headlessRoutes;
 try {
@@ -80,6 +81,7 @@ app.get('/health', (req, res) => {
 // API routes
 app.use('/api/event-stream', eventStreamRoutes);
 app.use('/api/banking', bankingRoutes);
+app.use('/api/jolt', joltRoutes);
 
 if (headlessRoutes) {
   app.use('/api/headless', headlessRoutes);

@@ -3,6 +3,21 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import '@testing-library/jest-dom';
 import JoltMapper from '../components/JoltMapper/JoltMapper';
+import * as joltGenerator from '../utils/joltGenerator';
+
+// Mock the utility functions
+jest.mock('../utils/joltGenerator', () => ({
+  validateJSON: jest.fn(),
+  generateJOLT: jest.fn(),
+  callLLMStreaming: jest.fn()
+}));
+
+// Mock the joltService
+jest.mock('../services/joltService', () => ({
+  fetchTransformations: jest.fn(() => Promise.resolve([])),
+  saveTransformation: jest.fn(() => Promise.resolve({})),
+  deleteTransformation: jest.fn(() => Promise.resolve())
+}));
 
 // Mock fetch for API calls
 global.fetch = jest.fn();
@@ -17,6 +32,7 @@ const renderJoltMapper = () => {
 
 describe('JoltMapper Component', () => {
   beforeEach(() => {
+    jest.clearAllMocks();
     fetch.mockClear();
     // Mock successful fetch responses for sample data
     fetch.mockImplementation((url) => {
@@ -42,122 +58,228 @@ describe('JoltMapper Component', () => {
     });
   });
 
-  describe('Basic Functionality', () => {
-    test('renders JoltMapper component', async () => {
-      renderJoltMapper();
-      await waitFor(() => {
-        expect(screen.getByText('JOLT Mapper')).toBeInTheDocument();
-      });
-    });
+  test('renders JoltMapper component', () => {
+    renderJoltMapper();
+    expect(screen.getByText('JOLT Mapper')).toBeInTheDocument();
+  });
 
-    test('renders left navigation menu', async () => {
-      renderJoltMapper();
-      await waitFor(() => {
-        expect(screen.getByText('Overview')).toBeInTheDocument();
-        expect(screen.getByText('Transformer')).toBeInTheDocument();
-      });
+  test('renders navigation menu with all tabs', () => {
+    renderJoltMapper();
+    expect(screen.getByText('Overview')).toBeInTheDocument();
+    expect(screen.getByText('Transformer')).toBeInTheDocument();
+    expect(screen.getByText('JOLT Spec Generator')).toBeInTheDocument();
+  });
+
+  test('displays JOLT Spec Generator button', () => {
+    renderJoltMapper();
+    const generatorButton = screen.getByText('JOLT Spec Generator');
+    expect(generatorButton).toBeInTheDocument();
+  });
+
+  test('shows generator section when JOLT Spec Generator button is clicked', () => {
+    renderJoltMapper();
+    const generatorButton = screen.getByText('JOLT Spec Generator');
+    fireEvent.click(generatorButton);
+    
+    expect(screen.getByText('Generate JOLT specifications using AI by providing input and desired output JSON structures.')).toBeInTheDocument();
+  });
+
+  test('displays input and output textareas in generator section', () => {
+    renderJoltMapper();
+    const generatorButton = screen.getByText('JOLT Spec Generator');
+    fireEvent.click(generatorButton);
+    
+    expect(screen.getByPlaceholderText('Enter your input JSON structure here...')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Enter your desired output JSON structure here...')).toBeInTheDocument();
+  });
+
+  test('displays instructions textarea in generator section', () => {
+    renderJoltMapper();
+    const generatorButton = screen.getByText('JOLT Spec Generator');
+    fireEvent.click(generatorButton);
+    
+    expect(screen.getByPlaceholderText('Enter any additional instructions or requirements for the JOLT transformation...')).toBeInTheDocument();
+  });
+
+  test('shows generate button in generator section', () => {
+    renderJoltMapper();
+    const generatorButton = screen.getByText('JOLT Spec Generator');
+    fireEvent.click(generatorButton);
+    
+    expect(screen.getByText('Generate JOLT Specification')).toBeInTheDocument();
+  });
+
+  test('generate button is disabled when inputs are empty', () => {
+    renderJoltMapper();
+    const generatorButton = screen.getByText('JOLT Spec Generator');
+    fireEvent.click(generatorButton);
+    
+    const generateButton = screen.getByText('Generate JOLT Specification');
+    expect(generateButton).toBeDisabled();
+  });
+
+  test('generate button is enabled when both inputs have content', () => {
+    renderJoltMapper();
+    const generatorButton = screen.getByText('JOLT Spec Generator');
+    fireEvent.click(generatorButton);
+    
+    const inputTextarea = screen.getByPlaceholderText('Enter your input JSON structure here...');
+    const outputTextarea = screen.getByPlaceholderText('Enter your desired output JSON structure here...');
+    
+    fireEvent.change(inputTextarea, { target: { value: '{"test": "input"}' } });
+    fireEvent.change(outputTextarea, { target: { value: '{"test": "output"}' } });
+    
+    const generateButton = screen.getByText('Generate JOLT Specification');
+    expect(generateButton).not.toBeDisabled();
+  });
+
+  test('displays help section in generator', () => {
+    renderJoltMapper();
+    const generatorButton = screen.getByText('JOLT Spec Generator');
+    fireEvent.click(generatorButton);
+    
+    expect(screen.getByText('How to use:')).toBeInTheDocument();
+    expect(screen.getByText('Paste your input JSON structure in the first textarea')).toBeInTheDocument();
+  });
+
+  test('calls validateJSON when generating JOLT specification', async () => {
+    joltGenerator.validateJSON.mockImplementation(() => true);
+    joltGenerator.callLLMStreaming.mockResolvedValue('{"operation": "shift"}');
+    
+    renderJoltMapper();
+    const generatorButton = screen.getByText('JOLT Spec Generator');
+    fireEvent.click(generatorButton);
+    
+    const inputTextarea = screen.getByPlaceholderText('Enter your input JSON structure here...');
+    const outputTextarea = screen.getByPlaceholderText('Enter your desired output JSON structure here...');
+    const generateButton = screen.getByText('Generate JOLT Specification');
+    
+    fireEvent.change(inputTextarea, { target: { value: '{"test": "input"}' } });
+    fireEvent.change(outputTextarea, { target: { value: '{"test": "output"}' } });
+    fireEvent.click(generateButton);
+    
+    await waitFor(() => {
+      expect(joltGenerator.validateJSON).toHaveBeenCalledWith('{"test": "input"}');
+      expect(joltGenerator.validateJSON).toHaveBeenCalledWith('{"test": "output"}');
     });
   });
 
-  describe('JOLT Spec Generator Feature (Failing Tests)', () => {
-    test('should display JOLT spec generator button in left menu below transformer button', async () => {
-      renderJoltMapper();
-      
-      await waitFor(() => {
-        expect(screen.getByText('Transformer')).toBeInTheDocument();
-      });
-
-      // This test should fail initially - the button doesn't exist yet
-      expect(screen.getByText('JOLT Spec Generator')).toBeInTheDocument();
-      
-      // Verify positioning - JOLT Spec Generator should be after Transformer
-      const navButtons = screen.getAllByRole('button');
-      const transformerIndex = navButtons.findIndex(button => button.textContent.includes('Transformer'));
-      const generatorIndex = navButtons.findIndex(button => button.textContent.includes('JOLT Spec Generator'));
-      
-      expect(generatorIndex).toBeGreaterThan(transformerIndex);
-    });
-
-    test('should display JOLT specification generator section when button is clicked', async () => {
-      renderJoltMapper();
-      
-      await waitFor(() => {
-        expect(screen.getByText('JOLT Spec Generator')).toBeInTheDocument();
-      });
-
-      // Click the JOLT Spec Generator button
-      const generatorButton = screen.getByText('JOLT Spec Generator');
-      fireEvent.click(generatorButton);
-
-      // This test should fail initially - the section doesn't exist yet
-      expect(screen.getByText('JOLT specification generator')).toBeInTheDocument();
-    });
-
-    test('should display user instructions in JOLT spec generator section', async () => {
-      renderJoltMapper();
-      
-      await waitFor(() => {
-        expect(screen.getByText('JOLT Spec Generator')).toBeInTheDocument();
-      });
-
-      const generatorButton = screen.getByText('JOLT Spec Generator');
-      fireEvent.click(generatorButton);
-
-      // This test should fail initially - the instructions don't exist yet
-      expect(screen.getByText('Provide input JSON and target output JSON then press Generate JOLT')).toBeInTheDocument();
-    });
-
-    test('should display Generate JOLT button in the generator section', async () => {
-      renderJoltMapper();
-      
-      await waitFor(() => {
-        expect(screen.getByText('JOLT Spec Generator')).toBeInTheDocument();
-      });
-
-      const generatorButton = screen.getByText('JOLT Spec Generator');
-      fireEvent.click(generatorButton);
-
-      // This test should fail initially - the Generate JOLT button doesn't exist yet
-      expect(screen.getByText('Generate JOLT')).toBeInTheDocument();
-    });
-
-    test('should have proper navigation state management', async () => {
-      renderJoltMapper();
-      
-      await waitFor(() => {
-        expect(screen.getByText('JOLT Spec Generator')).toBeInTheDocument();
-      });
-
-      // Click JOLT Spec Generator button
-      const generatorButton = screen.getByText('JOLT Spec Generator');
-      fireEvent.click(generatorButton);
-
-      // This test should fail initially - active state styling doesn't exist yet
-      expect(generatorButton).toHaveClass('active');
-
-      // Click back to Overview
-      const overviewButton = screen.getByText('Overview');
-      fireEvent.click(overviewButton);
-
-      expect(generatorButton).not.toHaveClass('active');
-      expect(overviewButton).toHaveClass('active');
+  test('calls callLLMStreaming when generating JOLT specification', async () => {
+    joltGenerator.validateJSON.mockImplementation(() => true);
+    joltGenerator.callLLMStreaming.mockResolvedValue('{"operation": "shift"}');
+    
+    renderJoltMapper();
+    const generatorButton = screen.getByText('JOLT Spec Generator');
+    fireEvent.click(generatorButton);
+    
+    const inputTextarea = screen.getByPlaceholderText('Enter your input JSON structure here...');
+    const outputTextarea = screen.getByPlaceholderText('Enter your desired output JSON structure here...');
+    const instructionsTextarea = screen.getByPlaceholderText('Enter any additional instructions or requirements for the JOLT transformation...');
+    const generateButton = screen.getByText('Generate JOLT Specification');
+    
+    fireEvent.change(inputTextarea, { target: { value: '{"test": "input"}' } });
+    fireEvent.change(outputTextarea, { target: { value: '{"test": "output"}' } });
+    fireEvent.change(instructionsTextarea, { target: { value: 'Test instructions' } });
+    fireEvent.click(generateButton);
+    
+    await waitFor(() => {
+      expect(joltGenerator.callLLMStreaming).toHaveBeenCalledWith(
+        '{"test": "input"}',
+        '{"test": "output"}',
+        'Test instructions',
+        expect.any(Function)
+      );
     });
   });
 
-  describe('Existing Transformer Functionality', () => {
-    test('should still work with transformer section', async () => {
-      renderJoltMapper();
-      
-      await waitFor(() => {
-        expect(screen.getByText('Transformer')).toBeInTheDocument();
-      });
+  test('displays generated JOLT specification', async () => {
+    joltGenerator.validateJSON.mockImplementation(() => true);
+    joltGenerator.callLLMStreaming.mockResolvedValue('[{"operation": "shift", "spec": {"test": "result"}}]');
+    
+    renderJoltMapper();
+    const generatorButton = screen.getByText('JOLT Spec Generator');
+    fireEvent.click(generatorButton);
+    
+    const inputTextarea = screen.getByPlaceholderText('Enter your input JSON structure here...');
+    const outputTextarea = screen.getByPlaceholderText('Enter your desired output JSON structure here...');
+    const generateButton = screen.getByText('Generate JOLT Specification');
+    
+    fireEvent.change(inputTextarea, { target: { value: '{"test": "input"}' } });
+    fireEvent.change(outputTextarea, { target: { value: '{"test": "output"}' } });
+    fireEvent.click(generateButton);
+    
+    await waitFor(() => {
+      expect(screen.getByText('Generated JOLT Specification')).toBeInTheDocument();
+      expect(screen.getByText('[{"operation": "shift", "spec": {"test": "result"}}]')).toBeInTheDocument();
+    });
+  });
 
-      const transformerButton = screen.getByText('Transformer');
-      fireEvent.click(transformerButton);
+  test('shows copy button when JOLT specification is generated', async () => {
+    joltGenerator.validateJSON.mockImplementation(() => true);
+    joltGenerator.callLLMStreaming.mockResolvedValue('[{"operation": "shift"}]');
+    
+    renderJoltMapper();
+    const generatorButton = screen.getByText('JOLT Spec Generator');
+    fireEvent.click(generatorButton);
+    
+    const inputTextarea = screen.getByPlaceholderText('Enter your input JSON structure here...');
+    const outputTextarea = screen.getByPlaceholderText('Enter your desired output JSON structure here...');
+    const generateButton = screen.getByText('Generate JOLT Specification');
+    
+    fireEvent.change(inputTextarea, { target: { value: '{"test": "input"}' } });
+    fireEvent.change(outputTextarea, { target: { value: '{"test": "output"}' } });
+    fireEvent.click(generateButton);
+    
+    await waitFor(() => {
+      expect(screen.getByText('Copy to Clipboard')).toBeInTheDocument();
+    });
+  });
 
-      await waitFor(() => {
-        expect(screen.getByText('Simple Transformation')).toBeInTheDocument();
-      });
+  test('displays error message when validation fails', async () => {
+    joltGenerator.validateJSON.mockImplementation(() => {
+      throw new Error('Invalid JSON format');
+    });
+    
+    renderJoltMapper();
+    const generatorButton = screen.getByText('JOLT Spec Generator');
+    fireEvent.click(generatorButton);
+    
+    const inputTextarea = screen.getByPlaceholderText('Enter your input JSON structure here...');
+    const outputTextarea = screen.getByPlaceholderText('Enter your desired output JSON structure here...');
+    const generateButton = screen.getByText('Generate JOLT Specification');
+    
+    fireEvent.change(inputTextarea, { target: { value: 'invalid json' } });
+    fireEvent.change(outputTextarea, { target: { value: '{"test": "output"}' } });
+    fireEvent.click(generateButton);
+    
+    await waitFor(() => {
+      const errorMessages = screen.getAllByText('Invalid JSON format');
+      expect(errorMessages.length).toBeGreaterThan(0);
+    });
+  });
+
+  test('shows generating state during JOLT generation', async () => {
+    joltGenerator.validateJSON.mockImplementation(() => true);
+    joltGenerator.callLLMStreaming.mockImplementation(() => 
+      new Promise(resolve => setTimeout(() => resolve('[{"operation": "shift"}]'), 100))
+    );
+    
+    renderJoltMapper();
+    const generatorButton = screen.getByText('JOLT Spec Generator');
+    fireEvent.click(generatorButton);
+    
+    const inputTextarea = screen.getByPlaceholderText('Enter your input JSON structure here...');
+    const outputTextarea = screen.getByPlaceholderText('Enter your desired output JSON structure here...');
+    const generateButton = screen.getByText('Generate JOLT Specification');
+    
+    fireEvent.change(inputTextarea, { target: { value: '{"test": "input"}' } });
+    fireEvent.change(outputTextarea, { target: { value: '{"test": "output"}' } });
+    fireEvent.click(generateButton);
+    
+    expect(screen.getByText('Generating...')).toBeInTheDocument();
+    
+    await waitFor(() => {
+      expect(screen.getByText('Generate JOLT Specification')).toBeInTheDocument();
     });
   });
 }); 

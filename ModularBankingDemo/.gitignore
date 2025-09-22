@@ -118,4 +118,6 @@ demoflow-backend/server.log
 modular-banking-frontend/build/
 
 # Any other generated files
-*.generated.* 
+*.generated.* *.log
+*.pid
+node_modules/

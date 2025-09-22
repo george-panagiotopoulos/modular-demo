@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { fetchTransformations, saveTransformation, deleteTransformation } from '../../services/joltService';
+import { generateJOLT, validateJSON, callLLMStreaming, debugEnvironmentVariables } from '../../utils/joltGenerator';
 import './JoltMapper.css';
 
 const JOLT_API_URL = 'http://localhost:8081/transform';
@@ -16,11 +18,14 @@ const JoltMapper = () => {
   const [simpleOutput, setSimpleOutput] = useState('');
   const [complexOutput, setComplexOutput] = useState('');
   
-  // New state for JOLT Spec Generator
+  // JOLT Spec Generator state
   const [generatorInputJson, setGeneratorInputJson] = useState('');
   const [generatorOutputJson, setGeneratorOutputJson] = useState('');
   const [generatedJoltSpec, setGeneratedJoltSpec] = useState('');
   const [generatorErrors, setGeneratorErrors] = useState({});
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatorInstructions, setGeneratorInstructions] = useState('');
+  const [streamingOutput, setStreamingOutput] = useState('');
   
   const navigate = useNavigate();
 
@@ -98,61 +103,54 @@ const JoltMapper = () => {
     }
   };
 
-  // New function to validate JSON input
+  // Validate JSON input for generator
   const validateJsonInput = (jsonString, fieldName) => {
     try {
-      if (!jsonString.trim()) {
-        return `${fieldName} cannot be empty`;
-      }
-      JSON.parse(jsonString);
-      return null;
+      validateJSON(jsonString);
+      setGeneratorErrors(prev => ({ ...prev, [fieldName]: '' }));
+      return true;
     } catch (error) {
-      return `Invalid JSON in ${fieldName}: ${error.message}`;
+      setGeneratorErrors(prev => ({ ...prev, [fieldName]: error.message }));
+      return false;
     }
   };
 
-  // New function to generate JOLT specification
-  const generateJoltSpecification = () => {
+  // Generate JOLT specification using LLM
+  const generateJoltSpecification = async () => {
+    // Clear previous errors and results
     setGeneratorErrors({});
-    
+    setGeneratedJoltSpec('');
+    setStreamingOutput('');
+
     // Validate inputs
-    const inputError = validateJsonInput(generatorInputJson, 'Input JSON');
-    const outputError = validateJsonInput(generatorOutputJson, 'Output JSON');
-    
-    if (inputError || outputError) {
-      setGeneratorErrors({
-        input: inputError,
-        output: outputError
-      });
+    const inputValid = validateJsonInput(generatorInputJson, 'input');
+    const outputValid = validateJsonInput(generatorOutputJson, 'output');
+
+    if (!inputValid || !outputValid) {
       return;
     }
 
-    try {
-      const inputData = JSON.parse(generatorInputJson);
-      const outputData = JSON.parse(generatorOutputJson);
-      
-      // Basic JOLT spec generation logic (simplified for MVP)
-      const generatedSpec = generateBasicJoltSpec(inputData, outputData);
-      setGeneratedJoltSpec(JSON.stringify(generatedSpec, null, 2));
-    } catch (error) {
-      setGeneratorErrors({
-        general: `Error generating JOLT spec: ${error.message}`
-      });
-    }
-  };
+    setIsGenerating(true);
 
-  // Basic JOLT spec generation (MVP implementation)
-  const generateBasicJoltSpec = (input, output) => {
-    // This is a simplified implementation for the MVP
-    // In a full implementation, this would be much more sophisticated
-    return [
-      {
-        "operation": "shift",
-        "spec": {
-          "*": "&"
+    try {
+      // Use streaming for better user experience
+      const joltSpec = await callLLMStreaming(
+        generatorInputJson,
+        generatorOutputJson,
+        generatorInstructions,
+        (chunk) => {
+          setStreamingOutput(prev => prev + chunk);
         }
-      }
-    ];
+      );
+
+      setGeneratedJoltSpec(joltSpec);
+      setStreamingOutput('');
+    } catch (error) {
+      setGeneratorErrors({ general: error.message });
+      setStreamingOutput('');
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   // Run transformation when spec or input changes
@@ -178,6 +176,13 @@ const JoltMapper = () => {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [navigate]);
+
+  const handleTabChange = (tab) => {
+    setActiveSection(tab);
+    if (tab === 'generator') {
+      debugEnvironmentVariables(); // Debug environment variables
+    }
+  };
 
   const renderContent = () => {
     switch (activeSection) {
@@ -226,9 +231,9 @@ const JoltMapper = () => {
       case 'generator':
         return (
           <div className="jolt-spec-generator-section">
-            <div className="jolt-mapper-header">
-              <h2>JOLT specification generator</h2>
-              <p>Provide input JSON and target output JSON then press Generate JOLT</p>
+            <div className="jolt-generator-header">
+              <h3>JOLT Spec Generator</h3>
+              <p>Generate JOLT specifications using AI by providing input and desired output JSON structures.</p>
             </div>
 
             {generatorErrors.general && (
@@ -239,13 +244,13 @@ const JoltMapper = () => {
 
             <div className="jolt-generator-grid">
               <div className="jolt-generator-panel">
-                <h3>Input JSON</h3>
+                <h4>Input JSON Structure</h4>
                 <textarea
-                  className="jolt-json-input"
+                  className={`jolt-json-input ${generatorErrors.input ? 'error' : ''}`}
                   value={generatorInputJson}
                   onChange={(e) => setGeneratorInputJson(e.target.value)}
-                  placeholder="Enter your input JSON here..."
-                  rows={15}
+                  placeholder="Enter your input JSON structure here..."
+                  rows={12}
                 />
                 {generatorErrors.input && (
                   <div className="jolt-field-error">{generatorErrors.input}</div>
@@ -253,39 +258,106 @@ const JoltMapper = () => {
               </div>
 
               <div className="jolt-generator-panel">
-                <h3>Target Output JSON</h3>
+                <h4>Desired Output JSON Structure</h4>
                 <textarea
-                  className="jolt-json-input"
+                  className={`jolt-json-input ${generatorErrors.output ? 'error' : ''}`}
                   value={generatorOutputJson}
                   onChange={(e) => setGeneratorOutputJson(e.target.value)}
-                  placeholder="Enter your desired output JSON here..."
-                  rows={15}
+                  placeholder="Enter your desired output JSON structure here..."
+                  rows={12}
                 />
                 {generatorErrors.output && (
                   <div className="jolt-field-error">{generatorErrors.output}</div>
                 )}
               </div>
+            </div>
 
-              <div className="jolt-generator-panel">
-                <h3>Generated JOLT Specification</h3>
-                <textarea
-                  className="jolt-spec-output"
-                  value={generatedJoltSpec}
-                  readOnly
-                  placeholder="Generated JOLT spec will appear here..."
-                  rows={15}
-                />
-              </div>
+            <div className="jolt-generator-panel">
+              <h4>Additional Instructions (Optional)</h4>
+              <textarea
+                className="jolt-json-input"
+                value={generatorInstructions}
+                onChange={(e) => setGeneratorInstructions(e.target.value)}
+                placeholder="Enter any additional instructions or requirements for the JOLT transformation..."
+                rows={3}
+              />
             </div>
 
             <div className="jolt-generator-actions">
-              <button 
-                className="jolt-generate-button"
+              <button
+                className={`jolt-generate-button ${isGenerating ? 'generating' : ''}`}
                 onClick={generateJoltSpecification}
-                disabled={!generatorInputJson.trim() || !generatorOutputJson.trim()}
+                disabled={isGenerating || !generatorInputJson.trim() || !generatorOutputJson.trim()}
               >
-                Generate JOLT
+                {isGenerating ? 'Generating...' : 'Generate JOLT Specification'}
               </button>
+            </div>
+
+            {(streamingOutput || generatedJoltSpec) && (
+              <div className="jolt-generator-panel">
+                <h4>Generated JOLT Specification</h4>
+                <div className="jolt-spec-output">
+                  <pre style={{ textAlign: 'left', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                    {streamingOutput || generatedJoltSpec}
+                  </pre>
+                </div>
+                {generatedJoltSpec && (
+                  <div className="jolt-generator-actions">
+                    <button
+                      className="jolt-copy-button"
+                      onClick={async (event) => {
+                        try {
+                          await navigator.clipboard.writeText(generatedJoltSpec);
+                          // Show success feedback
+                          const button = event.target;
+                          const originalText = button.textContent;
+                          button.textContent = 'Copied!';
+                          button.style.backgroundColor = '#28a745';
+                          setTimeout(() => {
+                            button.textContent = originalText;
+                            button.style.backgroundColor = '';
+                          }, 2000);
+                        } catch (error) {
+                          console.error('Failed to copy to clipboard:', error);
+                          // Fallback for older browsers
+                          const textArea = document.createElement('textarea');
+                          textArea.value = generatedJoltSpec;
+                          document.body.appendChild(textArea);
+                          textArea.select();
+                          try {
+                            document.execCommand('copy');
+                            const button = event.target;
+                            const originalText = button.textContent;
+                            button.textContent = 'Copied!';
+                            button.style.backgroundColor = '#28a745';
+                            setTimeout(() => {
+                              button.textContent = originalText;
+                              button.style.backgroundColor = '';
+                            }, 2000);
+                          } catch (fallbackError) {
+                            console.error('Fallback copy failed:', fallbackError);
+                            alert('Failed to copy to clipboard. Please select and copy the text manually.');
+                          }
+                          document.body.removeChild(textArea);
+                        }
+                      }}
+                    >
+                      Copy to Clipboard
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="jolt-generator-help">
+              <h4>How to use:</h4>
+              <ol>
+                <li>Paste your input JSON structure in the first textarea</li>
+                <li>Paste your desired output JSON structure in the second textarea</li>
+                <li>Optionally, add specific instructions or requirements</li>
+                <li>Click "Generate JOLT Specification" to create the transformation</li>
+                <li>Copy the generated specification and use it in your JOLT transformations</li>
+              </ol>
             </div>
           </div>
         );
@@ -477,7 +549,7 @@ const JoltMapper = () => {
       <div className="jolt-mapper-sidebar">
         <button 
           className={`jolt-nav-button ${activeSection === 'overview' ? 'active' : ''}`}
-          onClick={() => setActiveSection('overview')}
+          onClick={() => handleTabChange('overview')}
         >
           <span className="jolt-nav-icon">🏠</span>
           Overview
@@ -485,7 +557,7 @@ const JoltMapper = () => {
         
         <button 
           className={`jolt-nav-button ${activeSection === 'transformer' ? 'active' : ''}`}
-          onClick={() => setActiveSection('transformer')}
+          onClick={() => handleTabChange('transformer')}
         >
           <span className="jolt-nav-icon">🔄</span>
           Transformer
@@ -493,7 +565,7 @@ const JoltMapper = () => {
 
         <button 
           className={`jolt-nav-button ${activeSection === 'generator' ? 'active' : ''}`}
-          onClick={() => setActiveSection('generator')}
+          onClick={() => handleTabChange('generator')}
         >
           <span className="jolt-nav-icon">🧠</span>
           JOLT Spec Generator
@@ -501,7 +573,7 @@ const JoltMapper = () => {
         
         <button 
           className={`jolt-nav-button ${activeSection === 'reference' ? 'active' : ''}`}
-          onClick={() => setActiveSection('reference')}
+          onClick={() => handleTabChange('reference')}
         >
           <span className="jolt-nav-icon">📊</span>
           Reference
